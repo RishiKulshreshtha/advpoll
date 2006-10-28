@@ -1,0 +1,931 @@
+<?php
+// $Id$
+/**
+ * @file
+ * Advanced Poll - a sophisticated polling module for voting, elections, and group poll-making.
+ */
+
+
+define('ADVPOLL_DEFAULT_ELECTORAL_LIST', 0);
+// always, aftervote, or afterclose
+define('ADVPOLL_DEFAULT_VIEW_RESULTS', 'aftervote');
+
+/**
+ * Implementation of hook_access().
+ */
+function advpoll_access($op, $node) {
+  global $user;
+
+  if ($op == 'create') {
+    return user_access('create polls');
+  }
+  if ($op == 'delete') {
+    return user_access('delete polls');
+  }
+  if ($op == 'update') {
+    if (user_access('create polls') && ($user->uid == $node->uid)) {
+      return TRUE;
+    }
+  }
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function advpoll_block($op = 'list', $delta = 'mostrecent', $edit = array()) {
+  switch($op) {
+    case 'list' :
+      $blocks['mostrecent']['info'] = t('Advanced Poll - Newest');
+      return $blocks;
+    case 'view':
+  		if (user_access('view polls')) {
+				switch ($delta) {
+					case 'mostrecent': default:
+      			$block['content'] = advpoll_block_mostrecent();
+      			$block['subject'] = t('Advanced Poll - Newest');
+				}
+
+				if ($block['content']) {
+      		return $block;
+				}
+			}
+			return array();
+  }
+}
+
+/**
+ * Content of the block, as returned by advpoll_block('view')
+ */
+function advpoll_block_mostrecent() {
+  $output = '';
+	$result = db_query('SELECT nid FROM {advpoll} WHERE active=1 ORDER BY nid DESC LIMIT 1');
+	// Check that there is an active poll
+	if (db_num_rows($result) > 0) {
+  	$poll = db_fetch_object($result);
+		$output = advpoll_view(node_load($poll->nid), false, false, true);
+	}
+	else {
+		$output .= t('No active advpoll.');
+	}
+  return $output;
+}
+
+/**
+ * Implementation of hook_cron().
+ *
+ * Closes advpoll that have exceeded their allowed runtime.
+ */
+function advpoll_cron() {
+  $result = db_query('SELECT d.nid FROM {advpoll} d INNER JOIN {node} n ON d.nid = n.nid WHERE (n.created + d.runtime) < '. time() .' AND d.active = 1 AND d.runtime != 0');
+  while ($poll = db_fetch_object($result)) {
+    db_query("UPDATE {advpoll} SET active = 0 WHERE nid=%d", $poll->nid);
+  }
+}
+
+
+/**
+ * Implementation of hook_delete().
+ *
+ */
+function advpoll_delete($node) {
+  db_query("DELETE FROM {advpoll} WHERE nid = %d", $node->nid);
+  db_query("DELETE FROM {advpoll_choices} WHERE nid = %d", $node->nid);
+  db_query("DELETE FROM {advpoll_electoral_list} WHERE nid = %d", $node->nid);
+
+	// Note: this should be converted to a votingapi method eventually
+	db_query("DELETE FROM {votingapi_vote} WHERE content_id = %d", $node->nid);
+}
+
+/**
+ * Implementation of votingapi_hook_calculate()
+ */
+function advpoll_votingapi_calculate(&$cache, $votes, $content_type, $content_id) {
+  $node = node_load($content_id);
+	$mode = _advpoll_get_mode($node);
+  if (function_exists("advpoll_votingapi_calculate_$mode")) {
+  	//return call_user_func("advpoll_votingapi_calculate_$mode", $node, $cache, $votes, $content_type, $content_id);
+  }
+}
+
+
+
+/**
+ * Implementation of hook_form().
+ *
+ * This hook displays the form necessary to create/edit the poll.
+ */
+function advpoll_form($node) {
+	$mode = _advpoll_get_mode($node);
+
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => ucfirst($mode) . ' ' . t('Question'),
+    '#required' => TRUE,
+    '#default_value' => $node->title,
+  );
+
+  $form['body'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Description'),
+    '#required' => FALSE,
+    '#default_value' => $node->body,
+  );
+
+ $form['choice']['choices'] = array(
+    '#type' => 'hidden',
+    '#default_value' => max(2, count($node->choice) ? count($node->choice) : 5)
+  );
+  
+  $form['choice']['morechoices'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Need more choices'),
+    '#default_value' => 0,
+    '#description' => t("If the amount of boxes above isn't enough, check this box and click the Preview button below to add some more."),
+    '#weight' => 1
+  );
+  
+  $form['choice'] = form_builder($node->type . '_node_form', $form['choice']);
+  
+  if ($form['choice']['morechoices']['#value']) {
+    $form['choice']['morechoices']['#value'] = 0;
+    $form['choice']['choices']['#value'] *= 2;
+  }
+
+  // If the value was changed in a previous iteration, retain it.
+  $node->choices = $form['choice']['choices']['#value'];
+
+  // Advanced Poll choices
+  $form['choice'] += array(
+    '#type' => 'fieldset',
+    '#title' => t('Poll choices'),
+    '#collapsible' => TRUE,
+    '#prefix' => '<div class="poll-form">',
+    '#suffix' => '</div>', '#tree' => TRUE,
+    '#weight' => 1,
+  );
+    
+  for ($a = 0; $a < $node->choices; $a++) {
+    $form['choice'][$a]['chtext'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Choice %n', array('%n' => ($a + 1))),
+      '#default_value' => $node->choice[$a]['chtext']
+    );
+  }
+
+	$form['settings'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Poll settings'),
+    '#collapsible' => TRUE,
+		'#weight' => 2,
+  );
+
+	$maxChoiceList = array();
+	for ($i = 0; $i <= $node->choices; $i++) {
+		$maxChoiceList[$i] = ($i == 0? 'No limit' : $i);
+	}
+
+  $form['settings']['maxchoices'] = array(
+		'#type' => 'select',
+		'#title' => t('Maximum Choices'),
+		'#default_value' => ($node->maxchoices? $node->maxchoices : 0),
+		'#options' => $maxChoiceList,
+		'#description' => t('Limits the total number of choices voters may select.')
+	);
+
+	$voting_algorithms = array();
+	if ($mode == 'ranking') {
+		$algs = array('instant runoff', 'borda count');
+	}
+	else {
+		// mode == poll
+		$algs = array('plurality');
+	}
+
+	foreach ($algs as $alg) {
+		$voting_algorithms[$alg] = ucwords($alg);
+	}
+
+	$defaultalg = ($_POST['edit']['settings']['algorithm']?
+		$_POST['edit']['settings']['algorithm'] : 
+			$node->algorithm);
+			
+
+	$form['settings']['algorithm'] = array(
+		'#type' => 'select',
+		'#title' => t('Algorithm'),
+		'#options' => $voting_algorithms,
+		'#default_value' => $defaultalg,
+		'#description' => 'Voting algorithm to use to calculate the winner.',
+	);
+
+	$active = array(1 => t('Active'), 0 => t('Closed'));
+	$form['settings']['active'] = array(
+		'#type' => 'radios',
+		'#title' => t('Poll Status'),
+		'#options' => $active,
+		'#default_value' => (isset($node->active)? $node->active : 1),
+		'#description' => t('When a poll is closed users may no longer vote on it.'),
+	);
+
+  $_duration = array(0 => t('Unlimited')) + drupal_map_assoc(array(86400, 172800, 345600, 604800, 1209600, 2419200, 4838400, 9676800, 31536000), 'format_interval');
+
+  $form['settings']['runtime'] = array(
+		'#type' => 'select',
+		'#title' => t('Poll duration'),
+		'#default_value' => ($node->runtime? $node->runtime : 0),
+		'#options' => $_duration,
+		'#description' => t('After this period, the poll will be closed automatically.')
+	);
+
+
+	$form['settings']['uselist'] = array(
+		'#type' => 'checkbox',
+		'#title' => t('Restrict voting to electoral list'),
+		'#description' => t('If enabled, a list of eligible voters will be created and only that group will be able to vote in the poll.'),
+		'#default_value' => isset($node->uselist)? $node->uselist : variable_get('advpoll_default_electoral_list', ADVPOLL_DEFAULT_ELECTORAL_LIST),
+	);
+
+	$form['settings']['showvotes'] = array(
+		'#type' => 'checkbox',
+		'#title' => t('Show individual votes'),
+		'#description' => t('Users with the appropriate permissions will be able to see how each person voted.'),
+		'#default_value' => isset($node->showvotes)? $node->showvotes : 1,
+	);
+
+  
+	$form['format'] = filter_form($node->form);
+	return $form;
+}
+
+
+/**
+ * Implementation of hook_help().
+ */
+function advpoll_help($section) {
+  switch ($section) {
+    case 'admin/modules#description':
+      return t('An advanced polling module for voting, elections, and group decision-making.');
+    case 'node/add#advpoll-binary':
+      return t('Create an advanced poll using a binary voting interface.');
+    case 'node/add#advpoll-ranking':
+      return t('Create an advanced poll using a ranking interface.');
+  }
+}
+
+/**
+ * Implementation of hook_load().
+ *
+ * Load the votes and poll-specific data into the node object.
+ */
+function advpoll_load($node) {
+	global $user;
+  $poll = db_fetch_object(db_query("SELECT * FROM {advpoll} WHERE nid = %d", $node->nid));
+  $result = db_query("SELECT chorder, chtext FROM {advpoll_choices} WHERE nid = %d ORDER BY chorder", $node->nid);
+  while ($choice = db_fetch_array($result)) {
+  	$poll->choice[$choice['chorder']] = $choice;
+  }
+  $poll->choices = count($poll->choice);
+
+	$poll->voted = false;
+	// See if user has voted
+	if ($user->uid) {
+		$poll->voted = (count(votingapi_get_user_votes('advpoll', $node->nid)) > 0);
+	}
+	else {
+		$result = db_query('SELECT value FROM {votingapi_vote} '
+			. 'WHERE content_id=%d AND ' . 'hostname="%s"',
+			$node->nid, $_SERVER['REMOTE_ADDR']);
+		if (db_num_rows($result) > 0) {
+			$poll->voted = true;
+		}
+	}
+
+  return $poll;
+}
+
+/**
+ * Implementation of hook_menu().
+ *
+ */
+function advpoll_menu($may_cache) {
+  global $user;
+
+  // load the necessary submodules in here instead of _init() to
+  // profit from caching, as recommended by
+  // http://drupaldocs.org/api/head/function/hook_init
+  _advpoll_load_modes();
+
+  $items = array();
+
+  if ($may_cache) {
+    $items[] = array('path' => 'node/add/advpoll-ranking',
+			'title' => t('advpoll-ranking'),
+      'access' => user_access('create polls'),
+		);
+
+    $items[] = array('path' => 'node/add/advpoll-binary',
+			'title' => t('advpoll-binary'),
+      'access' => user_access('create polls'),
+		);
+
+		$items[] = array('path' => 'advpoll/cancel',
+			'title' => t('cancel'),
+			'callback' => 'advpoll_cancel',
+			'access' => user_access('cancel own vote'),
+			'type' => MENU_CALLBACK);
+  }
+	else {
+		// need to be able to extract the nid
+		if (arg(0) == 'node' && is_numeric(arg(1))) {
+			$nid = arg(1);
+			$node = node_load($nid);
+			// Make sure we're on the actual poll node's page
+			if (strstr($node->type, 'advpoll-') == 0) {
+				// Show the results tab
+				if ($node->active && !$node->voted
+					&& _advpoll_can_view_results($node)) {
+					$items[] = array('path' => 'node/' . $nid . '/results',
+						'title' => t('results'),
+						'callback' => 'advpoll_results',
+						'access' => user_access('view polls'),
+						'weight' => 3,
+						'type' => MENU_LOCAL_TASK);
+				}
+
+				// Show the votes tab
+				if ($node->showvotes) {
+					$items[] = array(
+						'path' => 'node/' . $nid . '/votes',
+						'title' => t('votes'),
+						'callback' => 'advpoll_tab_votes',
+						'access' => user_access('inspect all votes'),
+						'weight' => 3,
+						'type' => MENU_LOCAL_TASK
+					);
+				}
+
+				if ($node->uselist) {
+					$items[] = array(
+						'path' => 'node/' . $nid . '/electoral_list',
+						'title' => t('electoral list'),
+						'callback' => 'advpoll_tab_electoral_list',
+						'access' => user_access('view polls'),
+						'weight' => 3,
+						'type' => MENU_LOCAL_TASK
+					);
+				}
+			}
+		}
+	}
+
+  return $items;
+}
+
+function advpoll_tab_electoral_list() {
+	if ($node = node_load(arg(1))) {
+		if (!$node->uselist) {
+			drupal_not_found();
+			return;
+		}
+		drupal_set_title(check_plain($node->title));
+  	$output = t('This table lists all the eligible voters for this poll.');
+
+    $header[] = array('data' => t('Voter'), 'field' => 'u.name');
+
+    $result = pager_query("SELECT u.uid, u.name FROM {advpoll_electoral_list} el LEFT JOIN {users} u ON el.uid = u.uid WHERE el.nid = %d" . tablesort_sql($header), 20, 0, NULL, $node->nid);
+    $eligible_voters = array();
+    while ($voter = db_fetch_object($result)) {
+			$eligible_voters[] = array(theme('username', $voter));
+    }
+    $output .= theme('table', $header, $eligible_voters);
+    $output .= theme('pager', NULL, 20, 0);
+    print theme('page', $output);
+	}
+	else {
+		drupal_not_found();
+	}
+}
+
+
+function advpoll_tab_votes() {
+	if ($node = node_load(arg(1))) {
+		if (!$node->showvotes) {
+			// Advanced Poll is set to not allow viewing of votes
+			drupal_not_found();
+			return;
+		}
+		drupal_set_title(check_plain($node->title));
+  	$output = t('This table lists all the recorded votes for this poll. If anonymous users are allowed to vote, they will be identified by the IP address of the computer they used when they voted.');
+
+    $header[] = array('data' => t('Visitor'), 'field' => 'u.name');
+    $header[] = array('data' => t('Vote'), '');
+
+    $result = pager_query('SELECT v.value, v.uid, v.hostname, v.tag, u.name FROM {votingapi_vote} v LEFT JOIN {users} u ON v.uid = u.uid WHERE v.content_id = %d' . tablesort_sql($header), 20, 0, NULL, $node->nid);
+    $rows = array();
+    while ($vote = db_fetch_object($result)) {
+			$key = $vote->uid? $vote->uid : $vote->hostname;
+			$rows[$key]['name'] = $vote->name ? theme('username', $vote) : check_plain($vote->hostname);
+			if ($node->type == 'advpoll-ranking') {
+				// Need two dimensional results (if equal rankings are allowed)
+      	$rows[$key]['votes'][$vote->value][] = check_plain($node->choice[$vote->tag]['chtext']);
+			}
+			else {
+				// Just need one dimensional results
+      	$rows[$key]['votes'][] = check_plain($node->choice[$vote->tag]['chtext']);
+			}
+    }
+		
+		$separators = array('advpoll-ranking' => ' > ', 'advpoll-binary' => ', ');
+
+		// create strings out of each vote
+		$results = array();
+
+		foreach ($rows as $key => $container) {
+			$ranking = $container['votes'];
+			asort($ranking);
+			$rankings = array();
+			if ($node->type == 'advpoll-ranking') {
+				// Include support for multiple choices having the same ranking
+				foreach ($ranking as $vote => $choices) {
+					$rankings[$vote] = implode(' = ', $choices);
+				}
+			}
+			else {
+				// Just copy the previous array
+				$rankings = $ranking;
+			}
+			ksort($rankings);
+			$results[$key]['name'] = $rows[$key]['name'];
+			$results[$key]['vote'] = implode($separators[$node->type], $rankings);
+		}
+
+    $output .= theme('table', $header, $results);
+    $output .= theme('pager', NULL, 20, 0);
+    print theme('page', $output);
+	}
+	else {
+		drupal_not_found();
+	}
+}
+
+
+function _advpoll_can_view_results($node) {
+	$view_results = variable_get('advpoll_view_results'
+		, ADVPOLL_DEFAULT_VIEW_RESULTS);
+	return (!$node->active  // node is closed
+				|| ($node->voted && $view_results == 'aftervote') // user voted
+				|| ($view_results == 'always')); // all can view
+}
+
+/**
+ * Implementation of hook_node_info().
+ */
+function advpoll_node_info() {
+  return array(
+		'advpoll-ranking' => array('name' => t('advpoll-ranking'), 'base' => 'advpoll'),
+		'advpoll-binary' =>    array('name' => t('advpoll-binary'),    'base' => 'advpoll'),
+	);
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function advpoll_perm() {
+  return array('create polls', 'delete polls', 'view polls', 'vote on polls', 'cancel own vote', 'administer advanced poll', 'inspect all votes');
+}
+
+/**
+ * Implementation of hook_settings().
+ *
+ */
+function advpoll_settings() {
+	if (!user_access('administer advanced poll')) {
+		return message_access();
+	}
+
+	$enabled = array(0 => t('Disabled'), 1 => t('Enabled'));
+
+	$form['main']['advpoll_default_electoral_list'] = array(
+		'#type' => 'radios',
+		'#title' => t('Use electoral list by default'),
+		'#description' => t('Use an electoral list by default for new advpoll.'),
+		'#default_value' => variable_get('advpoll_default_electoral_list', ADVPOLL_DEFAULT_ELECTORAL_LIST),
+		'#options' => $enabled,
+	);
+
+	$view_results = array(
+		'always' => t('Always'),
+		'aftervote' => t('After user has voted'),
+		'afterclose' => t('After voting has closed'),
+	);
+
+	$form['main']['advpoll_view_results'] = array(
+		'#type' => 'radios',
+		'#title' => t('When should results be displayed'),
+		'#description' => t('Determines when users may view the results of the poll.'),
+		'#default_value' => variable_get('advpoll_view_results', ADVPOLL_DEFAULT_VIEW_RESULTS),
+		'#options' => $view_results,
+	);
+
+	return $form;
+}
+
+function advpoll_cancel_form($nid) {
+  $form['#action'] = url("advpoll/cancel/$nid");
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Cancel your vote'));
+  return $form;	
+}
+
+/**
+ * Implementation of hook_update().
+ *
+ * This is called upon node edition.
+ */
+function advpoll_update($node) {
+  db_query("UPDATE {advpoll} SET active=%d, runtime=%d, maxchoices=%d, algorithm='%s', uselist=%d, showvotes=%d WHERE nid = %d", $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['uselist'], $node->settings['showvotes'], $node->nid);
+  // XXX: should update advpoll here, when it has some parameters
+  // XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in advpoll_insert()
+  db_query('DELETE FROM {advpoll_choices} WHERE nid = %d', $node->nid);
+
+  foreach ($node->choice as $choice) {
+  	 if ($choice['chtext'] != '') {
+      db_query("INSERT INTO {advpoll_choices} (nid, chtext, chorder) VALUES (%d, '%s', %d)", $node->nid, $choice['chtext'], $i++);
+    }
+  }
+}
+
+function _advpoll_get_mode($node) {
+	if ($node->type) {
+		$types = explode('-', $node->type, 2);
+		return $types[1];
+	}
+	else {
+		drupal_set_error('No type specified for node: ' . $node->nid);
+		return '';
+	}
+}
+
+/**
+ * Implementation of hook_insert()
+ *
+ * This is called upon node creation
+ */
+function advpoll_insert($node) {
+	$mode = _advpoll_get_mode($node);
+	if ($mode == 'poll') {
+		$alg = 'poll';
+	} else if ($mode == 'ranking') {
+		$alg = 'runoff';
+	}
+  db_query("INSERT INTO {advpoll} (nid, mode, uselist, active, runtime, maxchoices, algorithm) VALUES (%d, '%s', %d, %d, %d, %d, '%s')", $node->nid, $mode, $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $alg);
+
+  // create the electoral list if desired
+
+	if ($node->settings['uselist']) {
+  	// Check if authenticated users have the right to vote, because authenticated users are not added to the users_roles permission, probably for performance reasons
+  	$result = db_fetch_object(db_query("SELECT COUNT(*) AS hit FROM {permission} JOIN role ON role.rid = permission.rid WHERE FIND_IN_SET(' vote on advpoll', perm) AND role.name = 'authenticated user'"));
+  	if ($result->hit) {
+    	// Special case: any authenticated user can vote
+    	// Add all current users to electoral list
+    	db_query("INSERT INTO {advpoll_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users u WHERE u.uid != 0", $node->nid);
+  	}
+  	else {
+			// All users must not be allowed to vote, add relevant users only
+    	db_query("INSERT INTO {advpoll_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users_roles u, permission p WHERE FIND_IN_SET(' view advpoll', p.perm) AND u.rid = p.rid AND u.uid != 0", $node->nid);
+  	}
+	}
+
+  // Insert the choices
+  advpoll_update($node);
+}
+
+/**
+ * Implementation of hook_validate().
+ */
+function advpoll_validate(&$node) {
+  // Use form_set_error for any errors
+	$node->choice = array_values($node->choice);
+
+	// Check for at least two choices
+	$realchoices = 0;
+	foreach ($node->choice as $i => $choice) {
+		if ($choice['chtext'] != '') {
+			$realchoices++;
+		}
+	}
+
+	if ($realchoices < 2) {
+		form_set_error("choice][$realchoices][chtext", t('You must fill in at least two choices.'));
+	}
+}
+
+function advpoll_submit(&$node) {
+	$node->choice = array_values($node->choice);
+}
+
+/**
+ * Implementation of hook_view().
+ */
+function advpoll_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
+	if (!$block) {
+  	$node = node_prepare($node, $teaser);
+	}
+	$mode = _advpoll_get_mode($node);
+
+	// Record the vote if they voted
+  $valid = FALSE;
+  if ($_POST['op'] == t('Vote')) {
+    // poll_vote will return FALSE on error
+    $valid = advpoll_vote_validate($node);
+    if ($valid) {
+      drupal_set_message(t('Your vote was registered.'));
+      advpoll_vote($node);
+			// Transferring makes the results tab display correctly
+			drupal_goto('node/' . $node->nid);
+    }
+		else {
+			drupal_set_message('Not valid, nid: ' .$node->nid);
+		}
+  }
+
+	// Previewing a node, so don't show results
+	if ($node->in_preview) {
+		// Show the voting form but don't let them vote
+    $output .= advpoll_view_voting($node, $teaser, $page, $block);
+	}
+  else if (!$node->voted && arg(2) != 'results' && $node->active && advpoll_eligible($node)) {
+		// User hasn't voted and we're not on the results tab
+		if (!$valid) {
+      $output .= advpoll_view_voting($node, $teaser, $page, $block);
+    }
+	}
+	else if (_advpoll_can_view_results($node)) {
+		// Show results only if the user has voted or poll is closed
+    $output .= advpoll_view_results($node, $teaser, $page, $block);
+  	$output .= advpoll_view_electoral_list($node, $teaser);
+	}
+
+	if (isset($node->voted) && $node->voted && user_access('cancel own vote') && $node->active && !$block) {
+			$output .= drupal_get_form('advpoll_cancel', advpoll_cancel_form($node->nid));
+  }
+
+	if ($block) {
+		$output = '<div class="title">' . $node->title . '</div>' . $output;
+		$output .= l(t('view poll'), 'node/' . $node->nid);
+		return $output;
+	}
+	else {
+  	$node->body .= $output;
+  	$node->teaser .= $output;
+	}
+	//drupal_set_message('done: ' . $node->nid);
+}
+
+function advpoll_view_electoral_list($node, $teaser = FALSE) {
+  $output = '';
+  if (!$teaser) {
+		if ($node->uselist) {
+    	$result = db_query("SELECT COUNT(*) AS voters FROM {advpoll_electoral_list} WHERE nid=%d", $node->nid);
+    	$electoral_list = db_fetch_object($result);
+		}
+    $result = db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid);
+    $votes = db_num_rows($result);
+
+    $output = '<div class="advpoll-electoral-list">';
+
+		$output .= t('Total votes: %d', array('%d' => $votes));
+		if ($node->uselist) {
+    	$output .= t(' (out of %v eligible voter' . 
+				($electoral_list->voters == 1? '' : 's') . ')',
+					array('%v' => $electoral_list->voters));
+		}
+    $output .= '</div>';
+  }
+  return $output;
+}
+
+/**
+ * Render the voting form.
+ */
+function theme_advpoll_view_voting($form) {
+  $output .= '<div class="advpoll">';
+  $output .= '  <div class="choice-form">';
+  $output .= '    <div class="choices">';
+  $output .= form_render($form['choice']);
+  $output .= '    </div>';
+  $output .= form_render($form['nid']);
+  $output .= form_render($form['vote']);
+  $output .= '  </div>';
+  $output .= form_render($form);
+  $output .= '</div>';
+  return $output;
+}
+
+function theme_advpoll_bar($title, $percentage, $votes, $block) {
+  if ($block) {
+    $output  = '<div class="text">'. $title .'</div>';
+    $output .= '<div class="bar"><div style="width: '. $percentage .'%;" class="foreground"></div></div>';
+    $output .= '<div class="percent">'. $percentage .'%</div>';
+  }
+  else {
+    $output  = '<div class="text">'. $title .'</div>';
+    $output .= '<div class="bar"><div style="width: '. $percentage .'%;" class="foreground"></div></div>';
+    $output .= '<div class="percent">'. $percentage .'% ('. $votes .')</div>';
+  }
+  return $output;
+}
+
+/**
+ * View the voting form.
+ *
+ * This calls a function advpoll_vote_$mode, where $mode is defined
+ * in the node. If the function does not exist, a watchdog error is
+ * raised and the error is reported using drupal_set_message().
+ *
+ * This also takes care of registering new votes, if the vote button
+ * has been pressed.
+ */
+function advpoll_view_voting(&$node, $teaser, $page, $block) {
+
+	$mode = _advpoll_get_mode($node);
+  if (function_exists("advpoll_view_voting_$mode")) {
+    return call_user_func("advpoll_view_voting_$mode", $node, $teaser, $page, $block);
+  }
+  else {
+    _advpoll_panic_on_mode($mode);
+  }
+}
+
+/**
+ * Callback for 'results' tab for advpoll you can vote on
+ */
+function advpoll_results() {
+	if ($node = node_load(arg(1))) {
+		drupal_set_title(check_plain($node->title));
+		return node_show($node, 0);
+	}
+	else {
+		// The url does not provide the appropriate node id
+		drupal_not_found();
+	}
+}
+/**
+ * Show results of the vote
+ *
+ * this calls the appropriate vote results function, depending on the
+ * mode. It will call advpoll_view_results_$mode, similarly to
+ * advpoll_view_voting().
+ */
+function advpoll_view_results(&$node, $teaser, $page, $block) {
+	$mode = _advpoll_get_mode($node);
+  if (function_exists("advpoll_view_results_$mode")) {
+    return call_user_func("advpoll_view_results_$mode", $node, $teaser, $page, $block);
+  }
+  else {
+    _advpoll_panic_on_mode($mode);
+  }
+}
+
+/**
+ * Record a vote on the node
+ *
+ * this calls the appropriate vote recording function, depending on
+ * the mode. It will call advpoll_vote_$mode, similarly to
+ * advpoll_view_voting().
+ */
+function advpoll_vote($node) {
+	$mode = _advpoll_get_mode($node);
+
+  $ok = FALSE; // error by default
+  if (advpoll_eligible($node)) {
+    if (function_exists("advpoll_vote_$mode")) {
+      call_user_func("advpoll_vote_$mode", $node);
+    }
+    else {
+      _advpoll_panic_on_mode($mode);
+    }
+  }
+  else {
+    drupal_set_message(t('You are not eligible to vote on this poll.'));
+  }
+}
+
+/**
+ * Callback for canceling a vote
+ */
+function advpoll_cancel($nid) {
+	global $user;
+	$nid = arg(2);
+  if ($node = node_load(array('nid' => $nid))) {
+    if ($node->voted && $node->active) {
+      if ($user->uid) {
+				votingapi_unset_vote('advpoll', $node->nid, $user->uid);
+      }
+      else {
+        db_query("DELETE FROM {votingapi_vote} WHERE content_id=%d and hostname = '%s'", $node->nid, $_SERVER['REMOTE_ADDR']);
+      }
+      drupal_set_message(t('Your vote was canceled.'));
+    }
+    else {
+      drupal_set_message(t("You are not allowed to cancel an invalid choice."), 'error');
+    }
+		drupal_goto('node/'. $nid);
+ 	}	
+  else {
+		drupal_not_found();
+	}
+}
+
+/**
+ * Validate vote form submission
+ *
+ * This will call a hook named advpoll_vote_validate_$mode and
+ * return its value. hooks should check $POST to see if the vote data
+ * submitted is valid and use form_set_error() if the form has invalid
+ * data.
+ *
+ * @returns boolean true if form has valid data or if no hook is
+ * defined in mode
+ */
+function advpoll_vote_validate($node) {
+	$mode = _advpoll_get_mode($node);
+  if (function_exists("advpoll_vote_validate_$mode") ) {
+		//drupal_set_message($mode);
+    return call_user_func("advpoll_vote_validate_$mode", $node);
+  }
+  return TRUE;
+}
+
+/**
+ * Check if user is eligible to vote in this poll
+ */
+function advpoll_eligible($node, $uid = NULL) {
+  global $user;
+  if (!isset($uid)) {
+    $uid = $user->uid;
+  }
+
+	if ($node->uselist) {
+  	$can_vote = db_fetch_object(db_query("SELECT COUNT(*) AS eligible FROM {advpoll_electoral_list} WHERE nid=%d AND uid=%d", $node->nid, $uid));
+	}
+	else {
+		return user_access('vote on polls');
+	}
+  return $can_vote->eligible;
+}
+
+/**
+ * Debugging function for unknown mode.
+ */
+function _advpoll_panic_on_mode($mode) {
+	watchdog('advpoll', t('Unknown poll mode : %mode.', array('%mode' => $mode), WATCHDOG_ERROR));
+	drupal_set_message(t('Unknown poll mode : %mode.', array('%mode' => $mode), 'error'));
+}
+
+/**
+ * Load the available modes.
+ *
+ * This scans the modes subdirectory to find mode.inc files, where
+ * mode is considered to be the mode name. found files are loaded and
+ * added to the mode list.
+ *
+ * @uses _advpoll_mode_list()
+ * @uses file_scan_directory()
+ */
+function _advpoll_load_modes() {
+  global $_advpoll_modes;
+
+  foreach (file_scan_directory(dirname(__FILE__) . '/modes/', '^([^\.].*)\.inc$', array('.', '..', 'CVS'), 0, FALSE) as $file) {
+		require_once($file->filename);
+		$mode = $file->name;
+		if (function_exists("advpoll_${mode}_longname") ) {
+			_advpoll_mode_list($mode, call_user_func("advpoll_${mode}_longname"));
+		}
+		else {
+			drupal_set_message("advpoll_${mode}_longname ??");
+			_advpoll_mode_list($mode);
+		}
+  }
+}
+
+/**
+ * List or set the known modes
+ *
+ * @param string $mode set/change the given mode
+ * @param string $longname choiceal. set a longname different than the mode name
+ *
+ * @returns array the module list as a mode => longname associative array
+ */
+function _advpoll_mode_list($mode = NULL, $longname = NULL) {
+  static $_advpoll_modes = array();
+
+  if (!is_null($mode)) {
+    if (is_null($longname)) {
+      $longname = $mode;
+    }
+    $_advpoll_modes[$mode] = $longname;
+  }
+  return $_advpoll_modes;
+}
+

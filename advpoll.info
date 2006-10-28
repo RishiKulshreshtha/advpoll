@@ -1,0 +1,4 @@
+; $Id$
+name = Advanced Poll
+description = An advanced polling module for voting, elections, and group decision-making.
+dependencies = votingapi

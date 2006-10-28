@@ -1,0 +1,53 @@
+<?php
+// $Id$
+
+
+/**
+ * Implementation of hook_install().
+ */
+function advpoll_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_query("CREATE TABLE {advpoll} (
+          `nid` int(10) NOT NULL,
+          `quorum` int(10) NOT NULL,
+          `mode` varchar(32) NOT NULL,
+					`uselist` tinyint default '0',
+					`active` tinyint default '1',
+					`runtime` int NOT NULL default '0',
+					`maxchoices` int unsigned NOT NULL default '0',
+					`algorithm` VARCHAR(100),
+					`showvotes` tinyint,
+          PRIMARY KEY  (`nid`)
+      ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */");
+
+      db_query("CREATE TABLE {advpoll_electoral_list} (
+          `nid` int(10) NOT NULL,
+          `uid` int(10) NOT NULL,
+          PRIMARY KEY  (`nid`,`uid`)
+      ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */");
+
+      db_query("CREATE TABLE {advpoll_choices} (
+          `nid` int(10) NOT NULL,
+          `chtext` text NOT NULL,
+          `chorder` int(2) default NULL,
+          PRIMARY KEY  (`nid`, `chorder`),
+          KEY `chorder` (`chorder`)
+        ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */");
+
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function advpoll_uninstall() {
+	// TODO: delete data in VotingAPI tables
+	db_query('DROP TABLE {advpoll}');
+	db_query('DROP TABLE {advpoll_electoral_list}');
+	db_query('DROP TABLE {advpoll_choices}');
+	variable_del('advpoll_default_mode');
+	variable_del('advpoll_default_electoral_list');
+}
