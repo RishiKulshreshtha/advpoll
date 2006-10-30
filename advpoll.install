@@ -19,6 +19,7 @@ function advpoll_install() {
 					`maxchoices` int unsigned NOT NULL default '0',
 					`algorithm` VARCHAR(100),
 					`showvotes` tinyint,
+					`startdate` int unsigned,
           PRIMARY KEY  (`nid`)
       ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */");
 
