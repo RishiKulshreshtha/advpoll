@@ -674,13 +674,10 @@ function advpoll_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
 	if ($block) {
 		$output = '<div class="title">' . $node->title . '</div>' . $output;
 		$output .= l(t('view poll'), 'node/' . $node->nid);
-		return $output;
 	}
-	else {
-  	$node->body .= $output;
-  	$node->teaser .= $output;
-	}
-	//drupal_set_message('done: ' . $node->nid);
+
+  $node->teaser .= $output;
+  $node->body .= $output;
 }
 
 function advpoll_view_electoral_list($node, $teaser = FALSE) {
