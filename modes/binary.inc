@@ -16,7 +16,7 @@ function advpoll_view_voting_binary(&$node, $teaser, $page, $block) {
 		if ($node->maxchoices == 1) {
 			// plurality voting
     	foreach ($node->choice as $i => $choice) {
-      	$list[$i] = check_plain($choice['chtext']);
+      	$list[$i] = check_plain($choice['label']);
     	}
 
     	$form['choice'] = array(
@@ -30,8 +30,8 @@ function advpoll_view_voting_binary(&$node, $teaser, $page, $block) {
 			// approval voting
 			foreach ($node->choice as $i => $choice) {
 				// Don't show blank choices
-				if ($choice['chtext']) {
-      		$list[$i] = check_plain($choice['chtext']);
+				if ($choice['label']) {
+      		$list[$i] = check_plain($choice['label']);
 				}
     	}
 			
@@ -96,7 +96,7 @@ function advpoll_view_results_binary($node, $teaser, $page, $block) {
 				$votes[$i] = 0;
 			}
 			$percentage = round(100 * $votes[$i] / $totalVotes, 0);
-			$output .= theme('advpoll_bar',  check_plain($ch['chtext']), $percentage, format_plural($votes[$i], '1 vote', '%count votes'), $block);
+			$output .= theme('advpoll_bar',  check_plain($ch['label']), $percentage, format_plural($votes[$i], '1 vote', '%count votes'), $block);
 		}
 		$output .= '</div>';
 	}

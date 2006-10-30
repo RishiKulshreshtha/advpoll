@@ -166,10 +166,10 @@ function advpoll_form($node) {
   );
     
   for ($a = 0; $a < $node->choices; $a++) {
-    $form['choice'][$a]['chtext'] = array(
+    $form['choice'][$a]['label'] = array(
       '#type' => 'textfield',
       '#title' => t('Choice %n', array('%n' => ($a + 1))),
-      '#default_value' => $node->choice[$a]['chtext']
+      '#default_value' => $node->choice[$a]['label']
     );
   }
 
@@ -282,9 +282,9 @@ function advpoll_help($section) {
 function advpoll_load($node) {
 	global $user;
   $poll = db_fetch_object(db_query("SELECT * FROM {advpoll} WHERE nid = %d", $node->nid));
-  $result = db_query("SELECT chorder, chtext FROM {advpoll_choices} WHERE nid = %d ORDER BY chorder", $node->nid);
+  $result = db_query("SELECT vote_offset, label FROM {advpoll_choices} WHERE nid = %d ORDER BY vote_offset", $node->nid);
   while ($choice = db_fetch_array($result)) {
-  	$poll->choice[$choice['chorder']] = $choice;
+  	$poll->choice[$choice['vote_offset']] = $choice;
   }
   $poll->choices = count($poll->choice);
 
@@ -429,11 +429,11 @@ function advpoll_tab_votes() {
 			$rows[$key]['name'] = $vote->name ? theme('username', $vote) : check_plain($vote->hostname);
 			if ($node->type == 'advpoll-ranking') {
 				// Need two dimensional results (if equal rankings are allowed)
-      	$rows[$key]['votes'][$vote->value][] = check_plain($node->choice[$vote->tag]['chtext']);
+      	$rows[$key]['votes'][$vote->value][] = check_plain($node->choice[$vote->tag]['label']);
 			}
 			else {
 				// Just need one dimensional results
-      	$rows[$key]['votes'][] = check_plain($node->choice[$vote->tag]['chtext']);
+      	$rows[$key]['votes'][] = check_plain($node->choice[$vote->tag]['label']);
 			}
     }
 		
@@ -550,8 +550,8 @@ function advpoll_update($node) {
   db_query('DELETE FROM {advpoll_choices} WHERE nid = %d', $node->nid);
 
   foreach ($node->choice as $choice) {
-  	 if ($choice['chtext'] != '') {
-      db_query("INSERT INTO {advpoll_choices} (nid, chtext, chorder) VALUES (%d, '%s', %d)", $node->nid, $choice['chtext'], $i++);
+  	 if ($choice['label'] != '') {
+      db_query("INSERT INTO {advpoll_choices} (nid, label, vote_offset) VALUES (%d, '%s', %d)", $node->nid, $choice['label'], $i++);
     }
   }
 }
@@ -611,13 +611,13 @@ function advpoll_validate(&$node) {
 	// Check for at least two choices
 	$realchoices = 0;
 	foreach ($node->choice as $i => $choice) {
-		if ($choice['chtext'] != '') {
+		if ($choice['label'] != '') {
 			$realchoices++;
 		}
 	}
 
 	if ($realchoices < 2) {
-		form_set_error("choice][$realchoices][chtext", t('You must fill in at least two choices.'));
+		form_set_error("choice][$realchoices][label", t('You must fill in at least two choices.'));
 	}
 }
 
