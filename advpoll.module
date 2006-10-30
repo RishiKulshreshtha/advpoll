@@ -646,7 +646,7 @@ function advpoll_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
 			drupal_goto('node/' . $node->nid);
     }
 		else {
-			drupal_set_message('Not valid, nid: ' .$node->nid);
+			//drupal_set_message('Not valid, nid: ' .$node->nid);
 		}
   }
 
