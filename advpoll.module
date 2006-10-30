@@ -2,7 +2,7 @@
 // $Id$
 /**
  * @file
- * Advanced Poll - a sophisticated polling module for voting, elections, and group poll-making.
+ * Advanced Poll - a sophisticated polling module for voting, elections, and group decision-making.
  */
 
 
@@ -73,7 +73,7 @@ function advpoll_block_mostrecent() {
 /**
  * Implementation of hook_cron().
  *
- * Closes advpoll that have exceeded their allowed runtime.
+ * Closes polls that have exceeded their allowed runtime.
  */
 function advpoll_cron() {
   $result = db_query('SELECT d.nid FROM {advpoll} d INNER JOIN {node} n ON d.nid = n.nid WHERE (n.created + d.runtime) < '. time() .' AND d.active = 1 AND d.runtime != 0');
@@ -160,7 +160,8 @@ function advpoll_form($node) {
     '#title' => t('Poll choices'),
     '#collapsible' => TRUE,
     '#prefix' => '<div class="poll-form">',
-    '#suffix' => '</div>', '#tree' => TRUE,
+    '#suffix' => '</div>',
+		'#tree' => TRUE,
     '#weight' => 1,
   );
     

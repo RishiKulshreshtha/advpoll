@@ -39,11 +39,14 @@ function advpoll_view_voting_ranking(&$node, $teaser, $page, $block) {
 		);
 
     foreach ($node->choice as $key => $choice) {
-      $form['choice'][$key] = array(
-        '#type' => 'select',
-        '#title' => check_plain($choice['chtext']),
-				'#options' => $choices,
-      );
+			// Don't show blank choices
+			if ($choice['chtext']) {
+      	$form['choice'][$key] = array(
+        	'#type' => 'select',
+        	'#title' => check_plain($choice['chtext']),
+					'#options' => $choices,
+      	);
+			}
     }
   }
 

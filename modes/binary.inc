@@ -29,7 +29,10 @@ function advpoll_view_voting_binary(&$node, $teaser, $page, $block) {
 		else {
 			// approval voting
 			foreach ($node->choice as $i => $choice) {
-      	$list[$i] = check_plain($choice['chtext']);
+				// Don't show blank choices
+				if ($choice['chtext']) {
+      		$list[$i] = check_plain($choice['chtext']);
+				}
     	}
 			
     	$form['choice'] = array(
