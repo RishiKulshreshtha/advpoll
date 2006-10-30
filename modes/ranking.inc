@@ -73,27 +73,44 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
 
 	// If no one has voted, $results = array() and thus is empty
 	if (!empty($results)) {
+		if ($node->algorithm == 'borda count') {
+			$output .= '<div class="poll">';
+			for ($i = 0; $i < count($results->ranking); $i++) {
+				$firstOne = true;
+				$thisRank = '';
 
-		$output .= t('Final results: ') . '<ol>';
+				// Loop through all choices with this ranking
+				foreach ($results->ranking[$i]['choices'] as $choice) {
+					$thisRank .= ($firstOne? '' : ', ')
+						. check_plain($node->choice[$choice]['label']);
+					$firstOne = false;
+				}
 
-		for ($i = 0; $i < count($results->ranking); $i++) {
-			$output .= '<li> ';
-			$firstOne = true;
+				$percentage = round(100 * $results->ranking[$i]['percentage'], 0);
+				$output .= theme('advpoll_bar',  $thisRank, $percentage, $results->ranking[$i]['viewscore'], $block);
 
-			// Loop through all choices with this ranking
-			foreach ($results->ranking[$i]['choices'] as $choice) {
-				// This check shouldn't be needed
-				if (isset($node->choice[$choice])) {
+			}
+			$output .= '</div>';
+		}
+		else {
+			$output .= '<ol>';
+
+			for ($i = 0; $i < count($results->ranking); $i++) {
+				$output .= '<li> ';
+				$firstOne = true;
+
+				// Loop through all choices with this ranking
+				foreach ($results->ranking[$i]['choices'] as $choice) {
 					$output .= ($firstOne? '' : ', ') . check_plain($node->choice[$choice]['label']);
 					$firstOne = false;
 				}
-			}
 
-			// Show the ranking's score if it exists (depends on algorithm)
-			if (isset($results->ranking[$i]['viewscore'])) {
-				$output .= ' (' . $results->ranking[$i]['viewscore'] . ')';
+				// Show the ranking's score if it exists (depends on algorithm)
+				if (isset($results->ranking[$i]['viewscore'])) {
+					$output .= ' (' . $results->ranking[$i]['viewscore'] . ')';
+				}
+				$output .= '</li>';
 			}
-			$output .= '</li>';
 		}
 		$output .= '</ol>';
 
@@ -194,6 +211,7 @@ function _advpoll_calculate_bordacount($node) {
 	$choiceVotes = array();
 
 	$totalChoices = count($node->choice);
+	$totalPoints = 0;
 
 	// Loop through each user's vote
 	foreach ($userVotes as $uid => $userVote) {
@@ -201,6 +219,15 @@ function _advpoll_calculate_bordacount($node) {
 			// Negative values are possible if choices were removed after vote
 			$voteValue = max($totalChoices - $ranking, 0);
 			$choiceVotes[$choice] += 	$voteValue;
+			$totalPoints += $voteValue;
+		}
+	}
+
+	// Add any remaining choices that received no votes
+	foreach ($node->choice as $i => $choice) {
+		if (!isset($choiceVotes[$i])) {
+			// Didn't receive any votes
+			$choiceVotes[$i] = 0;
 		}
 	}
 
@@ -219,8 +246,9 @@ function _advpoll_calculate_bordacount($node) {
 		}
 		$ranking[$curResult]['choices'][] = $choice;
 		$ranking[$curResult]['rawscore'] = $total;
-		$ranking[$curResult]['viewscore'] = $total . ' point'
-			. ($total == 1? '' : 's');
+		$ranking[$curResult]['viewscore'] = format_plural($total, '1 point',
+			'%count points');
+		$ranking[$curResult]['percentage'] = $total / $totalPoints;
 		$previousTotal = $total;
 	}
 
@@ -228,6 +256,7 @@ function _advpoll_calculate_bordacount($node) {
 
 	$resultObj->ranking = $ranking;
 	$resultObj->totalVotes = $totalVotes;
+	$resultObj->totalPoints = $totalPoints;
   return $resultObj;
 }
 
