@@ -82,8 +82,11 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
 
 			// Loop through all choices with this ranking
 			foreach ($results->ranking[$i]['choices'] as $choice) {
-				$output .= ($firstOne? '' : ', ') . check_plain($node->choice[$choice]['label']);
-				$firstOne = false;
+				// This check shouldn't be needed
+				if (isset($node->choice[$choice])) {
+					$output .= ($firstOne? '' : ', ') . check_plain($node->choice[$choice]['label']);
+					$firstOne = false;
+				}
 			}
 
 			// Show the ranking's score if it exists (depends on algorithm)
@@ -280,10 +283,8 @@ function _advpoll_calculate_instantrunoff($node) {
 	// log of 1st-place votes per choice in each round
 	$roundLog = array();
 
-	//
+	// Gradually append candidates as they are eliminated; end with the winner
 	$reverseRanking = array();
-
-
 	
 	// If we eliminate one choice per round and have n choices, we should
 	// not be able to do more than n - 1 rounds
@@ -293,7 +294,8 @@ function _advpoll_calculate_instantrunoff($node) {
 		// Initialize curRound
 		$curRound = array();
 		$totalChoices = count($node->choice);
-		for ($chi = 1; $chi <= $totalChoices; $chi++) {
+
+		for ($chi = 0; $chi < $totalChoices; $chi++) {
 			$curRound[$chi] = array();
 		}
 
@@ -456,7 +458,7 @@ function _advpoll_calculate_instantrunoff($node) {
  * This takes care of registering the vote in runoff nodes.
  */
 function advpoll_vote_ranking($node) {
-  foreach ( $node->choice as $key => $choice ) {
+  foreach ($node->choice as $key => $choice) {
     $vote->value = $_POST['edit']['choice'][$key];
 
 		// A zero value indicates they didn't rank that choice
@@ -522,7 +524,6 @@ function advpoll_vote_validate_ranking($node) {
 			$ok = false;
 		}
 	}
-
 
   return $ok;
 }
