@@ -351,14 +351,16 @@ function advpoll_menu($may_cache) {
 			'type' => MENU_CALLBACK
 		);
 		
-		$items[] = array(
-			'path' => 'admin/settings/advanced-poll',
-			'title' => t('Advanced Poll'),
-			'description' => t('Update settings for Advanced Poll'),
-			'callback' => 'drupal_get_form',
-			'callback_arguments' => 'advpoll_admin_settings',
-			'access' => user_access('administer advanced poll'),
-		);
+		if (!DRUPAL_4_7) {
+			$items[] = array(
+				'path' => 'admin/settings/advanced-poll',
+				'title' => t('Advanced Poll'),
+				'description' => t('Update settings for Advanced Poll'),
+				'callback' => 'drupal_get_form',
+				'callback_arguments' => 'advpoll_admin_settings',
+				'access' => user_access('administer advanced poll'),
+			);
+		}
   }
 	else {
 		// need to be able to extract the nid
