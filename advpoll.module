@@ -273,13 +273,15 @@ function advpoll_form($node) {
  * Implementation of hook_help().
  */
 function advpoll_help($section) {
+
+	$desc = advpoll_node_info();
   switch ($section) {
     case 'admin/modules#description':
       return t('A sophisticated polling module for voting, elections, and group decision-making.');
     case 'node/add#advpoll-binary':
-      return t('Create an advanced poll using a binary voting interface.');
+      return $desc['advpoll-binary']['description'];
     case 'node/add#advpoll-ranking':
-      return t('Create an advanced poll using a ranking interface.');
+      return $desc['advpoll-ranking']['description'];
   }
 }
 
@@ -529,11 +531,13 @@ function advpoll_node_info() {
 			'name' => t('Advanced poll - ranking'),
 			'module' => 'advpoll',
 			'base' => 'advpoll',   // 4.7 legacy
+      'description' => t('Rank a number of choices.'),
 		),
 		'advpoll-binary' => array(
 			'name' => t('Advanced poll - binary'),
 			'module' => 'advpoll',
 			'base' => 'advpoll',   // 4.7 legacy
+      'description' => t('Vote for or against a number of choices.'),
 		),
 	);
 }
@@ -560,7 +564,7 @@ function advpoll_settings() {
  * Settings page for Drupal 5.0
  */
 function advpoll_admin_settings() {
-	return system_settings_form(advpoll_settings_helper());
+	return system_settings_form('advpoll_settings_helper');
 }
 
 /**
