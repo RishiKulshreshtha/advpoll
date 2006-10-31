@@ -168,10 +168,10 @@ function advpoll_form($node) {
     '#weight' => 1,
   );
     
-  for ($a = 0; $a < $node->choices; $a++) {
+  for ($a = 1; $a <= $node->choices; $a++) {
     $form['choice'][$a]['label'] = array(
       '#type' => 'textfield',
-      '#title' => t('Choice %n', array('%n' => ($a + 1))),
+      '#title' => t('Choice %n', array('%n' => $a)),
       '#default_value' => $node->choice[$a]['label']
     );
   }
@@ -273,13 +273,15 @@ function advpoll_form($node) {
  * Implementation of hook_help().
  */
 function advpoll_help($section) {
+
+	$desc = advpoll_node_info();
   switch ($section) {
     case 'admin/modules#description':
       return t('A sophisticated polling module for voting, elections, and group decision-making.');
     case 'node/add#advpoll-binary':
-      return t('Create an advanced poll using a binary voting interface.');
+      return $desc['advpoll-binary']['description'];
     case 'node/add#advpoll-ranking':
-      return t('Create an advanced poll using a ranking interface.');
+      return $desc['advpoll-ranking']['description'];
   }
 }
 
@@ -349,14 +351,16 @@ function advpoll_menu($may_cache) {
 			'type' => MENU_CALLBACK
 		);
 		
-		$items[] = array(
-			'path' => 'admin/settings/advanced-poll',
-			'title' => t('Advanced Poll'),
-			'description' => t('Update settings for Advanced Poll'),
-			'callback' => 'drupal_get_form',
-			'callback_arguments' => 'advpoll_admin_settings',
-			'access' => user_access('administer advanced poll'),
-		);
+		if (!DRUPAL_4_7) {
+			$items[] = array(
+				'path' => 'admin/settings/advanced-poll',
+				'title' => t('Advanced Poll'),
+				'description' => t('Update settings for Advanced Poll'),
+				'callback' => 'drupal_get_form',
+				'callback_arguments' => 'advpoll_admin_settings',
+				'access' => user_access('administer advanced poll'),
+			);
+		}
   }
 	else {
 		// need to be able to extract the nid
@@ -529,11 +533,13 @@ function advpoll_node_info() {
 			'name' => t('Advanced poll - ranking'),
 			'module' => 'advpoll',
 			'base' => 'advpoll',   // 4.7 legacy
+      'description' => t('Rank a number of choices.'),
 		),
 		'advpoll-binary' => array(
 			'name' => t('Advanced poll - binary'),
 			'module' => 'advpoll',
 			'base' => 'advpoll',   // 4.7 legacy
+      'description' => t('Vote for or against a number of choices.'),
 		),
 	);
 }
@@ -560,7 +566,7 @@ function advpoll_settings() {
  * Settings page for Drupal 5.0
  */
 function advpoll_admin_settings() {
-	return system_settings_form(advpoll_settings_helper());
+	return system_settings_form('advpoll_settings_helper');
 }
 
 /**
@@ -614,6 +620,8 @@ function advpoll_update($node) {
   // XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in advpoll_insert()
   db_query('DELETE FROM {advpoll_choices} WHERE nid = %d', $node->nid);
 
+	// Start at one rather than 0 due to Drupal FormAPI
+	$i = 1;
   foreach ($node->choice as $choice) {
   	 if ($choice['label'] != '') {
       db_query("INSERT INTO {advpoll_choices} (nid, label, vote_offset) VALUES (%d, '%s', %d)", $node->nid, $choice['label'], $i++);
@@ -712,6 +720,10 @@ function advpoll_validate(&$node) {
   	// Use form_set_error for any errors
 		$node->choice = array_values($node->choice);
 
+		// Start keys at 1 rather than 0
+		array_unshift($node->choice, '');
+		unset($node->choice[0]);
+
 		// Check for at least two choices
 		$realchoices = 0;
 		foreach ($node->choice as $i => $choice) {
@@ -728,6 +740,9 @@ function advpoll_validate(&$node) {
 
 function advpoll_submit(&$node) {
 	$node->choice = array_values($node->choice);
+	// Start keys at 1 rather than 0
+	array_unshift($node->choice, '');
+	unset($node->choice[0]);
 }
 
 /**
