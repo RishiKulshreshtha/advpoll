@@ -254,6 +254,12 @@ function advpoll_form($node) {
 		'#default_value' => isset($node->showvotes)? $node->showvotes : 1,
 	);
 
+	if (user_access('administer advanced poll')) {
+		$form['settings']['reset'] = array(
+			'#type' => 'button',
+			'#value' => t('Reset votes'),
+		);
+	}
   
 	$form['format'] = filter_form($node->form);
 	return $form;
@@ -366,6 +372,7 @@ function advpoll_menu($may_cache) {
 					);
 				}
 
+				// Show electoral list tab if using the functionality
 				if ($node->uselist) {
 					$items[] = array(
 						'path' => 'node/' . $nid . '/electoral_list',
@@ -376,6 +383,16 @@ function advpoll_menu($may_cache) {
 						'type' => MENU_LOCAL_TASK
 					);
 				}
+
+				// Allow votes to be reset
+				$items[] = array(
+					'path' => 'node/' . $nid . '/reset',
+					//'title' => t('Reset votes'),
+					'callback' => 'advpoll_reset_confirm',
+					'access' => user_access('administer advanced poll'),
+					'weight' => 3,
+					'type' => MENU_CALLBACK
+				);
 			}
 		}
 	}
@@ -383,6 +400,9 @@ function advpoll_menu($may_cache) {
   return $items;
 }
 
+/**
+ * Display the electoral list tab
+ */
 function advpoll_tab_electoral_list() {
 	if ($node = node_load(arg(1))) {
 		if (!$node->uselist) {
@@ -408,7 +428,9 @@ function advpoll_tab_electoral_list() {
 	}
 }
 
-
+/**
+ * Display the votes tab
+ */
 function advpoll_tab_votes() {
 	if ($node = node_load(arg(1))) {
 		if (!$node->showvotes) {
@@ -471,6 +493,9 @@ function advpoll_tab_votes() {
 }
 
 
+/**
+ * Helper function to abstract view results checking
+ */
 function _advpoll_can_view_results($node) {
 	$view_results = variable_get('advpoll_view_results'
 		, ADVPOLL_DEFAULT_VIEW_RESULTS);
@@ -484,8 +509,12 @@ function _advpoll_can_view_results($node) {
  */
 function advpoll_node_info() {
   return array(
-		'advpoll-ranking' => array('name' => t('advpoll-ranking'), 'base' => 'advpoll'),
-		'advpoll-binary' =>    array('name' => t('advpoll-binary'),    'base' => 'advpoll'),
+		'advpoll-ranking' => array(
+			'name' => t('advpoll-ranking'),
+			'base' => 'advpoll'),
+		'advpoll-binary' => array(
+			'name' => t('advpoll-binary'),
+			'base' => 'advpoll'),
 	);
 }
 
@@ -498,7 +527,6 @@ function advpoll_perm() {
 
 /**
  * Implementation of hook_settings().
- *
  */
 function advpoll_settings() {
 	if (!user_access('administer advanced poll')) {
@@ -532,6 +560,9 @@ function advpoll_settings() {
 	return $form;
 }
 
+/**
+ * Helper function to display 'cancel vote' button if user has voted
+ */
 function advpoll_cancel_form($nid) {
   $form['#action'] = url("advpoll/cancel/$nid");
   $form['submit'] = array('#type' => 'submit', '#value' => t('Cancel your vote'));
@@ -602,22 +633,62 @@ function advpoll_insert($node) {
 }
 
 /**
- * Implementation of hook_validate().
- */
-function advpoll_validate(&$node) {
-  // Use form_set_error for any errors
-	$node->choice = array_values($node->choice);
+ * Callback to display a reset votes confirmation form
+ */ 
+function advpoll_reset_confirm() {
+	$edit = $_POST['edit'];
+	$edit['nid'] = $edit['nid']? $edit['nid'] : arg(1);
+	$node = node_load($edit['nid']);
 
-	// Check for at least two choices
-	$realchoices = 0;
-	foreach ($node->choice as $i => $choice) {
-		if ($choice['label'] != '') {
-			$realchoices++;
+	$form['nid'] = array('#type' => 'value', '#value' => $node->nid);
+	$output = confirm_form('advpoll_reset_confirm', $form,
+		t('Are you sure you want to reset the votes for %title?',
+		array('%title' => theme('placeholder', $node->title))),
+		'node/' . $node->nid . '/edit',
+		t('This action cannot be undone.'),
+		t('Reset votes'),
+		t('Cancel') );
+	return $output;
+}
+
+/**
+ * Reset votes once the confirmation is given
+ */
+function advpoll_reset_confirm_submit($form_id, $form_values) {
+	if ($form_values['confirm']) {
+  	if ($node = node_load(array('nid' => arg(1)))) {
+			// Delete any votes for the poll
+			db_query("DELETE FROM {votingapi_vote} WHERE content_id = %d", $node->nid);
+			drupal_set_message('Votes have been reset.');
+			drupal_goto('node/' . $node->nid . '/edit');
 		}
 	}
 
-	if ($realchoices < 2) {
-		form_set_error("choice][$realchoices][label", t('You must fill in at least two choices.'));
+	return '';
+}
+
+/**
+ * Implementation of hook_validate().
+ */
+function advpoll_validate(&$node) {
+	if ($_POST['op'] == t('Reset votes')) {
+		drupal_goto('node/' . $node->nid . '/reset');
+	}
+	else {
+  	// Use form_set_error for any errors
+		$node->choice = array_values($node->choice);
+
+		// Check for at least two choices
+		$realchoices = 0;
+		foreach ($node->choice as $i => $choice) {
+			if ($choice['label'] != '') {
+				$realchoices++;
+			}
+		}
+
+		if ($realchoices < 2) {
+			form_set_error("choice][$realchoices][label", t('You must fill in at least two choices.'));
+		}
 	}
 }
 
@@ -645,9 +716,6 @@ function advpoll_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
 			// Transferring makes the results tab display correctly
 			drupal_goto('node/' . $node->nid);
     }
-		else {
-			//drupal_set_message('Not valid, nid: ' .$node->nid);
-		}
   }
 
 	// Previewing a node, so don't show results
@@ -848,7 +916,6 @@ function advpoll_cancel($nid) {
 function advpoll_vote_validate($node) {
 	$mode = _advpoll_get_mode($node);
   if (function_exists("advpoll_vote_validate_$mode") ) {
-		//drupal_set_message($mode);
     return call_user_func("advpoll_vote_validate_$mode", $node);
   }
   return TRUE;
