@@ -168,10 +168,10 @@ function advpoll_form($node) {
     '#weight' => 1,
   );
     
-  for ($a = 0; $a < $node->choices; $a++) {
+  for ($a = 1; $a <= $node->choices; $a++) {
     $form['choice'][$a]['label'] = array(
       '#type' => 'textfield',
-      '#title' => t('Choice %n', array('%n' => ($a + 1))),
+      '#title' => t('Choice %n', array('%n' => $a)),
       '#default_value' => $node->choice[$a]['label']
     );
   }
@@ -618,6 +618,8 @@ function advpoll_update($node) {
   // XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in advpoll_insert()
   db_query('DELETE FROM {advpoll_choices} WHERE nid = %d', $node->nid);
 
+	// Start at one rather than 0 due to Drupal FormAPI
+	$i = 1;
   foreach ($node->choice as $choice) {
   	 if ($choice['label'] != '') {
       db_query("INSERT INTO {advpoll_choices} (nid, label, vote_offset) VALUES (%d, '%s', %d)", $node->nid, $choice['label'], $i++);
@@ -716,6 +718,10 @@ function advpoll_validate(&$node) {
   	// Use form_set_error for any errors
 		$node->choice = array_values($node->choice);
 
+		// Start keys at 1 rather than 0
+		array_unshift($node->choice, '');
+		unset($node->choice[0]);
+
 		// Check for at least two choices
 		$realchoices = 0;
 		foreach ($node->choice as $i => $choice) {
@@ -732,6 +738,9 @@ function advpoll_validate(&$node) {
 
 function advpoll_submit(&$node) {
 	$node->choice = array_values($node->choice);
+	// Start keys at 1 rather than 0
+	array_unshift($node->choice, '');
+	unset($node->choice[0]);
 }
 
 /**

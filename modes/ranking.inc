@@ -324,7 +324,7 @@ function _advpoll_calculate_instantrunoff($node) {
 		$curRound = array();
 		$totalChoices = count($node->choice);
 
-		for ($chi = 0; $chi < $totalChoices; $chi++) {
+		foreach ($node->choice as $chi => $temp) {
 			$curRound[$chi] = array();
 		}
 
