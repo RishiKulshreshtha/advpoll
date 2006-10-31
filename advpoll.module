@@ -10,6 +10,8 @@ define('ADVPOLL_DEFAULT_ELECTORAL_LIST', 0);
 // always, aftervote, or afterclose
 define('ADVPOLL_DEFAULT_VIEW_RESULTS', 'aftervote');
 
+define('DRUPAL_4_7', function_exists('form_render') && !function_exists('drupal_render'));
+
 /**
  * Implementation of hook_access().
  */
@@ -34,7 +36,7 @@ function advpoll_access($op, $node) {
  */
 function advpoll_block($op = 'list', $delta = 'mostrecent', $edit = array()) {
   switch($op) {
-    case 'list' :
+    case 'list':
       $blocks['mostrecent']['info'] = t('Advanced Poll - Newest');
       return $blocks;
     case 'view':
@@ -50,6 +52,7 @@ function advpoll_block($op = 'list', $delta = 'mostrecent', $edit = array()) {
 				}
 			}
 			return array();
+		default:
   }
 }
 
@@ -65,7 +68,7 @@ function advpoll_block_mostrecent() {
 		$output = advpoll_view(node_load($poll->nid), false, false, true);
 	}
 	else {
-		$output .= t('No active advpoll.');
+		$output .= t('No active Advanced poll.');
 	}
   return $output;
 }
@@ -272,7 +275,7 @@ function advpoll_form($node) {
 function advpoll_help($section) {
   switch ($section) {
     case 'admin/modules#description':
-      return t('An advanced polling module for voting, elections, and group decision-making.');
+      return t('A sophisticated polling module for voting, elections, and group decision-making.');
     case 'node/add#advpoll-binary':
       return t('Create an advanced poll using a binary voting interface.');
     case 'node/add#advpoll-ranking':
@@ -326,21 +329,34 @@ function advpoll_menu($may_cache) {
   $items = array();
 
   if ($may_cache) {
-    $items[] = array('path' => 'node/add/advpoll-ranking',
+    $items[] = array(
+			'path' => 'node/add/advpoll-ranking',
 			'title' => t('advpoll-ranking'),
       'access' => user_access('create polls'),
 		);
 
-    $items[] = array('path' => 'node/add/advpoll-binary',
+    $items[] = array(
+			'path' => 'node/add/advpoll-binary',
 			'title' => t('advpoll-binary'),
       'access' => user_access('create polls'),
 		);
 
-		$items[] = array('path' => 'advpoll/cancel',
-			'title' => t('cancel'),
+		$items[] = array(
+			'path' => 'advpoll/cancel',
+			'title' => t('Cancel'),
 			'callback' => 'advpoll_cancel',
 			'access' => user_access('cancel own vote'),
-			'type' => MENU_CALLBACK);
+			'type' => MENU_CALLBACK
+		);
+		
+		$items[] = array(
+			'path' => 'admin/settings/advanced-poll',
+			'title' => t('Advanced Poll'),
+			'description' => t('Update settings for Advanced Poll'),
+			'callback' => 'drupal_get_form',
+			'callback_arguments' => 'advpoll_admin_settings',
+			'access' => user_access('administer advanced poll'),
+		);
   }
 	else {
 		// need to be able to extract the nid
@@ -353,22 +369,23 @@ function advpoll_menu($may_cache) {
 				if ($node->active && !$node->voted
 					&& _advpoll_can_view_results($node)) {
 					$items[] = array('path' => 'node/' . $nid . '/results',
-						'title' => t('results'),
+						'title' => t('Results'),
 						'callback' => 'advpoll_results',
 						'access' => user_access('view polls'),
 						'weight' => 3,
-						'type' => MENU_LOCAL_TASK);
+						'type' => MENU_LOCAL_TASK,
+					);
 				}
 
 				// Show the votes tab
 				if ($node->showvotes) {
 					$items[] = array(
 						'path' => 'node/' . $nid . '/votes',
-						'title' => t('votes'),
+						'title' => t('Votes'),
 						'callback' => 'advpoll_tab_votes',
 						'access' => user_access('inspect all votes'),
 						'weight' => 3,
-						'type' => MENU_LOCAL_TASK
+						'type' => MENU_LOCAL_TASK,
 					);
 				}
 
@@ -376,22 +393,21 @@ function advpoll_menu($may_cache) {
 				if ($node->uselist) {
 					$items[] = array(
 						'path' => 'node/' . $nid . '/electoral_list',
-						'title' => t('electoral list'),
+						'title' => t('Electoral list'),
 						'callback' => 'advpoll_tab_electoral_list',
 						'access' => user_access('view polls'),
 						'weight' => 3,
-						'type' => MENU_LOCAL_TASK
+						'type' => MENU_LOCAL_TASK,
 					);
 				}
 
 				// Allow votes to be reset
 				$items[] = array(
 					'path' => 'node/' . $nid . '/reset',
-					//'title' => t('Reset votes'),
 					'callback' => 'advpoll_reset_confirm',
 					'access' => user_access('administer advanced poll'),
 					'weight' => 3,
-					'type' => MENU_CALLBACK
+					'type' => MENU_CALLBACK,
 				);
 			}
 		}
@@ -510,11 +526,15 @@ function _advpoll_can_view_results($node) {
 function advpoll_node_info() {
   return array(
 		'advpoll-ranking' => array(
-			'name' => t('advpoll-ranking'),
-			'base' => 'advpoll'),
+			'name' => t('Advanced poll - ranking'),
+			'module' => 'advpoll',
+			'base' => 'advpoll',   // 4.7 legacy
+		),
 		'advpoll-binary' => array(
-			'name' => t('advpoll-binary'),
-			'base' => 'advpoll'),
+			'name' => t('Advanced poll - binary'),
+			'module' => 'advpoll',
+			'base' => 'advpoll',   // 4.7 legacy
+		),
 	);
 }
 
@@ -526,13 +546,27 @@ function advpoll_perm() {
 }
 
 /**
- * Implementation of hook_settings().
+ * Implementation of hook_settings() for 4.7.
  */
 function advpoll_settings() {
 	if (!user_access('administer advanced poll')) {
 		return message_access();
 	}
 
+	return advpoll_settings_helper();
+}
+
+/**
+ * Settings page for Drupal 5.0
+ */
+function advpoll_admin_settings() {
+	return system_settings_form(advpoll_settings_helper());
+}
+
+/**
+ * Abstract settings functionality for 5.0 and 4.7
+ */
+function advpoll_settings_helper() {
 	$enabled = array(0 => t('Disabled'), 1 => t('Enabled'));
 
 	$form['main']['advpoll_default_electoral_list'] = array(
@@ -556,9 +590,9 @@ function advpoll_settings() {
 		'#default_value' => variable_get('advpoll_view_results', ADVPOLL_DEFAULT_VIEW_RESULTS),
 		'#options' => $view_results,
 	);
-
 	return $form;
 }
+
 
 /**
  * Helper function to display 'cancel vote' button if user has voted
@@ -774,15 +808,17 @@ function advpoll_view_electoral_list($node, $teaser = FALSE) {
  * Render the voting form.
  */
 function theme_advpoll_view_voting($form) {
+	// maintain backwards compatibility with drupal 4.7
+	$render = DRUPAL_4_7? 'form_render' : 'drupal_render';
   $output .= '<div class="advpoll">';
   $output .= '  <div class="choice-form">';
   $output .= '    <div class="choices">';
-  $output .= form_render($form['choice']);
+  $output .= $render($form['choice']);
   $output .= '    </div>';
-  $output .= form_render($form['nid']);
-  $output .= form_render($form['vote']);
+  $output .= $render($form['nid']);
+  $output .= $render($form['vote']);
   $output .= '  </div>';
-  $output .= form_render($form);
+  $output .= $render($form);
   $output .= '</div>';
   return $output;
 }

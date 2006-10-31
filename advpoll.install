@@ -45,7 +45,7 @@ function advpoll_install() {
  * Implementation of hook_uninstall().
  */
 function advpoll_uninstall() {
-	// TODO: delete data in VotingAPI tables
+	db_query("DELETE FROM {votingapi_vote} WHERE content_type='advpoll'");
 	db_query('DROP TABLE {advpoll}');
 	db_query('DROP TABLE {advpoll_electoral_list}');
 	db_query('DROP TABLE {advpoll_choices}');
