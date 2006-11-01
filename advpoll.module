@@ -555,10 +555,6 @@ function advpoll_perm() {
  * Implementation of hook_settings() for 4.7.
  */
 function advpoll_settings() {
-	if (!user_access('administer advanced poll')) {
-		return message_access();
-	}
-
 	return advpoll_settings_helper();
 }
 
