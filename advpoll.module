@@ -125,6 +125,45 @@ function advpoll_delete($node) {
 function advpoll_form($node) {
 	$mode = _advpoll_get_mode($node);
 
+	if (!DRUPAL_4_7 || function_exists('_drupal_add_js')) {
+		$jQuery = TRUE;
+		// Using 5.0 or 4.7 with the jQuery patch
+		drupal_add_js("$(document).ready(function(){
+		var add_choice = document.createElement('input');
+		add_choice.id = 'addChoice';
+		add_choice.type = 'button';
+		add_choice.value = '" . t('Add choice') . "';
+		$('#morechoices').append(add_choice);
+		$('#addChoice').bind('click', function () {
+			var nextChoice = $('input.choices').length + 1;
+			var div = document.createElement('div');
+			div.className = 'form-item';
+
+			var label = document.createElement('label');
+			label.htmlFor = 'edit-choice-' + nextChoice + '-label';
+			label.appendChild(document.createTextNode('"
+				// Hack for translating string before we know the specific number
+				. t('Choice %n', array('%n' => -1)) . ": '.replace('-1', nextChoice)));
+
+			div.appendChild(label);
+
+			var input = document.createElement('input');
+			input.type = 'text';
+			input.maxlength = 128;
+			input.name = 'edit[choice][' + nextChoice + '][label]';
+			input.id = 'edit-choice-' + nextChoice + '-label';
+			input.size = 60;
+			input.className = 'form-text choices';
+
+			div.appendChild(input);
+
+			$('.choices:last').after(div);
+			$('#edit-choices').each(function(){this.value=nextChoice});
+		});
+	});", 'inline');
+
+	}
+
   $form['title'] = array(
     '#type' => 'textfield',
     '#title' => ucfirst($mode) . ' ' . t('Question'),
@@ -148,10 +187,12 @@ function advpoll_form($node) {
     '#type' => 'checkbox',
     '#title' => t('Need more choices'),
     '#default_value' => 0,
+		'#prefix' => '<div id="morechoices">',
+		'#suffix' => '</div>',
     '#description' => t("If the amount of boxes above isn't enough, check this box and click the Preview button below to add some more."),
     '#weight' => 1
   );
-  
+
   $form['choice'] = form_builder($node->type . '_node_form', $form['choice']);
   
   if ($form['choice']['morechoices']['#value']) {
@@ -177,7 +218,8 @@ function advpoll_form($node) {
     $form['choice'][$a]['label'] = array(
       '#type' => 'textfield',
       '#title' => t('Choice %n', array('%n' => $a)),
-      '#default_value' => $node->choice[$a]['label']
+      '#default_value' => $node->choice[$a]['label'],
+			'#attributes' => array('class' => 'choices'),
     );
   }
 
