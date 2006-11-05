@@ -134,10 +134,11 @@ function advpoll_form($node) {
 		add_choice.type = 'button';
 		add_choice.value = '" . t('Add choice') . "';
 		$('#morechoices').append(add_choice);
+		$('#addChoice').fadeIn(1000);
 		$('#addChoice').bind('click', function () {
 			var nextChoice = $('input.choices').length + 1;
 			var div = document.createElement('div');
-			div.className = 'form-item';
+			div.className = 'form-item choiceDiv';
 
 			var label = document.createElement('label');
 			label.htmlFor = 'edit-choice-' + nextChoice + '-label';
@@ -158,6 +159,7 @@ function advpoll_form($node) {
 			div.appendChild(input);
 
 			$('.choices:last').after(div);
+			$('.choiceDiv:last').fadeIn(1000);
 			$('#edit-choices').each(function(){this.value=nextChoice});
 		});
 	});", 'inline');
