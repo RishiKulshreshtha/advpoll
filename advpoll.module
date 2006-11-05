@@ -550,6 +550,16 @@ function advpoll_electoral_list_validate($form_id, $form_values) {
 			return;
 		}
 	}
+
+	$add_user = $form_values['electoral_list']['add_user'];
+	if ($add_user) {
+		// Check that the user exists
+		$result = db_query('SELECT uid FROM {users} WHERE name="%s"', $add_user);
+		if (db_num_rows($result) == 0) {
+			form_set_error('electoral_list][add_user', t('User %user does not exist.', array('%user' => $add_user)));
+			return FALSE;
+		}
+	}
 }
 
 /**
