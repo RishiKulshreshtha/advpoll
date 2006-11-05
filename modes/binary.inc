@@ -107,27 +107,35 @@ function advpoll_view_results_binary($node, $teaser, $page, $block) {
 }
 
 /**
+ * Recalculate results as needed by VotingAPI and store in cache
+ */
+function advpoll_calculate_results_binary(&$results, $votes, $node) {
+	
+}
+
+/**
  * Registers the vote as a key for this node using votingapi_set_vote()
  */
 function advpoll_vote_binary($node) {
+	$vote = array();
 	if ($node->maxchoices == 1) {
 		// plurality voting
-    $vote->value = $_POST['edit']['choice'];
-	  $vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
-	  votingapi_set_vote('advpoll', $node->nid, $vote);
+    $temp->value = $_POST['edit']['choice'];
+	  $temp->value_type = VOTINGAPI_VALUE_TYPE_KEY;
+		$vote[] = $temp;
 	}
 	else {
 		// approval voting
     foreach ($node->choice as $key => $choice) {
-    	$vote->value = $_POST['edit']['choice'][$key];
-
-			if (isset($vote->value)) {
-  			$vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
-   			$vote->tag = $key;
-   			votingapi_set_vote('advpoll', $node->nid, $vote);
+    	$temp->value = $_POST['edit']['choice'][$key];
+			if (isset($temp->value)) {
+  			$temp->value_type = VOTINGAPI_VALUE_TYPE_KEY;
+   			$temp->tag = $key;
+				$vote[] = $temp;
 			}
 		}
   }
+	votingapi_set_vote('advpoll', $node->nid, $vote);
 }
 
 /**
