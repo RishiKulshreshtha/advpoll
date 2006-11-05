@@ -532,7 +532,7 @@ function advpoll_remove_voter() {
 			drupal_set_message(t('%user removed from the electoral list.', array('%user' => $user->name)));
 		}
 		else {
-			drupal_set_message(t('No user found with a uid of %id.', array('uid' => $uid)));
+			drupal_set_message(t('No user found with a uid of %uid.', array('%uid' => $uid)));
 		}
 
 	}
