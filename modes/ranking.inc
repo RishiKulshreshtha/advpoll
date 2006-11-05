@@ -69,25 +69,62 @@ function advpoll_view_voting_ranking(&$node, $teaser, $page, $block) {
 }
 
 function advpoll_view_results_ranking($node, $teaser, $page, $block) {
-  $results = _advpoll_calculate_results_ranking($node);
+	$results = votingapi_get_voting_results('advpoll', $node->nid);
 
 	// If no one has voted, $results = array() and thus is empty
 	if (!empty($results)) {
+		// temporary list of choices indexes for the ranking
+		$ranking_list = array();
+		// result object
+		$ranking = array();
+		$choices = array();
+		$poll = array();
+		foreach ($results as $result) {
+			$tag = $result->tag;
+			if ($tag == '_advpoll') {
+				// Poll-wide cached value
+				$poll[$result->function] = $result->value;
+			}
+			else if (isset($node->choice[$tag])) {
+				// Choice-specific cached value
+				if ($result->function == 'ranking') {
+					$ranking_list[$result->value][] = $tag;
+				}
+				else if (!isset($node->choice[$result->function])) {
+					$choices[$tag][$result->function] = $result->value;
+				}
+			}
+		}
+
+		// Re-construct the rankings object
+
+		foreach ($ranking_list as $i => $choice_list) {
+			$ranking[$i]->choices = array();
+			foreach ($choice_list as $choice_i) {
+				$ranking[$i]->choices[] = $choice_i;
+				$ranking[$i]->viewscore = $choices[$choice_i]['viewscore'];
+				$ranking[$i]->rawscore = $choices[$choice_i]['rawscore'];
+				if ($choices[$choice_i]['percentage']) {
+					$ranking[$i]->percentage = $choices[$choice_i]['percentage'];
+				}		
+			}
+		}
+
 		if ($node->algorithm == 'borda count') {
 			$output .= '<div class="poll">';
-			for ($i = 0; $i < count($results->ranking); $i++) {
+			for ($i = 0; $i < count($ranking); $i++) {
 				$firstOne = true;
 				$thisRank = '';
 
 				// Loop through all choices with this ranking
-				foreach ($results->ranking[$i]['choices'] as $choice) {
+				foreach ($ranking[$i]->choices as $choice) {
 					$thisRank .= ($firstOne? '' : ', ')
 						. check_plain($node->choice[$choice]['label']);
 					$firstOne = false;
 				}
 
-				$percentage = round(100 * $results->ranking[$i]['percentage'], 0);
-				$output .= theme('advpoll_bar',  $thisRank, $percentage, $results->ranking[$i]['viewscore'], $block);
+				$percentage = round(100 * $ranking[$i]->percentage, 0);
+				$output .= theme('advpoll_bar',  $thisRank, $percentage, $ranking[$i]->viewscore, $block);
 
 			}
 			$output .= '</div>';
@@ -95,27 +132,27 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
 		else {
 			$output .= '<ol>';
 
-			for ($i = 0; $i < count($results->ranking); $i++) {
+			for ($i = 0; $i < count($ranking); $i++) {
 				$output .= '<li> ';
 				$firstOne = true;
 
 				// Loop through all choices with this ranking
-				foreach ($results->ranking[$i]['choices'] as $choice) {
+				foreach ($ranking[$i]->choices as $choice) {
 					$output .= ($firstOne? '' : ', ') . check_plain($node->choice[$choice]['label']);
 					$firstOne = false;
 				}
 
 				// Show the ranking's score if it exists (depends on algorithm)
-				if (isset($results->ranking[$i]['viewscore'])) {
-					$output .= ' (' . $results->ranking[$i]['viewscore'] . ')';
+				if ($ranking[$i]->viewscore) {
+					$output .= ' (' . $ranking[$i]->viewscore . ')';
 				}
 				$output .= '</li>';
 			}
 		}
 		$output .= '</ol>';
 
-    // XXX: debugging code
-		if (user_access('administer advanced poll') && $results->matrix) {
+    // XXX: debugging code, currently broken
+		if (FALSE && user_access('administer advanced poll') && $results->matrix) {
     	$output .= '<br />Internal values, for debugging purposes:';
     	// output the table of algorithm rounds
     	$output .= '<table border="1"><tr><td>Round</td>';
@@ -155,12 +192,32 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
  *							a status message indicating who was eliminated
  *   -totalVoters : the total number of voters who participated
  */
-function _advpoll_calculate_results_ranking($node) {
+function advpoll_calculate_results_ranking(&$cache, $votes, $node) {
 	if ($node->algorithm == 'borda count') {
-		return _advpoll_calculate_bordacount($node);
+		$results = _advpoll_calculate_bordacount($node);
 	}
 	else {
-		return _advpoll_calculate_instantrunoff($node);
+		$results = _advpoll_calculate_instantrunoff($node);
+	}
+
+	// Cache rankings
+	for ($i = 0; $i < count($results->ranking); $i++) {
+		foreach ($results->ranking[$i]['choices'] as $choice) {
+			$cache[$choice][0]['ranking'] = $i;
+			$cache[$choice][0]['rawscore'] = $results->ranking[$i]['rawscore'];
+			$cache[$choice][0]['viewscore'] = $results->ranking[$i]['viewscore'];
+			if (isset($results->ranking[$i]['percentage'])) {
+				$cache[$choice][0]['percentage'] = $results->ranking[$i]['percentage'];
+			}
+		}
+	}
+
+	// Cache total votes
+	$cache['_advpoll'][0]['total_voters'] = $results->totalVotes;
+
+	// Cache total points (if it exists)
+	if (isset($results->totalPoints)) {
+		$cache['_advpoll'][0]['total_points'] = $results->totalPoints;
 	}
 }
 
