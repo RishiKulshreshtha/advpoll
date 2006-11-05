@@ -61,33 +61,31 @@ function advpoll_view_results_binary($node, $teaser, $page, $block) {
   $content_type = 'advpoll';
 	$content_id = $node->nid;
 
-	// TODO: use VotingAPI instead of SQL
-	$result = db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid);
-  $totalVotes = db_num_rows($result);
-
-
 	$results = votingapi_get_voting_results($content_type, $content_id);
-
-  // Count the votes for each choice
 	$votes = array();
 	foreach ($results as $result) {
 		$voteval = $result->tag;
-
-		if (!$votes[$voteval]) {
-			$votes[$voteval] = 0;
+		if ($voteval == '_advpoll') {
+			if ($result->function == 'total_votes') {
+				$total_votes = $result->value;
+			}
 		}
-		// Not sure if this can just be = rather than +=
-		$votes[$voteval] += $result->value;
+		else if (isset($node->choice[$voteval])) {
+			if (!$votes[$voteval]) {
+				$votes[$voteval] = 0;
+			}
+			$votes[$voteval] = $result->value;
+		}
 	}
 
-	if ($node->choice && $totalVotes > 0) {
+	if ($node->choice && $total_votes > 0) {
 	  // display results for each possible choice
 		$output .= '<div class="poll">';
 		foreach ($node->choice as $i => $ch) {
 			if (!$votes[$i]) {
 				$votes[$i] = 0;
 			}
-			$percentage = round(100 * $votes[$i] / $totalVotes, 0);
+			$percentage = round(100 * $votes[$i] / $total_votes, 0);
 			$output .= theme('advpoll_bar',  check_plain($ch['label']), $percentage, format_plural($votes[$i], '1 vote', '%count votes'), $block);
 		}
 		$output .= '</div>';
@@ -98,11 +96,18 @@ function advpoll_view_results_binary($node, $teaser, $page, $block) {
 	return $output;
 }
 
-/**
- * Recalculate results as needed by VotingAPI and store in cache
- */
 function advpoll_calculate_results_binary(&$results, $votes, $node) {
-	
+	$voters = array();
+	foreach ($votes as $vote) {
+		if ($vote->uid) {
+			$key = $vote->uid;
+		}
+		else {
+			$key = $vote->hostname;
+		}
+		$voters[$key] = TRUE;
+	}
+	$results['_advpoll'] = array(array('total_votes' => count($voters)));
 }
 
 /**
@@ -124,6 +129,7 @@ function advpoll_vote_binary($node) {
 			if (isset($temp->value)) {
   			$temp->value_type = VOTINGAPI_VALUE_TYPE_KEY;
    			$temp->tag = $key;
+				$temp->value = 1;
 				$vote[] = $temp;
 			}
 		}
