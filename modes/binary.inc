@@ -71,15 +71,7 @@ function advpoll_view_results_binary($node, $teaser, $page, $block) {
   // Count the votes for each choice
 	$votes = array();
 	foreach ($results as $result) {
-
-		if ($node->maxchoices == 1) {
-			// plurality
-			$voteval = $result->function;
-		}
-		else {
-			// approval
-			$voteval = $result->tag;
-		}
+		$voteval = $result->tag;
 
 		if (!$votes[$voteval]) {
 			$votes[$voteval] = 0;
@@ -120,7 +112,8 @@ function advpoll_vote_binary($node) {
 	$vote = array();
 	if ($node->maxchoices == 1) {
 		// plurality voting
-    $temp->value = $_POST['edit']['choice'];
+		$temp->value = 1;
+    $temp->tag = $_POST['edit']['choice'];
 	  $temp->value_type = VOTINGAPI_VALUE_TYPE_KEY;
 		$vote[] = $temp;
 	}
