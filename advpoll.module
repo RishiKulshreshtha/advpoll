@@ -638,6 +638,7 @@ function advpoll_update($node) {
       db_query("INSERT INTO {advpoll_choices} (nid, label, vote_offset) VALUES (%d, '%s', %d)", $node->nid, $choice['label'], $i++);
     }
   }
+	votingapi_recalculate_results('advpoll', $node->nid);
 }
 
 function _advpoll_get_mode($node) {
