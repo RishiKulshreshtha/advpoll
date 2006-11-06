@@ -234,7 +234,6 @@ function advpoll_calculate_results_ranking(&$cache, $votes, $node) {
  *							a status message indicating who was eliminated
  *   -totalVoters : the total number of voters who participated
  */
-
 function _advpoll_calculate_bordacount($node) {
  	$votes = array();
   // ORDER BY value ASC lets us ensure no gaps
@@ -331,7 +330,6 @@ function _advpoll_calculate_bordacount($node) {
  *							a status message indicating who was eliminated
  *   -totalVoters : the total number of voters who participated
  */
-
 function _advpoll_calculate_instantrunoff($node) {
  	$votes = array();
   // ORDER BY value ASC lets us ensure no gaps

@@ -162,7 +162,6 @@ function advpoll_form($node, $form_values = NULL) {
 			$('#edit-choices').each(function(){this.value=nextChoice});
 		});
 	});", 'inline');
-	// */
 
   $form['title'] = array(
     '#type' => 'textfield',
@@ -997,33 +996,6 @@ function theme_advpoll_bar($title, $percentage, $votes, $block) {
 }
 
 /**
- * View the voting form.
- *
- * This calls a function advpoll_vote_$mode, where $mode is defined
- * in the node. If the function does not exist, a watchdog error is
- * raised and the error is reported using drupal_set_message().
- */
- /*
-function advpoll_voting_form(&$node, $teaser, $page, $block) {
-	$mode = _advpoll_get_mode($node);
-  if (function_exists("advpoll_voting_{$mode}_form")) {
-    return call_user_func("advpoll_voting_{$mode}_form", $node, $teaser, $page, $block);
-  }
-  else {
-    _advpoll_panic_on_mode($mode);
-  }
-}
-*/
-
-/*
-function advpoll_voting_form_submit($form_id, $form_values) {
-	if ($form_values['nid']) {
-		$node = node_load($form_values['nid']);
-	}
-}
-*(/
-
-/**
  * Callback for 'results' tab for advpoll you can vote on
  */
 function advpoll_results() {
@@ -1104,27 +1076,6 @@ function advpoll_cancel($nid) {
   else {
 		drupal_not_found();
 	}
-}
-
-/**
- * Validate vote form submission
- *
- * This will call a hook named advpoll_vote_validate_$mode and
- * return its value. hooks should check $POST to see if the vote data
- * submitted is valid and use form_set_error() if the form has invalid
- * data.
- *
- * @returns boolean true if form has valid data or if no hook is
- * defined in mode
- */
-function advpoll_vote_validate($node) {
-/*
-	$mode = _advpoll_get_mode($node);
-  if (function_exists("advpoll_vote_validate_$mode") ) {
-    return call_user_func("advpoll_vote_validate_$mode", $node);
-  }
-  return TRUE;
-	*/
 }
 
 /**
