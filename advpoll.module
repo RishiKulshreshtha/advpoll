@@ -150,7 +150,7 @@ function advpoll_form($node, $form_values = NULL) {
 			var input = document.createElement('input');
 			input.type = 'text';
 			input.maxlength = 128;
-			input.name = 'edit[choice][' + nextChoice + '][label]';
+			input.name = 'choice[' + nextChoice + '][label]';
 			input.id = 'edit-choice-' + nextChoice + '-label';
 			input.size = 60;
 			input.className = 'form-text choices';
@@ -772,7 +772,7 @@ function advpoll_update($node) {
 	// Start at one rather than 0 due to Drupal FormAPI
 	$i = 1;
   foreach ($node->choice as $choice) {
-  	 if ($choice['label'] != '') {
+		if ($choice['label'] != '') {
       db_query("INSERT INTO {advpoll_choices} (nid, label, vote_offset) VALUES (%d, '%s', %d)", $node->nid, $choice['label'], $i++);
     }
   }
