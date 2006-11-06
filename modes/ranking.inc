@@ -5,7 +5,7 @@ function advpoll_ranking_longname() {
   return t("Ranking");
 }
 
-function advpoll_view_voting_ranking(&$node, $teaser, $page, $block) {
+function advpoll_voting_ranking_form(&$node, $teaser, $page, $block) {
 
   $weight = 0;
 	$form = array();
@@ -65,7 +65,7 @@ function advpoll_view_voting_ranking(&$node, $teaser, $page, $block) {
 	}
 
   $form['#action'] = url('node/'. $node->nid);
-  return drupal_get_form('advpoll_view_voting', $form);
+  return $form;
 }
 
 function advpoll_view_results_ranking($node, $teaser, $page, $block) {
@@ -151,8 +151,8 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
 		}
 		$output .= '</ol>';
 
-    // XXX: debugging code, currently broken
-		if (FALSE && user_access('administer advanced poll') && $results->matrix) {
+    // XXX: debugging code, currently broken due to caching
+		if (FALSE && user_access('administer polls') && $results->matrix) {
     	$output .= '<br />Internal values, for debugging purposes:';
     	// output the table of algorithm rounds
     	$output .= '<table border="1"><tr><td>Round</td>';
@@ -304,7 +304,7 @@ function _advpoll_calculate_bordacount($node) {
 		$ranking[$curResult]['choices'][] = $choice;
 		$ranking[$curResult]['rawscore'] = $total;
 		$ranking[$curResult]['viewscore'] = format_plural($total, '1 point',
-			'%count points');
+			'@count points');
 		$ranking[$curResult]['percentage'] = $total / $totalPoints;
 		$previousTotal = $total;
 	}
@@ -543,17 +543,19 @@ function _advpoll_calculate_instantrunoff($node) {
  *
  * This takes care of registering the vote in runoff nodes.
  */
-function advpoll_vote_ranking($node) {
-  foreach ($node->choice as $key => $choice) {
-    $vote->value = $_POST['edit']['choice'][$key];
-
+function advpoll_voting_ranking_form_submit($form_id, $form_values) {
+	$vote = array();
+  foreach ($form_values['choice'] as $choice => $rank) {
+    $temp->value = $rank;
 		// A zero value indicates they didn't rank that choice
-		if ($vote->value != 0) {
-    	$vote->value_type = VOTINGAPI_VALUE_TYPE_KEY;
-    	$vote->tag = $key;
-    	votingapi_set_vote('advpoll', $node->nid, $vote);
+		if ($temp->value != 0) {
+    	$temp->value_type = 'option';
+    	$temp->tag = $choice;
+			$vote[] = $temp;
 		}
   }
+
+  votingapi_set_vote('advpoll', $form_values['nid'], $vote);
 }
 
 /**
@@ -564,7 +566,9 @@ function advpoll_vote_ranking($node) {
  *
  * @returns boolean false on invalid forms, true otherwise.
  */
-function advpoll_vote_validate_ranking($node) {
+function advpoll_voting_ranking_form_validate($form_id, $form_values) {
+	$node = node_load($form_values['nid']);
+
   $ok = TRUE;
   // array used to check which values are set
   $setvalues = array();
@@ -573,18 +577,20 @@ function advpoll_vote_validate_ranking($node) {
   foreach ($node->choice as $key => $choice) {
 		
 		// count the number of choices that are ranked
-    if (!empty($_POST['edit']['choice'][$key])) {
+    if ($form_values['choice'][$key]) {
 			$numchoices++;
 		}
-    $intvalue = intval($_POST['edit']['choice'][$key]);
+    $intvalue = intval($form_values['choice'][$key]);
     // mark this value as seen
     $setvalues[$intvalue]++;
     // check range
     if ($intvalue > count($node->choice) || $intvalue < 0) {
-      form_set_error('choice]['.$key, "illegal rank for choice $key: $intvalue (min: 1, max: " . count($node->choice) . ")");
+			// TODO: clean up this error message
+      form_set_error('choice][' . $key,
+				"Illegal rank for choice $key: $intvalue (min: 1, max: "
+				. count($node->choice) . ')');
       $ok = FALSE;
     }
-
   }
 	
 	// too many choices ranked

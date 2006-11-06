@@ -9,52 +9,45 @@ function advpoll_binary_longname() {
  * 
  * This creates a list of choices to allow the user to vote on choices.
  */
-function advpoll_view_voting_binary(&$node, $teaser, $page, $block) {
+function advpoll_voting_binary_form(&$node, $teaser, $page, $block) {
   if ($node->choice) {
     $list = array();
+		foreach ($node->choice as $i => $choice) {
+			// Don't show blank choices
+			if ($choice['label']) {
+     		$list[$i] = check_plain($choice['label']);
+			}
+    }
+		$form['choice'] = array(
+     	'#title' => $page ? '' : check_plain($node->title),
+      '#options' => $list,
+		);
 
 		if ($node->maxchoices == 1) {
-			// plurality voting
-    	foreach ($node->choice as $i => $choice) {
-      	$list[$i] = check_plain($choice['label']);
-    	}
-
-    	$form['choice'] = array(
-      	'#type' => 'radios',
-      	'#title' => $page ? '' : check_plain($node->title),
-      	'#default_value' => -1,
-      	'#options' => $list
-    	);
+			// Plurality voting
+    	$form['choice']['#type'] = 'radios';
+			$form['choice']['#default_value'] = -1;
 		}
 		else {
-			// approval voting
-			foreach ($node->choice as $i => $choice) {
-				// Don't show blank choices
-				if ($choice['label']) {
-      		$list[$i] = check_plain($choice['label']);
-				}
-    	}
-			
-    	$form['choice'] = array(
-      	'#type' => 'checkboxes',
-      	'#title' => $page ? '' : check_plain($node->title),
-        '#options' => $list,
-      );
+			// Approval voting
+    	$form['choice']['#type'] = 'checkboxes';
 		}
   }
 
   $form['nid'] = array(
     '#type' => 'hidden',
-    '#value' => $node->nid
+    '#value' => $node->nid,
   );
 
-  $form['vote'] = array(
-    '#type' => 'submit',
-    '#value' => t('Vote')
-  );
+	if (!$node->in_preview) {
+  	$form['vote'] = array(
+    	'#type' => 'submit',
+    	'#value' => t('Vote'),
+  	);
+	}
 
   $form['#action'] = url('node/'. $node->nid);
-  return drupal_get_form('advpoll_view_voting', $form);
+  return $form;
 }
 
 function advpoll_view_results_binary($node, $teaser, $page, $block) {
@@ -86,7 +79,7 @@ function advpoll_view_results_binary($node, $teaser, $page, $block) {
 				$votes[$i] = 0;
 			}
 			$percentage = round(100 * $votes[$i] / $total_votes, 0);
-			$output .= theme('advpoll_bar',  check_plain($ch['label']), $percentage, format_plural($votes[$i], '1 vote', '%count votes'), $block);
+			$output .= theme('advpoll_bar',  check_plain($ch['label']), $percentage, format_plural($votes[$i], '1 vote', '@count votes'), $block);
 		}
 		$output .= '</div>';
 	}
@@ -113,28 +106,29 @@ function advpoll_calculate_results_binary(&$results, $votes, $node) {
 /**
  * Registers the vote as a key for this node using votingapi_set_vote()
  */
-function advpoll_vote_binary($node) {
+function advpoll_voting_binary_form_submit($node, $form_values) {
 	$vote = array();
-	if ($node->maxchoices == 1) {
+	if ($form_values['maxchoices'] == 1) {
 		// plurality voting
 		$temp->value = 1;
-    $temp->tag = $_POST['edit']['choice'];
-	  $temp->value_type = VOTINGAPI_VALUE_TYPE_KEY;
+    $temp->tag = $form_values['choice'];
+	  $temp->value_type = 'option';
 		$vote[] = $temp;
 	}
 	else {
 		// approval voting
-    foreach ($node->choice as $key => $choice) {
-    	$temp->value = $_POST['edit']['choice'][$key];
-			if (isset($temp->value)) {
-  			$temp->value_type = VOTINGAPI_VALUE_TYPE_KEY;
-   			$temp->tag = $key;
+    foreach ($form_values['choice'] as $choice => $selected) {
+    	$temp->value = $choice;
+			if ($selected) {
+  			$temp->value_type = 'option';
+   			$temp->tag = $choice;
 				$temp->value = 1;
 				$vote[] = $temp;
 			}
 		}
   }
-	votingapi_set_vote('advpoll', $node->nid, $vote);
+	votingapi_set_vote('advpoll', $form_values['nid'], $vote);
+  drupal_set_message(t('Your vote was registered.'));
 }
 
 /**
@@ -142,12 +136,13 @@ function advpoll_vote_binary($node) {
  *
  * @returns boolean true if the form is valid
  */
-function advpoll_vote_validate_binary($node) {
+function advpoll_voting_binary_form_validate($form_id, $form_values) {
 	$ok = true;
+	$node = node_load($form_values['nid']);
 	if ($node->maxchoices == 1) {
 		// plurality voting
-  	if (!($ok = array_key_exists($_POST['edit']['choice'], $node->choice))) {
-    	form_set_error('choice', 'At least one choice must be selected.');
+  	if (!($ok = array_key_exists($form_values['choice'], $node->choice))) {
+    	form_set_error('choice[', 'At least one choice must be selected.');
 			$ok = false;
   	}
 	}
@@ -158,14 +153,14 @@ function advpoll_vote_validate_binary($node) {
 
   	foreach ($node->choice as $i => $val) {
 			// see if the box is checked
-    	if (isset($_POST['edit']['choice'][$i])) {
+    	if ($form_values['choice'][$i]) {
 				$numchoices++;
 			}
   	}
 	
 		// too many choices ranked
 		if ($node->maxchoices != 0 && $numchoices > $node->maxchoices) {
-			form_set_error('choice',
+			form_set_error('choice[',
 				t('%num choices were selected but only %max are allowed.',
 					array('%num' => $numchoices, '%max' => $node->maxchoices)));
 			$ok = false;
@@ -174,7 +169,7 @@ function advpoll_vote_validate_binary($node) {
 		// not enough choices ranked
 		$minchoices = 1;
 		if ($numchoices < $minchoices) {
-			form_set_error('choice', t('At least one choice must be selected.'));
+			form_set_error('choice[', t('At least one choice must be selected.'));
 			$ok = false;
 		}
 	}
