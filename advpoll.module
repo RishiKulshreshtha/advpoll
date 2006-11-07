@@ -72,6 +72,23 @@ function advpoll_block_mostrecent() {
 }
 
 /**
+ *
+ */
+function advpoll_page() {
+  // List all polls
+  $sql = "SELECT n.nid, n.title, p.active, n.created, c.value AS votes FROM {node} n INNER JOIN {advpoll} p ON n.nid = p.nid INNER JOIN {votingapi_cache} c ON n.nid = c.content_id WHERE n.status = 1 AND tag = '_advpoll' AND function='total_votes' GROUP BY n.nid, n.title, p.active, n.created ORDER BY n.created DESC";
+  $sql = db_rewrite_sql($sql);
+  $result = pager_query($sql, 15);
+  $output = '<ul>';
+  while ($node = db_fetch_object($result)) {
+    $output .= '<li>'. l($node->title, "node/$node->nid") .' - '. format_plural($node->votes, '1 vote', '@count votes') .' - '. ($node->active ? t('open') : t('closed')) .'</li>';
+  }
+  $output .= '</ul>';
+  $output .= theme("pager", NULL, 15);
+  return $output;
+}
+
+/**
  * Implementation of VotingAPI's hook_calculate
  * Recalculate results whenever a vote is added or removed
  */
@@ -413,6 +430,14 @@ function advpoll_menu($may_cache) {
 			'callback' => 'drupal_get_form',
 			'callback arguments' => array('advpoll_admin_settings'),
 			'access' => user_access('administer polls'),
+		);
+
+		$items[] = array(
+			'path' => 'polls',
+			'title' => t('Advanced Polls'),
+			'callback' => 'advpoll_page',
+			'access' => user_access('view polls'),
+			'type' => MENU_SUGGESTED_ITEM,
 		);
 	}
 	else {
