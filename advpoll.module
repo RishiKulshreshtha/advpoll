@@ -264,16 +264,9 @@ function advpoll_form($node, $form_values = NULL) {
 	);
 
 	$voting_algorithms = array();
-	if ($mode == 'ranking') {
-		$algs = array('instant runoff', 'borda count');
-	}
-	else {
-		// mode == poll
-		$algs = array('plurality');
-	}
 
-	foreach ($algs as $alg) {
-		$voting_algorithms[$alg] = ucwords($alg);
+	foreach (advpoll_algorithms($mode) as $alg) {
+		$voting_algorithms[$alg] = ucfirst($alg);
 	}
 
 	$defaultalg = ($form_values['settings']['algorithm']?
@@ -401,26 +394,20 @@ function advpoll_load($node) {
 function advpoll_menu($may_cache) {
   global $user;
 
-  // load the necessary submodules in here instead of _init() to
-  // profit from caching, as recommended by
-  // http://drupaldocs.org/api/head/function/hook_init
-  _advpoll_load_modes();
+  // Load the modes in here instead of _init() toprofit from caching,
+	// as recommended by http://api.drupal.org/api/head/function/hook_init
+  $modes = _advpoll_list_modes();
 
   $items = array();
 
-  //if ($may_cache) {
 	if ($may_cache) {
-    $items[] = array(
-			'path' => 'node/add/advpoll-ranking',
-			'title' => t('advpoll-ranking'),
-      'access' => user_access('create polls'),
-		);
-
-    $items[] = array(
-			'path' => 'node/add/advpoll-binary',
-			'title' => t('advpoll-binary'),
-      'access' => user_access('create polls'),
-		);
+		foreach ($modes as $mode) {
+    	$items[] = array(
+				'path' => 'node/add/advpoll-' . $mode['name'],
+				'title' => t('advpoll-' . $mode['name']),
+      	'access' => user_access('create polls'),
+			);
+		}
 
 		$items[] = array(
 			'path' => 'advpoll/cancel',
@@ -729,18 +716,16 @@ function _advpoll_can_view_results($node) {
  * Implementation of hook_node_info().
  */
 function advpoll_node_info() {
-  return array(
-		'advpoll_ranking' => array(
-			'name' => t('Advanced poll - ranking'),
+	$modes = _advpoll_list_modes();
+	$info = array();
+	foreach ($modes as $mode) {
+		$info['advpoll_' . $mode['name']] = array(
+			'name' => t('Advanced poll - ' . $mode['name']),
 			'module' => 'advpoll',
-      'description' => t('Rank a number of choices.'),
-		),
-		'advpoll_binary' => array(
-			'name' => t('Advanced poll - binary'),
-			'module' => 'advpoll',
-      'description' => t('Vote for or against a number of choices.'),
-		),
-	);
+			'description' => $mode['description'],
+		);
+	}
+	return $info;
 }
 
 /**
@@ -1052,36 +1037,7 @@ function advpoll_view_results(&$node, $teaser, $page, $block) {
   if (function_exists("advpoll_view_results_$mode")) {
     return call_user_func("advpoll_view_results_$mode", $node, $teaser, $page, $block);
   }
-  else {
-    _advpoll_panic_on_mode($mode);
-  }
 }
-
-/**
- * Record a vote on the node
- *
- * this calls the appropriate vote recording function, depending on
- * the mode. It will call advpoll_vote_$mode, similarly to
- * advpoll_view_voting().
- */
- /*
-function advpoll_vote($node) {
-	$mode = _advpoll_get_mode($node);
-
-  $ok = FALSE; // error by default
-  if (advpoll_eligible($node)) {
-    if (function_exists("advpoll_vote_$mode")) {
-      call_user_func("advpoll_vote_$mode", $node);
-    }
-    else {
-      _advpoll_panic_on_mode($mode);
-    }
-  }
-  else {
-    drupal_set_message(t('You are not eligible to vote on this poll.'));
-  }
-}
-*/
 
 /**
  * Callback for canceling a vote
@@ -1129,57 +1085,30 @@ function advpoll_eligible($node, $uid = NULL) {
 	return $eligible;
 }
 
-/**
- * Debugging function for unknown mode.
- */
-function _advpoll_panic_on_mode($mode) {
-	watchdog('advpoll', t('Unknown poll mode : %mode.', array('%mode' => $mode), WATCHDOG_ERROR));
-	drupal_set_message(t('Unknown poll mode : %mode.', array('%mode' => $mode), 'error'));
+function advpoll_algorithms($mode) {
+	return call_user_func("advpoll_algorithms_$mode");
 }
 
 /**
  * Load the available modes.
  *
  * This scans the modes subdirectory to find mode.inc files, where
- * mode is considered to be the mode name. found files are loaded and
+ * mode is considered to be the mode name. Found files are loaded and
  * added to the mode list.
  *
  * @uses _advpoll_mode_list()
- * @uses file_scan_directory()
  */
-function _advpoll_load_modes() {
-  global $_advpoll_modes;
-
-  foreach (file_scan_directory(dirname(__FILE__) . '/modes/', '^([^\.].*)\.inc$', array('.', '..', 'CVS'), 0, FALSE) as $file) {
-		require_once($file->filename);
-		$mode = $file->name;
-		if (function_exists("advpoll_${mode}_longname") ) {
-			_advpoll_mode_list($mode, call_user_func("advpoll_${mode}_longname"));
-		}
-		else {
-			drupal_set_message("advpoll_${mode}_longname ??");
-			_advpoll_mode_list($mode);
-		}
-  }
+function _advpoll_list_modes() {
+  static $_advpoll_modes;
+	if (!$_advpoll_modes) {
+  	foreach (file_scan_directory(dirname(__FILE__) . '/modes/',
+				'^([^\.].*)\.inc$', array('.', '..', 'CVS'), 0, FALSE) as $file) {
+			require_once($file->filename);
+			$mode = $file->name;
+			if (function_exists("advpoll_info_$mode")) {
+    		$_advpoll_modes[$mode] = call_user_func("advpoll_info_$mode");
+			}
+  	}
+	}
+	return $_advpoll_modes;
 }
-
-/**
- * List or set the known modes
- *
- * @param string $mode set/change the given mode
- * @param string $longname choiceal. set a longname different than the mode name
- *
- * @returns array the module list as a mode => longname associative array
- */
-function _advpoll_mode_list($mode = NULL, $longname = NULL) {
-  static $_advpoll_modes = array();
-
-  if (!is_null($mode)) {
-    if (is_null($longname)) {
-      $longname = $mode;
-    }
-    $_advpoll_modes[$mode] = $longname;
-  }
-  return $_advpoll_modes;
-}
-

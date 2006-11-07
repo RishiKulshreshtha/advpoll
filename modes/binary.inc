@@ -1,7 +1,14 @@
 <?php
 // $Id$
-function advpoll_binary_longname() {
-  return t("Binary Poll");
+function advpoll_info_binary() {
+  return array(
+		'name' => 'binary',
+		'description' => t('Vote for or against a number of choices.'),
+	);
+}
+
+function advpoll_algorithms_binary() {
+	return array('plurality' => t('plurality'));
 }
 
 /**

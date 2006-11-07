@@ -1,8 +1,18 @@
 <?php
 // $Id$
 
-function advpoll_ranking_longname() {
-  return t("Ranking");
+function advpoll_info_ranking() {
+  return array(
+		'name' => 'ranking',
+		'description' => t('Rank a number of choices.'),
+	);
+}
+
+function advpoll_algorithms_ranking() {
+	return array(
+		'borda count' => t('borda count'),
+		'instant runoff' => t('instant runoff'),
+	);
 }
 
 function advpoll_voting_ranking_form(&$node, $teaser, $page, $block) {
