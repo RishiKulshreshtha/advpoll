@@ -49,7 +49,6 @@ function advpoll_block($op = 'list', $delta = 'mostrecent', $edit = array()) {
       		return $block;
 				}
 			}
-			return array();
 		default:
   }
 }
@@ -63,7 +62,8 @@ function advpoll_block_mostrecent() {
 	// Check that there is an active poll
 	if (db_num_rows($result) > 0) {
   	$poll = db_fetch_object($result);
-		$output = advpoll_view(node_load($poll->nid), false, false, true);
+		$node = advpoll_view(node_load($poll->nid), FALSE, FALSE, TRUE);
+		$output = drupal_render($node->content);
 	}
 	else {
 		$output .= t('No active Advanced poll.');
@@ -915,12 +915,21 @@ function advpoll_submit(&$node) {
 /**
  * Implementation of hook_view().
  */
-function advpoll_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
-	/* if (!$block) {
-  	$node = node_prepare($node, $teaser);
-	}
-	// */
+function advpoll_view($node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
 	$mode = _advpoll_get_mode($node);
+
+	if ($block) {
+		// No 'readmore' link
+		$node->readmore = FALSE;
+		$links = module_invoke_all('links', 'node', $node, 1);
+		$links[] = array(
+			'title' => 'Older polls',
+			'href' => 'polls',
+			'attributes' => array('title' =>
+				t('View the list of polls on this site.')),
+		);
+		$node->links = $links;
+	}
 
 	// Previewing a node, so don't show results
 	if ($node->in_preview) {
@@ -931,13 +940,19 @@ function advpoll_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
 	}
   else if (!$node->voted && arg(2) != 'results' && $node->active && advpoll_eligible($node)) {
 		// User hasn't voted and we're not on the results tab
-		if (!$valid) {
-      $node->content['body'] = array(
-				'#value' => drupal_get_form('advpoll_voting_' . $node->mode . '_form',
-					$node, $teaser, $page, $block)
-  			. advpoll_view_electoral_list($node, $teaser),
+
+		if ($block) {
+			$node->links[] = array(
+				'title' => t('Results'),
+				'href' => 'node/'. $node->nid .'/results',
+				'attributes' => array('title' => t('View the current poll results.')),
 			);
-    }
+		}
+    $node->content['body'] = array(
+			'#value' => drupal_get_form('advpoll_voting_' . $node->mode . '_form',
+				$node, $teaser, $page, $block)
+  		. advpoll_view_electoral_list($node, $teaser),
+		);
 	}
 	else if (_advpoll_can_view_results($node)) {
 		// Show results only if the user has voted or poll is closed
@@ -951,12 +966,6 @@ function advpoll_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
 			$node->content['body']['#value'] .= drupal_get_form('advpoll_cancel_form', $node->nid);
   }
 
-/*
-	if ($block) {
-		$output = '<div class="title">' . $node->title . '</div>' . $output;
-		$output .= l(t('view poll'), 'node/' . $node->nid);
-	}
-	*/
 	return $node;
 }
 
