@@ -84,7 +84,7 @@ function advpoll_page() {
     $output .= '<li>'. l($node->title, "node/$node->nid") .' - '. format_plural($node->votes, '1 vote', '@count votes') .' - '. ($node->active ? t('open') : t('closed')) .'</li>';
   }
   $output .= '</ul>';
-  $output .= theme("pager", NULL, 15);
+  $output .= theme('pager', NULL, 15);
   return $output;
 }
 
@@ -279,14 +279,21 @@ function advpoll_form($node, $form_values = NULL) {
 	$defaultalg = ($form_values['settings']['algorithm']?
 		$form_values['settings']['algorithm'] : $node->algorithm);
 			
-
-	$form['settings']['algorithm'] = array(
-		'#type' => 'select',
-		'#title' => t('Algorithm'),
-		'#options' => $voting_algorithms,
-		'#default_value' => $defaultalg,
-		'#description' => 'Voting algorithm to use to calculate the winner.',
-	);
+	if (count($voting_algorithms) > 1) {
+		$form['settings']['algorithm'] = array(
+			'#type' => 'select',
+			'#title' => t('Algorithm'),
+			'#options' => $voting_algorithms,
+			'#default_value' => $defaultalg,
+			'#description' => 'Voting algorithm to use to calculate the winner.',
+		);
+	}
+	else {
+		$form['settings']['algorithm'] = array(
+			'#type' => 'hidden',
+			'#value' => $defaultalg,
+		);
+	}
 
 	$active = array(1 => t('Active'), 0 => t('Closed'));
 	$form['settings']['active'] = array(
