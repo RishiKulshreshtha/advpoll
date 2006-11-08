@@ -93,7 +93,7 @@ function advpoll_view_results_binary($node, $teaser, $page, $block) {
 
 	$output .= '<br />';
 
-	return $output;
+	return array('results' => $output, 'votes' => $total_votes);
 }
 
 function advpoll_calculate_results_binary(&$results, $votes, $node) {

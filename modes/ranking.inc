@@ -185,8 +185,8 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
     	$output .= '</table>';
 		}
 
-    return $output;
 	}
+	return array('results' => $output, 'votes' => $poll['total_votes']);
 }
 
 /**

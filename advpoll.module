@@ -921,7 +921,7 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
 	if ($block) {
 		// No 'readmore' link
 		$node->readmore = FALSE;
-		$links = module_invoke_all('links', 'node', $node, 1);
+		//$links = module_invoke_all('links', 'node', $node, 1);
 		$links[] = array(
 			'title' => 'Older polls',
 			'href' => 'polls',
@@ -951,20 +951,16 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
     $node->content['body'] = array(
 			'#value' => drupal_get_form('advpoll_voting_' . $node->mode . '_form',
 				$node, $teaser, $page, $block)
-  		. advpoll_view_electoral_list($node, $teaser),
+  		//. advpoll_view_electoral_list($node, $teaser),
 		);
 	}
 	else if (_advpoll_can_view_results($node)) {
 		// Show results only if the user has voted or poll is closed
     $node->content['body'] = array(
 			'#value' => advpoll_view_results($node, $teaser, $page, $block)
-  			. advpoll_view_electoral_list($node, $teaser),
+  			//. advpoll_view_electoral_list($node, $teaser),
 		);	
 	}
-
-	if (isset($node->voted) && $node->cancel_vote && user_access('cancel own vote') && $node->active && !$block) {
-			$node->content['body']['#value'] .= drupal_get_form('advpoll_cancel_form', $node->nid);
-  }
 
 	return $node;
 }
@@ -1007,6 +1003,27 @@ function theme_advpoll_view_voting($form) {
   return $output;
 }
 
+function theme_advpoll_results($title, $results, $votes, $links, $block, $nid, $voted, $cancel_vote) {
+  if ($block) {
+    $output .= '<div class="poll">';
+    $output .= '<div class="title">'. $title .'</div>';
+    $output .= $results;
+    $output .= '<div class="total">'. t('Total votes: %votes', array('%votes' => $votes)) .'</div>';
+    $output .= '</div>';
+    $output .= '<div class="links">'. theme('links', $links) .'</div>';
+  }
+  else {
+    $output .= '<div class="poll">';
+    $output .= $results;
+    $output .= '<div class="total">'. t('Total votes: %votes', array('%votes' => $votes)) .'</div>';
+		if ($voted && $cancel_vote && user_access('cancel own vote') && !$block) {
+      $output .= drupal_get_form('advpoll_cancel_form', $nid);
+    }
+    $output .= '</div>';
+  }
+  return $output;
+} 
+
 function theme_advpoll_bar($title, $percentage, $votes, $block) {
   if ($block) {
     $output  = '<div class="text">'. $title .'</div>';
@@ -1044,7 +1061,10 @@ function advpoll_results() {
 function advpoll_view_results(&$node, $teaser, $page, $block) {
 	$mode = _advpoll_get_mode($node);
   if (function_exists("advpoll_view_results_$mode")) {
-    return call_user_func("advpoll_view_results_$mode", $node, $teaser, $page, $block);
+    $output =  call_user_func("advpoll_view_results_$mode", $node, $teaser, $page, $block);
+		return theme('advpoll_results', check_plain($node->title),
+			$output['results'], $output['votes'], $node->links, $block, $node->nid,
+			$node->voted, $node->cancel_vote);
   }
 }
 
