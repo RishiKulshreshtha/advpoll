@@ -154,13 +154,13 @@ function advpoll_form($node, $form_values = NULL) {
 
     $('#addChoice').bind('click', function () {
       var nextChoice = $('input.choices').length + 1;
-      $('<div class=\'form-item choiceDiv\'><label for=\'edit-choice'
+      $('<div class=\'form-item choiceDiv\'><label for=\'edit-choice-'
         + nextChoice + '-label\'>' + '" 
           // Hack for translating string before we know the specific number
           . t('Choice %n', array('%n' => -1))
           . ": '.replace('-1', nextChoice) + '</label>'
         + '<input type=\'text\' maxlength=\'128\' name=\'choice[' + nextChoice
-          + '][label]\' id=\'edit-choice-' + nextChoice + 'label\' size=\'60\''
+          + '][label]\' id=\'edit-choice-' + nextChoice + '-label\' size=\'60\''
           + ' class=\'form-text choices\' />'
         + '</div>').insertAfter('.choices:last');
       $('.choiceDiv:last').fadeIn(1000);
