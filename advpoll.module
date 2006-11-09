@@ -144,42 +144,27 @@ function advpoll_form($node, $form_values = NULL) {
   $mode = _advpoll_get_mode($node);
 
   drupal_add_js("$(document).ready(function(){
-    var add_choice = document.createElement('input');
-    add_choice.id = 'addChoice';
-    add_choice.type = 'button';
-    add_choice.value = '" . t('Add choice') . "';
     // Be sure not to add it more than once
     if ($('#addChoice').length == 0) {
-      $('#morechoices').append(add_choice);
+      //$('#morechoices').append(add_choice);
+      $('<input type=\'button\' id=\'addChoice\' value=\'". t('Add choice') . "'
+        + '\' />').insertAfter('#morechoices');
+        
     }
-    //$('#addChoice').fadeIn(1000);
+
     $('#addChoice').bind('click', function () {
       var nextChoice = $('input.choices').length + 1;
-      var div = document.createElement('div');
-      div.className = 'form-item choiceDiv';
-
-      var label = document.createElement('label');
-      label.htmlFor = 'edit-choice-' + nextChoice + '-label';
-      label.innerHTML = '"
-        // Hack for translating string before we know the specific number
-        . t('Choice %n', array('%n' => -1))
-        . ": '.replace('-1', nextChoice);
-
-      div.appendChild(label);
-
-      var input = document.createElement('input');
-      input.type = 'text';
-      input.maxlength = 128;
-      input.name = 'choice[' + nextChoice + '][label]';
-      input.id = 'edit-choice-' + nextChoice + '-label';
-      input.size = 60;
-      input.className = 'form-text choices';
-
-      div.appendChild(input);
-
-      $('.choices:last').after(div);
+      $('<div class=\'form-item choiceDiv\'><label for=\'edit-choice'
+        + nextChoice + '-label\'>' + '" 
+          // Hack for translating string before we know the specific number
+          . t('Choice %n', array('%n' => -1))
+          . ": '.replace('-1', nextChoice) + '</label>'
+        + '<input type=\'text\' maxlength=\'128\' name=\'choice[' + nextChoice
+          + '][label]\' id=\'edit-choice-' + nextChoice + 'label\' size=\'60\''
+          + ' class=\'form-text choices\' />'
+        + '</div>').insertAfter('.choices:last');
       $('.choiceDiv:last').fadeIn(1000);
-      $('#edit-choices').each(function(){this.value=nextChoice});
+      $('#edit-choices').each(function(){this.value = nextChoice});
     });
   });", 'inline');
 
