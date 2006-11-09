@@ -146,10 +146,8 @@ function advpoll_form($node, $form_values = NULL) {
   drupal_add_js("$(document).ready(function(){
     // Be sure not to add it more than once
     if ($('#addChoice').length == 0) {
-      //$('#morechoices').append(add_choice);
       $('<input type=\'button\' id=\'addChoice\' value=\'". t('Add choice') . "'
         + '\' />').insertAfter('#morechoices');
-        
     }
 
     $('#addChoice').bind('click', function () {
