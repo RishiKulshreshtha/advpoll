@@ -128,8 +128,11 @@ function advpoll_delete($node) {
   db_query("DELETE FROM {advpoll_choices} WHERE nid = %d", $node->nid);
   db_query("DELETE FROM {advpoll_electoral_list} WHERE nid = %d", $node->nid);
 
-  // Note: this should be converted to a votingapi method eventually
-  db_query("DELETE FROM {votingapi_vote} WHERE content_id = %d", $node->nid);
+  // Note: these should be converted to a votingapi method eventually
+  db_query('DELETE FROM {votingapi_vote} WHERE content_id = %d AND 
+    content_type="advpoll"', $node->nid);
+  db_query('DELETE FROM {votingapi_cache} WHERE content_id = %d AND
+    content_type="advpoll"', $node->nid);
 }
 
 /**
