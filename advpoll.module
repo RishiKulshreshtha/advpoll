@@ -476,7 +476,8 @@ function advpoll_menu($may_cache) {
         // Allow votes to be reset
         $items[] = array(
           'path' => 'node/' . $nid . '/reset',
-          'callback' => 'advpoll_reset_confirm',
+          'callback' => 'drupal_get_form',
+          'callback arguments' => 'advpoll_reset_confirm',
           'access' => user_access('administer polls'),
           'weight' => 3,
           'type' => MENU_CALLBACK,
@@ -836,13 +837,13 @@ function advpoll_reset_confirm() {
   $node = node_load($edit['nid']);
 
   $form['nid'] = array('#type' => 'value', '#value' => $node->nid);
-  $output = confirm_form('advpoll_reset_confirm', $form,
+  $output = confirm_form($form,
     t('Are you sure you want to reset the votes for %title?',
-    array('%title' => theme('placeholder', $node->title))),
+    array('%title' => $node->title)),
     'node/' . $node->nid . '/edit',
     t('This action cannot be undone.'),
     t('Reset votes'),
-    t('Cancel') );
+    t('Cancel'));
   return $output;
 }
 
