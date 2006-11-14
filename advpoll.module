@@ -142,29 +142,32 @@ function advpoll_delete($node) {
  */
 function advpoll_form($node, $form_values = NULL) {
   $mode = _advpoll_get_mode($node);
+  static $addjs;
 
-  drupal_add_js("$(document).ready(function(){
-    // Be sure not to add it more than once
-    if ($('#addChoice').length == 0) {
-      $('<input type=\'button\' id=\'addChoice\' value=\'". t('Add choice') . "'
-        + '\' />').insertAfter('#morechoices');
-    }
-
-    $('#addChoice').bind('click', function () {
-      var nextChoice = $('input.choices').length + 1;
-      $('<div class=\'form-item choiceDiv\'><label for=\'edit-choice-'
-        + nextChoice + '-label\'>' + '" 
-          // Hack for translating string before we know the specific number
-          . t('Choice %n', array('%n' => -1))
-          . ": '.replace('-1', nextChoice) + '</label>'
-        + '<input type=\'text\' maxlength=\'128\' name=\'choice[' + nextChoice
-          + '][label]\' id=\'edit-choice-' + nextChoice + '-label\' size=\'60\''
-          + ' class=\'form-text choices\' />'
-        + '</div>').insertAfter('.choices:last');
-      $('.choiceDiv:last').fadeIn(1000);
-      $('#edit-choices').each(function(){this.value = nextChoice});
-    });
-  });", 'inline');
+  if (!$addjs) {
+    // Only add javascript once, even if _form is called multiple times
+    $js = '$(document).ready(function(){
+  $("#morechoices").hide();
+  $(\'<input type="button" id="add-choice" value="'. t('Add choice') .'"/>\').insertAfter("#morechoices");
+  $("#add-choice").click(function(){
+    var nextChoiceN = $("input.choices").length + 1;
+    var html = \'<div class="form-item">\' +
+      \'<label for="edit-choice-\' + nextChoiceN + \'-label">\' + \''. 
+    // Hack for translating string before we know the specific number
+    t('Choice %n', array('%n' => 'n'))
+    .':\'.replace(\'n\', nextChoiceN) + \'<\/label>\' +
+     \'<input type="text" maxlength="128" name="choice[\' + nextChoiceN + \'][label]"" id="edit-choice-\' + nextChoiceN + \'-label" size="60" class="form-text choices" />\' +
+     \'<\/div>\';
+      
+    $(html).insertBefore("#morechoices").fadeIn();
+    $("#edit-choices").val(nextChoiceN);
+    $("#edit-changed").val($("#edit-changed").val() + 1);
+  });
+});';
+  
+    drupal_add_js($js, 'inline');
+    $addjs = true;
+  }
 
   $form['title'] = array(
     '#type' => 'textfield',
@@ -190,12 +193,10 @@ function advpoll_form($node, $form_values = NULL) {
     $choices = max(2, count($node->choice)? count($node->choice) : 5);
   }
 
- $form['choices'] = array(
+  $form['choices'] = array(
     '#type' => 'hidden',
     '#value' => $choices,
   );
-
-  $form['choice'] = form_builder($node->type . '_node_form', $form['choice']);
 
   // Advanced Poll choices
   $form['choice'] = array(
@@ -775,7 +776,7 @@ function advpoll_update($node) {
 
   // Start at one rather than 0 due to Drupal FormAPI
   $i = 1;
-  foreach ($node->choice as $choice) {
+  foreach ($_POST['choice'] as $choice) {
     if ($choice['label'] != '') {
       db_query("INSERT INTO {advpoll_choices} (nid, label, vote_offset) VALUES (%d, '%s', %d)", $node->nid, $choice['label'], $i++);
     }
