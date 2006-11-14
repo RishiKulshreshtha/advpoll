@@ -770,10 +770,12 @@ function advpoll_cancel_form($nid) {
  */
 function advpoll_update($node) {
   db_query("UPDATE {advpoll} SET active=%d, runtime=%d, maxchoices=%d, algorithm='%s', uselist=%d, showvotes=%d WHERE nid = %d", $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['uselist'], $node->settings['showvotes'], $node->nid);
-  // XXX: should update advpoll here, when it has some parameters
-  // XXX: ... but before doing so, the code below must be factored out in a seperate function for usage in advpoll_insert()
-  db_query('DELETE FROM {advpoll_choices} WHERE nid = %d', $node->nid);
+  _advpoll_insert_choices($node);
+  votingapi_recalculate_results('advpoll', $node->nid);
+}
 
+function _advpoll_insert_choices($node) {
+  db_query('DELETE FROM {advpoll_choices} WHERE nid = %d', $node->nid);
   // Start at one rather than 0 due to Drupal FormAPI
   $i = 1;
   foreach ($_POST['choice'] as $choice) {
@@ -781,7 +783,6 @@ function advpoll_update($node) {
       db_query("INSERT INTO {advpoll_choices} (nid, label, vote_offset) VALUES (%d, '%s', %d)", $node->nid, check_plain($choice['label']), $i++);
     }
   }
-  votingapi_recalculate_results('advpoll', $node->nid);
 }
 
 function _advpoll_get_mode($node) {
@@ -803,7 +804,8 @@ function _advpoll_get_mode($node) {
 function advpoll_insert($node) {
   $mode = _advpoll_get_mode($node);
 
-  db_query("INSERT INTO {advpoll} (nid, mode, uselist, active, runtime, maxchoices, algorithm) VALUES (%d, '%s', %d, %d, %d, %d, '%s')", $node->nid, $mode, $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $node->settings['algorithm']);
+  db_query("INSERT INTO {advpoll} (nid, mode, uselist, active, runtime, maxchoices, algorithm, showvotes) VALUES (%d, '%s', %d, %d, %d, %d, '%s', %d)",
+    $node->nid, $mode, $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['showvotes']);
 
   // create the electoral list if desired
 
@@ -822,7 +824,7 @@ function advpoll_insert($node) {
   }
 
   // Insert the choices
-  advpoll_update($node);
+  _advpoll_insert_choices($node);
 }
 
 /**

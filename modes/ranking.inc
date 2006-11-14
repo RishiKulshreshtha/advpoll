@@ -186,7 +186,7 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
     }
 
   }
-  return array('results' => $output, 'votes' => $poll['total_votes']);
+  return array('results' => $output, 'votes' => $poll['total_voters']);
 }
 
 /**
@@ -554,6 +554,7 @@ function _advpoll_calculate_instantrunoff($node) {
 function advpoll_voting_ranking_form_submit($form_id, $form_values) {
   $vote = array();
   foreach ($form_values['choice'] as $choice => $rank) {
+    unset($temp);
     $temp->value = $rank;
     // A zero value indicates they didn't rank that choice
     if ($temp->value != 0) {
