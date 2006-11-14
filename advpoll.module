@@ -802,12 +802,8 @@ function _advpoll_get_mode($node) {
  */
 function advpoll_insert($node) {
   $mode = _advpoll_get_mode($node);
-  if ($mode == 'poll') {
-    $alg = 'poll';
-  } else if ($mode == 'ranking') {
-    $alg = 'runoff';
-  }
-  db_query("INSERT INTO {advpoll} (nid, mode, uselist, active, runtime, maxchoices, algorithm) VALUES (%d, '%s', %d, %d, %d, %d, '%s')", $node->nid, $mode, $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $alg);
+
+  db_query("INSERT INTO {advpoll} (nid, mode, uselist, active, runtime, maxchoices, algorithm) VALUES (%d, '%s', %d, %d, %d, %d, '%s')", $node->nid, $mode, $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $node->settings['algorithm']);
 
   // create the electoral list if desired
 
