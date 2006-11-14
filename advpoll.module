@@ -778,7 +778,7 @@ function advpoll_update($node) {
   $i = 1;
   foreach ($_POST['choice'] as $choice) {
     if ($choice['label'] != '') {
-      db_query("INSERT INTO {advpoll_choices} (nid, label, vote_offset) VALUES (%d, '%s', %d)", $node->nid, $choice['label'], $i++);
+      db_query("INSERT INTO {advpoll_choices} (nid, label, vote_offset) VALUES (%d, '%s', %d)", $node->nid, check_plain($choice['label']), $i++);
     }
   }
   votingapi_recalculate_results('advpoll', $node->nid);
