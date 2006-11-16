@@ -113,9 +113,10 @@ function advpoll_calculate_results_binary(&$results, $votes, $node) {
 /**
  * Registers the vote as a key for this node using votingapi_set_vote()
  */
-function advpoll_voting_binary_form_submit($node, $form_values) {
+function advpoll_voting_binary_form_submit($form_id, $form_values) {
   $vote = array();
-  if ($form_values['maxchoices'] == 1) {
+  $node = node_load($form_values['nid']);
+  if ($node->maxchoices == 1) {
     // Plurality voting
     $temp->value = 1;
     $temp->tag = $form_values['choice'];
