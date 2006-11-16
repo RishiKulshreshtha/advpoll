@@ -116,24 +116,26 @@ function advpoll_calculate_results_binary(&$results, $votes, $node) {
 function advpoll_voting_binary_form_submit($node, $form_values) {
   $vote = array();
   if ($form_values['maxchoices'] == 1) {
-    // plurality voting
+    // Plurality voting
     $temp->value = 1;
     $temp->tag = $form_values['choice'];
     $temp->value_type = 'option';
     $vote[] = $temp;
   }
   else {
-    // approval voting
+    // Approval voting
     foreach ($form_values['choice'] as $choice => $selected) {
+      unset($temp);
       $temp->value = $choice;
       if ($selected) {
         $temp->value_type = 'option';
-         $temp->tag = $choice;
+        $temp->tag = $choice;
         $temp->value = 1;
         $vote[] = $temp;
       }
     }
   }
+
   votingapi_set_vote('advpoll', $form_values['nid'], $vote);
   drupal_set_message(t('Your vote was registered.'));
 }
