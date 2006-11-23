@@ -142,31 +142,14 @@ function advpoll_delete($node) {
  */
 function advpoll_form($node, $form_values = NULL) {
   $mode = _advpoll_get_mode($node);
-  static $addjs;
-
-  if (!$addjs) {
-    // Only add javascript once, even if _form is called multiple times
-    $js = '$(document).ready(function(){
-  $("#morechoices").hide();
-  $(\'<input type="button" id="add-choice" value="'. t('Add choice') .'"/>\').insertAfter("#morechoices");
-  $("#add-choice").click(function(){
-    var nextChoiceN = $("input.choices").length + 1;
-    var html = \'<div class="form-item">\' +
-      \'<label for="edit-choice-\' + nextChoiceN + \'-label">\' + \''. 
-    // Hack for translating string before we know the specific number
-    t('Choice %n', array('%n' => 'n'))
-    .':\'.replace(\'n\', nextChoiceN) + \'<\/label>\' +
-     \'<input type="text" maxlength="128" name="choice[\' + nextChoiceN + \'][label]"" id="edit-choice-\' + nextChoiceN + \'-label" size="60" class="form-text choices" />\' +
-     \'<\/div>\';
-      
-    $(html).insertBefore("#morechoices").fadeIn();
-    $("#edit-choices").val(nextChoiceN);
-    $("#edit-changed").val($("#edit-changed").val() + 1);
-  });
-});';
   
-    drupal_add_js($js, 'inline');
-    $addjs = true;
+  // Only add javascript once, even if _form is called multiple times
+  static $add_js;
+  if (!$add_js) {
+    // Pass translatable strings
+    drupal_add_js(array('advPoll' => array('addChoice' => t('Add choice'), 'noLimit' => t('No limit'))), 'setting');
+    drupal_add_js(drupal_get_path('module', 'advpoll') .'/advpoll.js', 'module');
+    $add_js = true;
   }
 
   $form['title'] = array(
