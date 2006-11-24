@@ -2,10 +2,10 @@
 
 // Global killswitch
 if (Drupal.jsEnabled) {
-  $(document).ready(function(){  
+  $(document).ready(function() {  
     // Hide "need more choices" checkbox
     $("#morechoices").hide();
-    $('<a href="#">' + Drupal.settings.advPoll.addChoice + '</a>').insertAfter("#morechoices").click(function(){
+    $('<a href="javascript:void(0)">' + Drupal.settings.advPoll.addChoice + '</a>').insertAfter("#morechoices").click(function() {
       
       // New choice input field 
       var newChoiceN = $("input.choices").length + 1;
@@ -24,12 +24,12 @@ if (Drupal.jsEnabled) {
       // Hard-code the HTML (not clone) as .html() doesn't work for select fields in IE and Opera.
       var newMaxChoices = '<select id="edit-settings-maxchoices" class="form-select" name="settings[maxchoices]">';
       // Build the options
-      for(var i = 0;  i <= newChoiceN;  i++)  {
+      for (var i = 0; i <= newChoiceN; i++) {
         var name = (i ? i : Drupal.settings.advPoll.noLimit);
         newMaxChoices += '<option ';
         // Set the option user had selected
-        if(i==selected) {
-          newMaxChoices += ' selected="selected" ';
+        if (i == selected) {
+          newMaxChoices += 'selected="selected" ';
         }
         newMaxChoices += 'value="' + i + '">' + name + '</option>';
       }
