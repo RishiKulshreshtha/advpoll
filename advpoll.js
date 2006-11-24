@@ -5,7 +5,7 @@ if (Drupal.jsEnabled) {
   $(document).ready(function() {  
     // Hide "need more choices" checkbox
     $("#morechoices").hide();
-    $('<a href="javascript:void(0)">' + Drupal.settings.advPoll.addChoice + '</a>').insertAfter("#morechoices").click(function() {
+    $('<a href="#">' + Drupal.settings.advPoll.addChoice + '</a>').insertAfter("#morechoices").click(function() {
       
       // New choice input field 
       var newChoiceN = $("input.choices").length + 1;
