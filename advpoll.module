@@ -147,8 +147,9 @@ function advpoll_form($node, $form_values = NULL) {
   static $add_js;
   if (!$add_js) {
     // Pass translatable strings
-    drupal_add_js(array('advPoll' => array('addChoice' => t('Add choice'), 'noLimit' => t('No limit'))), 'setting');
+    drupal_add_js(array('advPoll' => array('remove' => t('Remove'), 'addChoice' => t('Add choice'), 'noLimit' => t('No limit'))), 'setting');
     drupal_add_js(drupal_get_path('module', 'advpoll') .'/advpoll.js', 'module');
+    drupal_add_css(drupal_get_path('module', 'advpoll') .'/advpoll.css', 'module');
     $add_js = true;
   }
 
