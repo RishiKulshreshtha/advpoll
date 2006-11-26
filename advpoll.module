@@ -66,7 +66,7 @@ function advpoll_block_mostrecent() {
     $output = drupal_render($node->content);
   }
   else {
-    $output .= t('No active Advanced poll.');
+    $output .= t('No active Advanced Poll.');
   }
   return $output;
 }
@@ -155,7 +155,7 @@ function advpoll_form($node, $form_values = NULL) {
 
   $form['title'] = array(
     '#type' => 'textfield',
-    '#title' => ucfirst($mode) . ' ' . t('Question'),
+    '#title' => ucfirst($mode) .' '. t('question'),
     '#required' => TRUE,
     '#default_value' => $node->title,
   );
@@ -228,7 +228,7 @@ function advpoll_form($node, $form_values = NULL) {
 
   $form['settings']['maxchoices'] = array(
     '#type' => 'select',
-    '#title' => t('Maximum Choices'),
+    '#title' => t('Maximum choices'),
     '#default_value' => ($node->maxchoices? $node->maxchoices : 0),
     '#options' => $maxChoiceList,
     '#description' => t('Limits the total number of choices voters may select.')
@@ -262,7 +262,7 @@ function advpoll_form($node, $form_values = NULL) {
   $active = array(1 => t('Active'), 0 => t('Closed'));
   $form['settings']['active'] = array(
     '#type' => 'radios',
-    '#title' => t('Poll Status'),
+    '#title' => t('Status'),
     '#options' => $active,
     '#default_value' => (isset($node->active)? $node->active : 1),
     '#description' => t('When a poll is closed users may no longer vote on it.'),
@@ -272,7 +272,7 @@ function advpoll_form($node, $form_values = NULL) {
 
   $form['settings']['runtime'] = array(
     '#type' => 'select',
-    '#title' => t('Poll duration'),
+    '#title' => t('Duration'),
     '#default_value' => ($node->runtime? $node->runtime : 0),
     '#options' => $_duration,
     '#description' => t('After this period, the poll will be closed automatically.')
@@ -375,7 +375,7 @@ function advpoll_menu($may_cache) {
     foreach ($modes as $mode) {
       $items[] = array(
         'path' => 'node/add/advpoll-' . $mode['name'],
-        'title' => t('advpoll-' . $mode['name']),
+        'title' => t('Advanced Poll - ' . $mode['name']),
         'access' => user_access('create polls'),
       );
     }
@@ -692,7 +692,7 @@ function advpoll_node_info() {
   $info = array();
   foreach ($modes as $mode) {
     $info['advpoll_' . $mode['name']] = array(
-      'name' => t('Advanced poll - ' . $mode['name']),
+      'name' => t('Advanced Poll - ' . $mode['name']),
       'module' => 'advpoll',
       'description' => $mode['description'],
     );
