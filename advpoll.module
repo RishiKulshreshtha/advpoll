@@ -112,7 +112,17 @@ function advpoll_votingapi_calculate(&$results, $votes, $content_type, $content_
  * Closes polls that have exceeded their allowed runtime.
  */
 function advpoll_cron() {
-  $result = db_query('SELECT d.nid FROM {advpoll} d INNER JOIN {node} n ON d.nid = n.nid WHERE (n.created + d.runtime) < '. time() .' AND d.active = 1 AND d.runtime != 0');
+  // Open polls with a startdate that is in the past but that need to be opened
+  $sql = 'SELECT p.nid FROM {advpoll} p WHERE p.startdate IS NOT NULL AND (p.runtime = 0 OR p.startdate + p.runtime >= ' . (time() - time() % (3600 * 24)) . ') AND p.startdate < ' . time() . ' AND p.active = 0';
+  $result = db_query($sql);
+  drupal_set_message($sql);
+  while ($poll = db_fetch_object($result)) {
+    db_query("UPDATE {advpoll} SET active = 1 WHERE nid=%d", $poll->nid);
+  }
+
+  // Close polls
+  $sql = 'SELECT p.nid FROM {advpoll} p INNER JOIN {node} n ON p.nid = n.nid WHERE ((p.startdate IS NULL AND (n.created + p.runtime) < '. time() .') OR (p.startdate IS NOT NULL AND (p.startdate + p.runtime) < ' . time() . ')) AND p.active = 1 AND p.runtime != 0';
+  $result = db_query($sql);
   while ($poll = db_fetch_object($result)) {
     db_query("UPDATE {advpoll} SET active = 0 WHERE nid=%d", $poll->nid);
   }
@@ -270,12 +280,39 @@ function advpoll_form($node, $form_values = NULL) {
 
   $_duration = array(0 => t('Unlimited')) + drupal_map_assoc(array(86400, 172800, 345600, 604800, 1209600, 2419200, 4838400, 9676800, 31536000), 'format_interval');
 
+  $form['settings']['usestart'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use start date'),
+    '#description' => t('Specify a date that the poll opens.'),
+    '#default_value' => (isset($node->startdate)? TRUE :
+      ($form_values['startdate']? $form_values['startdate'] : FALSE)),
+  );
+
+  $date = $form_values['startdate']? $form_values['startdate'] :
+    $node->startdate? $node->startdate : time();
+
+  $form['settings']['startdate'] = array(
+    '#prefix' => '<div class="edit-settings-startdate">',
+    '#suffix' => '</div>',
+    '#type' => 'date',
+    '#title' => t('Starting date'),
+    '#description' => t('Date that the poll opens'),
+    '#default_value' => array('year' => date('Y', $date), 'month' => date('m', $date), 'day' => date('d', $date)),
+  );
+
+  $form['settings']['startdatejs'] = array(
+    '#type' => 'hidden',
+    '#default_value' => $date,
+  );
+
+
+
   $form['settings']['runtime'] = array(
     '#type' => 'select',
     '#title' => t('Duration'),
     '#default_value' => ($node->runtime? $node->runtime : 0),
     '#options' => $_duration,
-    '#description' => t('After this period, the poll will be closed automatically.')
+    '#description' => t('After this period, the poll will be closed automatically. This is relative to the start date if it is specified, otherwise the date the poll was created.')
   );
 
 
@@ -753,9 +790,50 @@ function advpoll_cancel_form($nid) {
  * This is called upon node edition.
  */
 function advpoll_update($node) {
-  db_query("UPDATE {advpoll} SET active=%d, runtime=%d, maxchoices=%d, algorithm='%s', uselist=%d, showvotes=%d WHERE nid = %d", $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['uselist'], $node->settings['showvotes'], $node->nid);
+  if ($node->settings['usestart']) {
+    $node->settings['active'] = _advpoll_calculate_active($node);
+  }
+
+  db_query("UPDATE {advpoll} SET active=%d, runtime=%d, maxchoices=%d, algorithm='%s', uselist=%d, showvotes=%d, startdate=%s WHERE nid = %d",
+    $node->settings['active'], $node->settings['runtime'],
+    $node->settings['maxchoices'], $node->settings['algorithm'],
+    $node->settings['uselist'], $node->settings['showvotes'],
+    $node->settings['usestart']? _advpoll_create_startdate($node): 'NULL',
+    $node->nid);
+
   _advpoll_insert_choices($node);
   votingapi_recalculate_results('advpoll', $node->nid);
+}
+
+
+/**
+ * Determine if node should be active for _insert and _update operations
+ *
+ * This function is needed when changing the startdate and/or duration
+ */
+function _advpoll_calculate_active($node) {
+  $startdate = _advpoll_create_startdate($node);
+  if ($node->settings['runtime']) {
+    // Check that startdate is in the past and that the duration hasn't elapsed
+    $active = time() >= $startdate
+      && time() < $node->settings['runtime'] + $startdate;
+  }
+  else {
+    // Just need to ensure that startdate is in the past
+    $active = time() >= $startdate;
+  }
+  return $active? 1 : 0;
+}
+
+/*
+ * Create a unix timestamp for startdate based on FormAPI inputs
+ */
+function _advpoll_create_startdate($node) {
+  list($hour, $min) = explode(':', date('h:m', time()));
+  return mktime($hour, $min, 0,
+      $node->settings['startdate']['month'],
+      $node->settings['startdate']['day'],
+      $node->settings['startdate']['year']);
 }
 
 function _advpoll_insert_choices($node) {
@@ -787,9 +865,17 @@ function _advpoll_get_mode($node) {
  */
 function advpoll_insert($node) {
   $mode = _advpoll_get_mode($node);
+  if ($node->settings['usestart']) {
+    $node->settings['active'] = _advpoll_calculate_active($node);
+  }
 
-  db_query("INSERT INTO {advpoll} (nid, mode, uselist, active, runtime, maxchoices, algorithm, showvotes) VALUES (%d, '%s', %d, %d, %d, %d, '%s', %d)",
-    $node->nid, $mode, $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['showvotes']);
+  db_query('INSERT INTO {advpoll} (nid, mode, uselist, active, runtime, '
+    . 'maxchoices, algorithm, showvotes, startdate)'
+    . ' VALUES (%d, "%s", %d, %d, %d, %d, "%s", %d, %s)',
+    $node->nid, $mode, $node->settings['uselist'], $node->settings['active'],
+    $node->settings['runtime'], $node->settings['maxchoices'],
+    $node->settings['algorithm'], $node->settings['showvotes'],
+    $node->settings['usestart']? _advpoll_create_startdate($node): 'NULL');
 
   // create the electoral list if desired
 

@@ -24,6 +24,21 @@ if (Drupal.jsEnabled) {
       
       $(newMaxChoices).insertAfter(label);
     }
+
+    function updateStartDate() {
+      if ($("#edit-settings-usestart").attr("checked")) {
+        $(".edit-settings-startdate").show();
+        $("#edit-settings-startdate-year").removeAttr("disabled");
+        $("#edit-settings-startdate-month").removeAttr("disabled");
+        $("#edit-settings-startdate-day").removeAttr("disabled");
+      }
+      else {
+        $(".edit-settings-startdate").hide();
+        $("#edit-settings-startdate-year").attr("disabled", "disabled");
+        $("#edit-settings-startdate-month").attr("disabled", "disabled");
+        $("#edit-settings-startdate-day").attr("disabled", "disabled");
+      }
+    }
     
     // Click event for Remove link, called on pageload and when Add choice is clicked
     function removeChoiceClick() {
@@ -52,11 +67,15 @@ if (Drupal.jsEnabled) {
     
     // Hide "need more choices" checkbox
     $("#morechoices").hide();
+
+    // Disable starting date if necessary
+    updateStartDate();
+    $("#edit-settings-usestart").click(updateStartDate);
     
     // Insert Remove links
     $('<a class="remove-choice" href="#">' + Drupal.settings.advPoll.remove + '</a>').insertAfter("input.choices");
     removeChoiceClick();
-    
+
     // "Backup" of the first choice
     var newChoice = $("input.choices:first").parent().clone();
     
