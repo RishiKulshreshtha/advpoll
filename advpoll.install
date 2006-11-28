@@ -38,6 +38,35 @@ function advpoll_install() {
         ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */");
 
       break;
+    case 'pgsql':
+      db_query("CREATE TABLE {advpoll} (
+          nid integer NOT NULL,
+          quorum integer NOT NULL,
+          mode varchar(32) NOT NULL,
+          uselist smallint DEFAULT '0',
+          active smallint DEFAULT '1',
+          runtime integer NOT NULL DEFAULT '0',
+          maxchoices integer NOT NULL DEFAULT '0',
+          algorithm varchar(100),
+          showvotes smallint,
+          startdate integer,
+          PRIMARY KEY (nid)
+      )");
+
+      db_query("CREATE TABLE {advpoll_electoral_list} ( 
+          nid integer NOT NULL,
+          uid integer NOT NULL,
+          PRIMARY KEY (nid, uid)   
+      )");
+
+      db_query("CREATE TABLE {advpoll_choices} (
+          nid integer NOT NULL,
+          label text NOT NULL,
+          vote_offset smallint DEFAULT NULL,
+          PRIMARY KEY (nid, vote_offset)
+      )");
+      db_query("CREATE INDEX {advpoll_choices}_vote_offset_idx ON {advpoll_choices} (vote_offset)");
+      break;
   }
 }
 
