@@ -241,6 +241,7 @@ function advpoll_form($node, $form_values = NULL) {
     '#title' => t('Maximum choices'),
     '#default_value' => ($node->maxchoices? $node->maxchoices : 0),
     '#options' => $maxChoiceList,
+    '#DANGEROUS_SKIP_CHECK' => true, // allow jQuery to add new options
     '#description' => t('Limits the total number of choices voters may select.')
   );
 
@@ -957,6 +958,16 @@ function advpoll_validate(&$node) {
 
     if ($realchoices < 2) {
       form_set_error("choice][$realchoices][label", t('You must fill in at least two choices.'));
+    }
+
+    // Validate maxchoices since it has #DANGEROUS_SKIP_CHECK set to true
+
+    if ($node->settings['maxchoices'] < 0) {
+      form_set_error('settings][maxchoices]', t('Maximum choices must be a non-negative integer.'));
+    }
+
+    if ($node->settings['maxchoices'] > count($node->choice)) {
+      form_set_error('settings][maxchoices]', t('Maximum choices cannot be larger than the number of choices submitted.'));
     }
   }
 }
