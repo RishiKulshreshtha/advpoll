@@ -49,8 +49,8 @@ function advpoll_block($op = 'list', $delta = 'mostrecent', $edit = array()) {
       		return $block;
 				}
 			}
-			return array();
 		default:
+      return array();
   }
 }
 
@@ -63,7 +63,9 @@ function advpoll_block_mostrecent() {
 	// Check that there is an active poll
 	if (db_num_rows($result) > 0) {
   	$poll = db_fetch_object($result);
-		$output = advpoll_view(node_load($poll->nid), false, false, true);
+    $node = node_load($poll->nid);
+		advpoll_view($node, false, false, true);
+    $output = $node->body;
 	}
 	else {
 		$output .= t('No active Advanced poll.');
