@@ -1,6 +1,8 @@
 // $Id$
 
-Drupal.advpoll = {};
+if (!Drupal.advpoll) {
+  Drupal.advpoll = {};
+}
 
 // Update maxchoices, called when adding and removing choices
 Drupal.advpoll.maxChoices = function(newChoiceN) {

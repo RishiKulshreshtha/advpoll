@@ -16,9 +16,10 @@ function advpoll_algorithms_ranking() {
 }
 
 function advpoll_voting_ranking_form(&$node, $teaser, $page, $block) {
-
   $weight = 0;
   $form = array();
+
+  $form['#attributes'] = array('class' => 'advpoll-vote');
 
   if ($node->choice) {
     $list = array();
@@ -565,6 +566,8 @@ function advpoll_voting_ranking_form_submit($form_id, $form_values) {
   }
 
   votingapi_set_vote('advpoll', $form_values['nid'], $vote);
+  $node = node_load($form_values['nid']);
+  _advpoll_vote_response($node, $_POST['ajax']);
 }
 
 /**
@@ -577,6 +580,7 @@ function advpoll_voting_ranking_form_submit($form_id, $form_values) {
  */
 function advpoll_voting_ranking_form_validate($form_id, $form_values) {
   $node = node_load($form_values['nid']);
+  $ajax = $_POST['ajax'];
 
   $ok = TRUE;
   // array used to check which values are set
@@ -595,36 +599,65 @@ function advpoll_voting_ranking_form_validate($form_id, $form_values) {
     // check range
     if ($intvalue > count($node->choice) || $intvalue < 0) {
       // TODO: clean up this error message
-      form_set_error('choice][' . $key,
-        "Illegal rank for choice $key: $intvalue (min: 1, max: "
-        . count($node->choice) . ')');
+      $msg = "Illegal rank for choice $key: $intvalue (min: 1, max: "
+        . count($node->choice) . ')';
+      if ($ajax) {
+        $errors[] = $msg;
+      }
+      else {
+        form_set_error('choice][' . $key, $msg);
+      }
       $ok = FALSE;
     }
   }
   
   // too many choices ranked
   if ($node->maxchoices != 0 && $numchoices > $node->maxchoices) {
-    form_set_error('choice',
-      t('%num choices were selected but only %max are allowed.',
-        array('%num' => $numchoices, '%max' => $node->maxchoices)));
+    $msg = t('%num choices were selected but only %max are allowed.',
+        array('%num' => $numchoices, '%max' => $node->maxchoices));
+    if ($ajax) {
+      $errors[] = $msg;
+    }
+    else {
+      form_set_error('choice', $msg);
+    }
     $ok = false;
   }
 
   // not enough choices ranked
   $minchoices = 1;
   if ($numchoices < $minchoices) {
-    form_set_error('choice', t('At least one choice must be selected.'));
+    $msg = t('At least one choice must be selected.');
+    if ($ajax) {
+      $errors[] = $msg;
+    }
+    else {
+      form_set_error('choice', $msg);
+    }
     $ok = false;
   }
 
   // Check that multiple choices are not set to the same value
   foreach ($setvalues as $val => $count) {
     if ($val != 0 && $count > 1) {
-      form_set_error('choice',
-        t('Multiple choices given the rank of %val.', array('%val' => $val)));
+      $msg = t('Multiple choices given the rank of %val.', array('%val' => $val));
+      if ($ajax) {
+        $errors[] = $msg;
+      }
+      else {
+        form_set_error('choice', $msg);
+      }
+    
       $ok = false;
     }
   }
-
-  return $ok;
+  // If the form was posted with AJAX and has errors, print the error message.
+  if ($ajax && !$ok) {
+    print drupal_to_js(array('response' => '<div class="messages error">'. implode('<br />', $errors) .'</div>', 'error' => TRUE));
+    exit;
+  }
+  // Do as usual.
+  else {
+    return $ok;
+  }
 }

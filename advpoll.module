@@ -158,7 +158,7 @@ function advpoll_form($node, $form_values = NULL) {
   if (!$add_js) {
     // Pass translatable strings
     drupal_add_js(array('advPoll' => array('remove' => t('Remove'), 'addChoice' => t('Add choice'), 'noLimit' => t('No limit'))), 'setting');
-    drupal_add_js(drupal_get_path('module', 'advpoll') .'/advpoll.js', 'module');
+    drupal_add_js(drupal_get_path('module', 'advpoll') .'/advpoll-form.js', 'module');
     drupal_add_css(drupal_get_path('module', 'advpoll') .'/advpoll.css', 'module');
     $add_js = true;
   }
@@ -1020,12 +1020,18 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
         $node, $teaser, $page, $block)
       //. advpoll_view_electoral_list($node, $teaser),
     );
+    static $addjs = TRUE;
+    if ($addjs) {
+      // Add javascript for posting voting forms with ajax
+      drupal_add_js(drupal_get_path('module', 'advpoll') .'/advpoll-vote.js', 'module');
+      drupal_add_js(drupal_get_path('module', 'advpoll') .'/jquery.form.js', 'module');
+      $addjs = FALSE;
+    }
   }
-  else if (_advpoll_can_view_results($node)) {
+  else {
     // Show results only if the user has voted or poll is closed
     $node->content['body'] = array(
       '#value' => advpoll_view_results($node, $teaser, $page, $block)
-        //. advpoll_view_electoral_list($node, $teaser),
     );  
   }
 
@@ -1086,13 +1092,19 @@ function theme_advpoll_results($title, $results, $votes, $links, $block, $nid, $
     $output .= '<div class="poll">';
     $output .= $results;
     $output .= '<div class="total">'. t('Total votes: %votes', array('%votes' => $votes)) .'</div>';
-    if ($voted && $cancel_vote && user_access('cancel own vote') && !$block) {
-      $output .= drupal_get_form('advpoll_cancel_form', $nid);
-    }
     $output .= '</div>';
   }
   return $output;
 } 
+
+function _advpoll_show_cancel_form($node, $block) {
+  $output = '';
+  if ($node->voted && $node->cancel_vote && user_access('cancel own vote')
+    && !$block) {
+    $output .= drupal_get_form('advpoll_cancel_form', $node->nid);
+  }
+  return $output;
+}
 
 function theme_advpoll_bar($title, $percentage, $votes, $block) {
   if ($block) {
@@ -1121,6 +1133,25 @@ function advpoll_results() {
     drupal_not_found();
   }
 }
+
+function _advpoll_vote_response($node, $use_ajax = FALSE) {
+  $msg = t('Your vote was registered.');
+  $node->voted = true;
+  $node->cancel_vote = true;
+  // Ajax response
+  if ($use_ajax) {
+    $ajax_output = '<div class="messages status">'. $msg .'</div>';
+    $ajax_output .= advpoll_view_results($node, NULL, NULL, NULL);
+    $ajax_output = str_replace("\n", '', $ajax_output);
+    print drupal_to_js(array('response' => $ajax_output));
+    exit();
+  }
+  // Usual response
+  else {
+    drupal_set_message($msg);
+  }
+}
+
 /**
  * Show results of the vote
  *
@@ -1130,13 +1161,17 @@ function advpoll_results() {
  */
 function advpoll_view_results(&$node, $teaser, $page, $block) {
   $mode = _advpoll_get_mode($node);
-  if (function_exists("advpoll_view_results_$mode")) {
-    $output =  call_user_func("advpoll_view_results_$mode", $node,
-      $teaser, $page, $block);
-    return theme('advpoll_results', check_plain($node->title),
-      $output['results'], $output['votes'], $node->links, $block, $node->nid,
-      $node->voted, $node->cancel_vote);
+  if (_advpoll_can_view_results($node)) {
+    if (function_exists("advpoll_view_results_$mode")) {
+      $results = call_user_func("advpoll_view_results_$mode", $node,
+        $teaser, $page, $block);
+      $output .= theme('advpoll_results', check_plain($node->title),
+        $results['results'], $results['votes'], $node->links, $block,
+        $node->nid, $node->voted, $node->cancel_vote);
+    }
   }
+  $output .= _advpoll_show_cancel_form($node, $block);
+  return $output;
 }
 
 /**

@@ -17,6 +17,8 @@ function advpoll_algorithms_binary() {
  * This creates a list of choices to allow the user to vote on choices.
  */
 function advpoll_voting_binary_form(&$node, $teaser, $page, $block) {
+  $form['#attributes'] = array('class' => 'advpoll-vote');
+  
   if ($node->choice) {
     $list = array();
     foreach ($node->choice as $i => $choice) {
@@ -138,7 +140,7 @@ function advpoll_voting_binary_form_submit($form_id, $form_values) {
   }
 
   votingapi_set_vote('advpoll', $form_values['nid'], $vote);
-  drupal_set_message(t('Your vote was registered.'));
+  _advpoll_vote_response($node, $_POST['ajax']);
 }
 
 /**
@@ -149,10 +151,17 @@ function advpoll_voting_binary_form_submit($form_id, $form_values) {
 function advpoll_voting_binary_form_validate($form_id, $form_values) {
   $ok = true;
   $node = node_load($form_values['nid']);
+  $ajax = $_POST['ajax'];
   if ($node->maxchoices == 1) {
     // plurality voting
     if (!($ok = array_key_exists($form_values['choice'], $node->choice))) {
-      form_set_error('choice[', 'At least one choice must be selected.');
+      $msg = t('At least one choice must be selected.');
+      if ($ajax) {
+        $errors[] = $msg;
+      }
+      else {
+        form_set_error('choice[', $msg);
+      }
       $ok = false;
     }
   }
@@ -170,19 +179,38 @@ function advpoll_voting_binary_form_validate($form_id, $form_values) {
   
     // too many choices ranked
     if ($node->maxchoices != 0 && $numchoices > $node->maxchoices) {
-      form_set_error('choice[',
-        t('%num choices were selected but only %max are allowed.',
-          array('%num' => $numchoices, '%max' => $node->maxchoices)));
+      $msg = t('%num choices were selected but only %max are allowed.',
+        array('%num' => $numchoices, '%max' => $node->maxchoices));
+      if ($ajax) {
+        $errors[] = $msg;
+      }
+      else {
+        form_set_error('choice[', $msg);
+      }
       $ok = false;
     }
 
     // not enough choices ranked
     $minchoices = 1;
     if ($numchoices < $minchoices) {
-      form_set_error('choice[', t('At least one choice must be selected.'));
+      $msg = t('At least one choice must be selected.');
+      if ($ajax) {
+        $errors[] = $msg;
+      }
+      else {
+        form_set_error('choice[', $msg);
+      }
       $ok = false;
     }
   }
-  return $ok;
+  // If the form was posted with AJAX and has errors, print the error message.
+  if ($ajax && !$ok) {
+    print drupal_to_js(array('response' => '<div class="messages error">'. implode('<br />', $errors) .'</div>', 'error' => TRUE));
+    exit;
+  }
+  // Do as usual.
+  else {
+    return $ok;
+  }
 }
 
