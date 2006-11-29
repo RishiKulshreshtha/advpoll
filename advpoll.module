@@ -58,7 +58,7 @@ function advpoll_block($op = 'list', $delta = 'mostrecent', $edit = array()) {
  */
 function advpoll_block_mostrecent() {
   $output = '';
-  $result = db_query('SELECT nid FROM {advpoll} WHERE active=1 ORDER BY nid DESC LIMIT 1');
+  $result = db_query('SELECT MAX(n.nid) nid FROM {node} n INNER JOIN {advpoll} p ON p.nid = n.nid WHERE n.status = 1 AND p.active=1');
   // Check that there is an active poll
   if (db_num_rows($result) > 0) {
     $poll = db_fetch_object($result);
