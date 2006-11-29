@@ -10,8 +10,6 @@ define('ADVPOLL_DEFAULT_ELECTORAL_LIST', 0);
 // always, aftervote, or afterclose
 define('ADVPOLL_DEFAULT_VIEW_RESULTS', 'aftervote');
 
-define('DRUPAL_4_7', function_exists('form_render') && !function_exists('drupal_render'));
-
 /**
  * Implementation of hook_access().
  */
@@ -125,7 +123,7 @@ function advpoll_delete($node) {
 function advpoll_form($node) {
 	$mode = _advpoll_get_mode($node);
 
-	if (!DRUPAL_4_7 || function_exists('_drupal_add_js')) {
+	if (function_exists('_drupal_add_js')) {
 		$jQuery = TRUE;
 		// Using 5.0 or 4.7 with the jQuery patch
 		drupal_add_js("$(document).ready(function(){
@@ -410,16 +408,6 @@ function advpoll_menu($may_cache) {
 			'type' => MENU_CALLBACK
 		);
 		
-		if (!DRUPAL_4_7) {
-			$items[] = array(
-				'path' => 'admin/settings/advanced-poll',
-				'title' => t('Advanced Poll'),
-				'description' => t('Update settings for Advanced Poll'),
-				'callback' => 'drupal_get_form',
-				'callback_arguments' => 'advpoll_admin_settings',
-				'access' => user_access('administer advanced poll'),
-			);
-		}
   }
 	else {
 		// need to be able to extract the nid
@@ -432,7 +420,7 @@ function advpoll_menu($may_cache) {
 				if ($node->active && !$node->voted
 					&& _advpoll_can_view_results($node)) {
 					$items[] = array('path' => 'node/' . $nid . '/results',
-						'title' => t('Results'),
+						'title' => t('results'),
 						'callback' => 'advpoll_results',
 						'access' => user_access('view polls'),
 						'weight' => 3,
@@ -444,7 +432,7 @@ function advpoll_menu($may_cache) {
 				if ($node->showvotes) {
 					$items[] = array(
 						'path' => 'node/' . $nid . '/votes',
-						'title' => t('Votes'),
+						'title' => t('votes'),
 						'callback' => 'advpoll_tab_votes',
 						'access' => user_access('inspect all votes'),
 						'weight' => 3,
@@ -456,7 +444,7 @@ function advpoll_menu($may_cache) {
 				if ($node->uselist) {
 					$items[] = array(
 						'path' => 'node/' . $nid . '/electoral_list',
-						'title' => t('Electoral list'),
+						'title' => t('electoral list'),
 						'callback' => 'advpoll_tab_electoral_list',
 						'access' => user_access('view polls'),
 						'weight' => 3,
@@ -724,20 +712,6 @@ function advpoll_perm() {
  * Implementation of hook_settings() for 4.7.
  */
 function advpoll_settings() {
-	return advpoll_settings_helper();
-}
-
-/**
- * Settings page for Drupal 5.0
- */
-function advpoll_admin_settings() {
-	return system_settings_form('advpoll_settings_helper');
-}
-
-/**
- * Abstract settings functionality for 5.0 and 4.7
- */
-function advpoll_settings_helper() {
 	$enabled = array(0 => t('Disabled'), 1 => t('Enabled'));
 
 	$form['main']['advpoll_default_electoral_list'] = array(
@@ -989,17 +963,15 @@ function advpoll_view_electoral_list($node, $teaser = FALSE) {
  * Render the voting form.
  */
 function theme_advpoll_view_voting($form) {
-	// maintain backwards compatibility with drupal 4.7
-	$render = DRUPAL_4_7? 'form_render' : 'drupal_render';
   $output .= '<div class="advpoll">';
   $output .= '  <div class="choice-form">';
   $output .= '    <div class="choices">';
-  $output .= $render($form['choice']);
+  $output .= form_render($form['choice']);
   $output .= '    </div>';
-  $output .= $render($form['nid']);
-  $output .= $render($form['vote']);
+  $output .= form_render($form['nid']);
+  $output .= form_render($form['vote']);
   $output .= '  </div>';
-  $output .= $render($form);
+  $output .= form_render($form);
   $output .= '</div>';
   return $output;
 }
