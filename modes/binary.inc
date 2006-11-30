@@ -71,6 +71,7 @@ function advpoll_voting_binary_form(&$node, $teaser, $page, $block) {
   }
 
   $form['#action'] = url('node/'. $node->nid);
+  $form['#multistep'] = TRUE;
   return $form;
 }
 

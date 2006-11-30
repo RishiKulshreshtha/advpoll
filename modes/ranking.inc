@@ -88,6 +88,7 @@ function advpoll_voting_ranking_form(&$node, $teaser, $page, $block) {
     );
   }
 
+  $form['#multistep'] = TRUE;
   $form['#action'] = url('node/'. $node->nid);
   return $form;
 }

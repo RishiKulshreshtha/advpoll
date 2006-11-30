@@ -996,14 +996,7 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
   if ($block) {
     // No 'readmore' link
     $node->readmore = FALSE;
-    //$links = module_invoke_all('links', 'node', $node, 1);
-    $links[] = array(
-      'title' => 'Older polls',
-      'href' => 'polls',
-      'attributes' => array('title' =>
-        t('View the list of polls on this site.')),
-    );
-    $node->links = $links;
+    $node->links[] = _advpoll_block_oldlink();
   }
 
   // Previewing a node, so don't show results
@@ -1017,7 +1010,8 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
     // User hasn't voted and we're not on the results tab
 
     if ($block) {
-      $node->links[] = _advpoll_block_links($node);
+      // Note: currently this isn't displayed anywhere
+      $node->links[] = _advpoll_block_resultslink($node);
     }
 
     $node->content['body'] = array(
@@ -1043,12 +1037,20 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
   return $node;
 }
 
-function _advpoll_block_links($node) {
+function _advpoll_block_resultslink($node) {
   return array(
-        'title' => t('Results'),
-        'href' => 'node/'. $node->nid .'/results',
-        'attributes' => array('title' => t('View the current poll results.')),
-      );
+    'title' => t('Results'),
+    'href' => 'node/'. $node->nid .'/results',
+    'attributes' => array('title' => t('View the current poll results.')),
+  );
+}
+
+function _advpoll_block_oldlink() {
+  return array(
+    'title' => t('Older polls'),
+    'href' => 'polls',
+    'attributes' => array('title' => t('View the list of polls on this site.')),
+  );
 }
 
 /**
@@ -1152,7 +1154,10 @@ function _advpoll_vote_response($node, $form_values) {
   // Ajax response
   if ($form_values['ajax']) {
     list($node->voted, $node->cancel_vote) = _advpoll_user_voted($node);
-    $ajax_output = '<div class="messages status">'. $msg .'</div>';
+    $ajax_output = '<div class="messages status">'. $msg . '</div>';
+    if ($form_values['in_block']) {
+      $node->links[] = _advpoll_block_oldlink();
+    }
     $ajax_output .= advpoll_view_results($node, NULL, NULL, $form_values['in_block']);
     $ajax_output = str_replace("\n", '', $ajax_output);
     print drupal_to_js(array('response' => $ajax_output));
