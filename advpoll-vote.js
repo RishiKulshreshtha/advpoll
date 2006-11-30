@@ -1,6 +1,6 @@
 // $Id$
 
-if (!Drupal.advpoll) {
+if (typeof(Drupal) == "undefined" || !Drupal.advpoll) {
   Drupal.advpoll = {};
 }
 
@@ -24,7 +24,8 @@ Drupal.advpoll.attachVoteAjax = function() {
       }
     };
     // Tell the server we are passing the form values with ajax and attach the function
-    $(this).prepend('<input type="hidden" name="ajax" value="true" />').ajaxForm(options);
+    $("input.ajax", thisForm).val(true);
+    $(this).ajaxForm(options);
   });
 }
 

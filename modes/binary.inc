@@ -18,6 +18,11 @@ function advpoll_algorithms_binary() {
  */
 function advpoll_voting_binary_form(&$node, $teaser, $page, $block) {
   $form['#attributes'] = array('class' => 'advpoll-vote');
+  $form['ajax'] = array(
+    '#type' => 'hidden',
+    '#value' => 'false',
+    '#attributes' => array('class' => 'ajax'),
+  );
   
   if ($node->choice) {
     $list = array();
@@ -140,7 +145,7 @@ function advpoll_voting_binary_form_submit($form_id, $form_values) {
   }
 
   votingapi_set_vote('advpoll', $form_values['nid'], $vote);
-  _advpoll_vote_response($node, $_POST['ajax']);
+  _advpoll_vote_response($node, $form_values['ajax']);
 }
 
 /**
@@ -151,7 +156,7 @@ function advpoll_voting_binary_form_submit($form_id, $form_values) {
 function advpoll_voting_binary_form_validate($form_id, $form_values) {
   $ok = true;
   $node = node_load($form_values['nid']);
-  $ajax = $_POST['ajax'];
+  $ajax = $form_values['ajax'];
   if ($node->maxchoices == 1) {
     // plurality voting
     if (!($ok = array_key_exists($form_values['choice'], $node->choice))) {

@@ -20,6 +20,12 @@ function advpoll_voting_ranking_form(&$node, $teaser, $page, $block) {
   $form = array();
 
   $form['#attributes'] = array('class' => 'advpoll-vote');
+  $form['ajax'] = array(
+    '#type' => 'hidden',
+    '#value' => 'false',
+    '#attributes' => array('class' => 'ajax'),
+  );
+
 
   if ($node->choice) {
     $list = array();
@@ -567,7 +573,7 @@ function advpoll_voting_ranking_form_submit($form_id, $form_values) {
 
   votingapi_set_vote('advpoll', $form_values['nid'], $vote);
   $node = node_load($form_values['nid']);
-  _advpoll_vote_response($node, $_POST['ajax']);
+  _advpoll_vote_response($node, $form_values['ajax']);
 }
 
 /**
@@ -580,7 +586,7 @@ function advpoll_voting_ranking_form_submit($form_id, $form_values) {
  */
 function advpoll_voting_ranking_form_validate($form_id, $form_values) {
   $node = node_load($form_values['nid']);
-  $ajax = $_POST['ajax'];
+  $ajax = $form_values['ajax'];
 
   $ok = TRUE;
   // array used to check which values are set
