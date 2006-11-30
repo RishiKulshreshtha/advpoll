@@ -910,7 +910,8 @@ function advpoll_insert($node) {
  * Callback to display a reset votes confirmation form
  */ 
 function advpoll_reset_confirm() {
-  $edit = $_POST['edit'];
+  global $form_values;
+  $edit = $form_values['edit'];
   $edit['nid'] = $edit['nid']? $edit['nid'] : arg(1);
   $node = node_load($edit['nid']);
 
@@ -945,7 +946,8 @@ function advpoll_reset_confirm_submit($form_id, $form_values) {
  * Implementation of hook_validate().
  */
 function advpoll_validate(&$node) {
-  if ($_POST['op'] == t('Reset votes')) {
+  global $form_values;
+  if ($form_values['op'] == t('Reset votes')) {
     drupal_goto('node/' . $node->nid . '/reset');
   }
   else {
