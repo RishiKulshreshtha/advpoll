@@ -200,7 +200,7 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
     }
 
   }
-  return array('results' => $output, 'votes' => $poll['total_voters']);
+  return array('results' => $output, 'votes' => $poll['total_votes']);
 }
 
 /**
@@ -237,7 +237,7 @@ function advpoll_calculate_results_ranking(&$cache, $votes, $node) {
   }
 
   // Cache total votes
-  $cache['_advpoll'][0]['total_voters'] = $results->totalVotes;
+  $cache['_advpoll'][0]['total_votes'] = $results->totalVotes;
 
   // Cache total points (if it exists)
   if (isset($results->totalPoints)) {
