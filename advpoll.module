@@ -369,10 +369,19 @@ function advpoll_load($node) {
   }
   $poll->choices = count($poll->choice);
 
+  list($poll->voted, $poll->cancel_vote) = _advpoll_user_voted($node);
+  return $poll;
+}
+
+/**
+ * Check if a user has voted on a poll
+ *
+ * @return array indicating if user voted and, if so, if the vote is cancellable
+ */
+function _advpoll_user_voted($node) {
+  global $user;
   $poll->voted = FALSE;
   $poll->cancel_vote = FALSE;
-
-  // See if user has voted
   if ($user->uid) {
     $poll->voted = (count(votingapi_get_user_votes('advpoll', $node->nid)) > 0);
     if ($poll->voted) {
@@ -392,8 +401,7 @@ function advpoll_load($node) {
       }
     }
   }
-
-  return $poll;
+  return array($poll->voted, $poll->cancel_vote);
 }
 
 /**
@@ -1009,20 +1017,17 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
     // User hasn't voted and we're not on the results tab
 
     if ($block) {
-      $node->links[] = array(
-        'title' => t('Results'),
-        'href' => 'node/'. $node->nid .'/results',
-        'attributes' => array('title' => t('View the current poll results.')),
-      );
+      $node->links[] = _advpoll_block_links($node);
     }
+
     $node->content['body'] = array(
       '#value' => drupal_get_form('advpoll_voting_' . $node->mode . '_form',
         $node, $teaser, $page, $block)
-      //. advpoll_view_electoral_list($node, $teaser),
     );
     static $addjs = TRUE;
     if ($addjs) {
       // Add javascript for posting voting forms with ajax
+      drupal_add_js(array('advPoll' => array('vote' => t('Vote'))), 'setting');
       drupal_add_js(drupal_get_path('module', 'advpoll') .'/advpoll-vote.js', 'module');
       drupal_add_js(drupal_get_path('module', 'advpoll') .'/jquery.form.js', 'module');
       $addjs = FALSE;
@@ -1036,6 +1041,14 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
   }
 
   return $node;
+}
+
+function _advpoll_block_links($node) {
+  return array(
+        'title' => t('Results'),
+        'href' => 'node/'. $node->nid .'/results',
+        'attributes' => array('title' => t('View the current poll results.')),
+      );
 }
 
 /**
@@ -1134,14 +1147,13 @@ function advpoll_results() {
   }
 }
 
-function _advpoll_vote_response($node, $use_ajax = FALSE) {
+function _advpoll_vote_response($node, $form_values) {
   $msg = t('Your vote was registered.');
-  $node->voted = true;
-  $node->cancel_vote = true;
   // Ajax response
-  if ($use_ajax) {
+  if ($form_values['ajax']) {
+    list($node->voted, $node->cancel_vote) = _advpoll_user_voted($node);
     $ajax_output = '<div class="messages status">'. $msg .'</div>';
-    $ajax_output .= advpoll_view_results($node, NULL, NULL, NULL);
+    $ajax_output .= advpoll_view_results($node, NULL, NULL, $form_values['in_block']);
     $ajax_output = str_replace("\n", '', $ajax_output);
     print drupal_to_js(array('response' => $ajax_output));
     exit();

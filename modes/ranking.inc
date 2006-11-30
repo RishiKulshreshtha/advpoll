@@ -16,13 +16,14 @@ function advpoll_algorithms_ranking() {
 }
 
 function advpoll_voting_ranking_form(&$node, $teaser, $page, $block) {
-  $weight = 0;
   $form = array();
 
+  static $ranking_form_count = 0; 
+  $form['#id'] = 'advpoll_voting_ranking_form-' . $ranking_form_count++;
   $form['#attributes'] = array('class' => 'advpoll-vote');
+
   $form['ajax'] = array(
     '#type' => 'hidden',
-    '#value' => 'false',
     '#attributes' => array('class' => 'ajax'),
   );
 
@@ -67,17 +68,23 @@ function advpoll_voting_ranking_form(&$node, $teaser, $page, $block) {
     }
   }
 
+  $form['in_block'] = array(
+    '#type' => 'hidden',
+    '#value' => $block,
+  );
+
   $form['nid'] = array(
     '#type' => 'hidden',
     '#value' => $node->nid,
-    '#weight' => $weight++,
+    '#attributes' => array('class' => 'edit-nid'),
   );
 
   if (!$node->in_preview) {
+    static $ranking_vote_count = 0;
     $form['vote'] = array(
       '#type' => 'submit',
       '#value' => t('Vote'),
-      '#weight' => $weight++,
+      '#attributes' => array('id' => 'edit-vote-rank-' . $ranking_vote_count++),
     );
   }
 
@@ -573,7 +580,7 @@ function advpoll_voting_ranking_form_submit($form_id, $form_values) {
 
   votingapi_set_vote('advpoll', $form_values['nid'], $vote);
   $node = node_load($form_values['nid']);
-  _advpoll_vote_response($node, $form_values['ajax']);
+  _advpoll_vote_response($node, $form_values);
 }
 
 /**
@@ -587,8 +594,22 @@ function advpoll_voting_ranking_form_submit($form_id, $form_values) {
 function advpoll_voting_ranking_form_validate($form_id, $form_values) {
   $node = node_load($form_values['nid']);
   $ajax = $form_values['ajax'];
-
   $ok = TRUE;
+
+  // Check if user has already voted
+  list($voted, $cancel_vote) = _advpoll_user_voted($node);
+  if ($voted) {
+    $msg = t('You have already voted in this poll.');
+    if ($ajax) {
+      $errors[] = $msg;
+    }
+    else {
+      form_set_error('choice[', $msg);
+    }
+    $ok = FALSE;
+  }
+
+
   // array used to check which values are set
   $setvalues = array();
   

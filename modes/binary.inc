@@ -17,13 +17,15 @@ function advpoll_algorithms_binary() {
  * This creates a list of choices to allow the user to vote on choices.
  */
 function advpoll_voting_binary_form(&$node, $teaser, $page, $block) {
+  static $binary_form_count = 0; 
+  $form['#id'] = 'advpoll_voting_binary_form-' . $binary_form_count++;
   $form['#attributes'] = array('class' => 'advpoll-vote');
+  
   $form['ajax'] = array(
     '#type' => 'hidden',
-    '#value' => 'false',
     '#attributes' => array('class' => 'ajax'),
   );
-  
+
   if ($node->choice) {
     $list = array();
     foreach ($node->choice as $i => $choice) {
@@ -48,15 +50,23 @@ function advpoll_voting_binary_form(&$node, $teaser, $page, $block) {
     }
   }
 
+  $form['in_block'] = array(
+    '#type' => 'hidden',
+    '#value' => $block,
+  );
+
   $form['nid'] = array(
     '#type' => 'hidden',
     '#value' => $node->nid,
+    '#attributes' => array('class' => 'edit-nid'),
   );
 
   if (!$node->in_preview) {
+    static $binary_vote_count = 0;
     $form['vote'] = array(
       '#type' => 'submit',
       '#value' => t('Vote'),
+      '#attributes' => array('id' => 'edit-vote-binary-'. $binary_vote_count++),
     );
   }
 
@@ -145,7 +155,7 @@ function advpoll_voting_binary_form_submit($form_id, $form_values) {
   }
 
   votingapi_set_vote('advpoll', $form_values['nid'], $vote);
-  _advpoll_vote_response($node, $form_values['ajax']);
+  _advpoll_vote_response($node, $form_values);
 }
 
 /**
@@ -154,9 +164,23 @@ function advpoll_voting_binary_form_submit($form_id, $form_values) {
  * @returns boolean true if the form is valid
  */
 function advpoll_voting_binary_form_validate($form_id, $form_values) {
-  $ok = true;
   $node = node_load($form_values['nid']);
   $ajax = $form_values['ajax'];
+  $ok = TRUE;
+
+  // Check if user has already voted
+  list($voted, $cancel_vote) = _advpoll_user_voted($node);
+  if ($voted) {
+    $msg = t('You have already voted in this poll.');
+    if ($ajax) {
+      $errors[] = $msg;
+    }
+    else {
+      form_set_error('choice[', $msg);
+    }
+    $ok = FALSE;
+  }
+
   if ($node->maxchoices == 1) {
     // plurality voting
     if (!($ok = array_key_exists($form_values['choice'], $node->choice))) {
@@ -167,7 +191,7 @@ function advpoll_voting_binary_form_validate($form_id, $form_values) {
       else {
         form_set_error('choice[', $msg);
       }
-      $ok = false;
+      $ok = FALSE;
     }
   }
   else {
