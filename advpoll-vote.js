@@ -23,9 +23,8 @@ Drupal.advpoll.attachVoteAjax = function() {
         }
         else {
           $(thisForm).hide(); 
-          // Insert messages last to prevent "blinking" when fading in, hence the extra code
-          var response = $(data.response).insertBefore(thisForm)[0];
-          $(data.statusMsgs).insertBefore(response).fadeIn();
+          $(data.statusMsgs).insertBefore(thisForm).fadeIn();
+          $(data.response).insertBefore(thisForm);
         }
 
         // Re-enable the Vote button if there was an error message
