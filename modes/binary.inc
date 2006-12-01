@@ -231,7 +231,7 @@ function advpoll_voting_binary_form_validate($form_id, $form_values) {
   }
   // If the form was posted with AJAX and has errors, print the error message.
   if ($ajax && !$ok) {
-    print drupal_to_js(array('response' => '<div class="messages error">'. implode('<br />', $errors) .'</div>', 'error' => TRUE));
+    print drupal_to_js(array('errors' => '<div class="messages error">'. implode('<br />', $errors) .'</div>'));
     exit;
   }
   // Do as usual.

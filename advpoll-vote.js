@@ -16,12 +16,17 @@ Drupal.advpoll.attachVoteAjax = function() {
       after: function(data) {
         // Remove previous messages
         $("div.messages").remove(); 
-        // Remove the voting form if validating passes
-        if (!data.error) {
-          $(thisForm).hide(); 
+        
+        // Insert response
+        if (data.errors) {
+          $(data.errors).insertBefore(thisForm).fadeIn();
         }
-        // Insert the response (voting result or error message)
-        $(data.response).insertBefore(thisForm);
+        else {
+          $(thisForm).hide(); 
+          // Insert messages last to prevent "blinking" when fading in, hence the extra code
+          var response = $(data.response).insertBefore(thisForm)[0];
+          $(data.statusMsgs).insertBefore(response).fadeIn();
+        }
 
         // Re-enable the Vote button if there was an error message
         $(submitSelect, thisForm).removeAttr("disabled");

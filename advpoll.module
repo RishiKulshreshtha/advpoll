@@ -1160,13 +1160,13 @@ function _advpoll_vote_response($node, $form_values) {
   // Ajax response
   if ($form_values['ajax']) {
     list($node->voted, $node->cancel_vote) = _advpoll_user_voted($node);
-    $ajax_output = '<div class="messages status">'. $msg . '</div>';
     if ($form_values['in_block']) {
       $node->links[] = _advpoll_block_oldlink();
     }
     $ajax_output .= advpoll_view_results($node, NULL, NULL, $form_values['in_block']);
+    // Remove linebreaks as they will break jQuery's insert-HTML methods
     $ajax_output = str_replace("\n", '', $ajax_output);
-    print drupal_to_js(array('response' => $ajax_output));
+    print drupal_to_js(array('statusMsgs' => '<div class="messages status">'. $msg .'</div>', 'response' => $ajax_output));
     exit();
   }
   // Usual response
