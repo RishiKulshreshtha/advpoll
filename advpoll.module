@@ -452,6 +452,10 @@ function advpoll_menu($may_cache) {
     );
   }
   else {
+    // Use Poll modules stylesheet, no need to duplicate at this point 
+    // We put this in !$may_cache so it's only added once per request
+    drupal_add_css(drupal_get_path('module', 'poll') .'/poll.css');
+    
     // need to be able to extract the nid
     if (arg(0) == 'node' && is_numeric(arg(1))) {
       $nid = arg(1);
