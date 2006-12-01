@@ -36,7 +36,7 @@ Drupal.advpoll.attachVoteAjax = function() {
             $(submitSelect, this).attr("disabled", "disabled");
           }
         });
-      },
+      }
     };
     // Tell the server we are passing the form values with ajax and attach the function
     $("input.ajax", thisForm).val(true);
