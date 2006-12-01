@@ -136,7 +136,6 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
     }
 
     if ($node->algorithm == 'borda count') {
-      $output .= '<div class="poll">';
       for ($i = 0; $i < count($ranking); $i++) {
         $firstOne = true;
         $thisRank = '';
@@ -152,7 +151,6 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
         $output .= theme('advpoll_bar',  $thisRank, $percentage, $ranking[$i]->viewscore, $block);
 
       }
-      $output .= '</div>';
     }
     else {
       $output .= '<ol>';

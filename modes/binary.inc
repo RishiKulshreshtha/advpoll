@@ -98,7 +98,6 @@ function advpoll_view_results_binary($node, $teaser, $page, $block) {
 
   if ($node->choice && $total_votes > 0) {
     // display results for each possible choice
-    $output .= '<div class="poll">';
     foreach ($node->choice as $i => $ch) {
       if (!$votes[$i]) {
         $votes[$i] = 0;
@@ -106,10 +105,7 @@ function advpoll_view_results_binary($node, $teaser, $page, $block) {
       $percentage = round(100 * $votes[$i] / $total_votes, 0);
       $output .= theme('advpoll_bar',  check_plain($ch['label']), $percentage, format_plural($votes[$i], '1 vote', '@count votes'), $block);
     }
-    $output .= '</div>';
   }
-
-  $output .= '<br />';
 
   return array('results' => $output, 'votes' => $total_votes);
 }
