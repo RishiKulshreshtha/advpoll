@@ -380,12 +380,12 @@ function advpoll_load($node) {
  */
 function _advpoll_user_voted($node) {
   global $user;
-  $poll->voted = FALSE;
-  $poll->cancel_vote = FALSE;
+  $voted = FALSE;
+  $cancel_vote = FALSE;
   if ($user->uid) {
-    $poll->voted = (count(votingapi_get_user_votes('advpoll', $node->nid)) > 0);
-    if ($poll->voted) {
-      $poll->cancel_vote = TRUE;
+    $voted = (count(votingapi_get_user_votes('advpoll', $node->nid)) > 0);
+    if ($voted) {
+      $cancel_vote = TRUE;
     }
   }
   else {
@@ -393,15 +393,15 @@ function _advpoll_user_voted($node) {
       . 'WHERE content_id=%d AND content_type="advpoll" AND hostname="%s"',
       $node->nid, $_SERVER['REMOTE_ADDR']);
     if (db_num_rows($result) > 0) {
-      $poll->voted = TRUE;
+      $voted = TRUE;
       $obj = db_fetch_object($result);
       if ($obj->uid == 0) {
         // Only allow cancelling if initial vote was also anonymous
-        $poll->cancel_vote = TRUE;
+        $cancel_vote = TRUE;
       }
     }
   }
-  return array($poll->voted, $poll->cancel_vote);
+  return array($voted, $cancel_vote);
 }
 
 /**
