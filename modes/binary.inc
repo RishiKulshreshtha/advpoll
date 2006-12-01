@@ -70,8 +70,10 @@ function advpoll_voting_binary_form(&$node, $teaser, $page, $block) {
     );
   }
 
-  $form['#action'] = url('node/'. $node->nid);
+  // Multistep is set to TRUE as a hack to allow in_block to be accessed
+  // when voting via ajax in a block - there may be a better way to do this
   $form['#multistep'] = TRUE;
+  $form['#action'] = url('node/'. $node->nid);
   return $form;
 }
 
