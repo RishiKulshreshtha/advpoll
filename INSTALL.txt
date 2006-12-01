@@ -3,8 +3,8 @@
 REQUIREMENTS
 ------------
 
-  * Drupal 4.7 or later
-  * VotingAPI
+  * Drupal 5.0 or later
+  * VotingAPI 5.0 or later
  
 
 INSTALLATION
@@ -18,15 +18,13 @@ INSTALLATION
 2. INSTALL ADVANCED POLL
    
    Unpack the module in your sites module directory. Then browse to 
-   "administer" -> "site building" -> "modules" (or "administer" -> 
-   "modules") and enable the module.
+   "Administer" -> "Site building" -> "Modules" and enable the module.
    
 3. CONFIGURE ADVANCED POLL
 
    You probably want to set the permissions for which users who can 
-   vote, see results etc.: Browse to "administer" -> "user management" ->
-   "access control" (or "administer" -> "access control") and set permissions
-   for the module.
+   vote, see results etc.: Browse to "Administer" -> "User management" ->
+   "Access control" to set permissions for the module.
    
-   Other related settings can be found at "administer" -> 
-   "site configuration" (or "settings") -> "decisions".
+   Other settings can be found at "Administer" -> 
+   "Site configuration" -> "Advanced Poll".
