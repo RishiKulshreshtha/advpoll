@@ -777,7 +777,7 @@ function _advpoll_get_mode($node) {
 		return $types[1];
 	}
 	else {
-		drupal_set_error('No type specified for node: ' . $node->nid);
+		drupal_set_message('No type specified for node: ' . $node->nid, 'error');
 		return '';
 	}
 }
