@@ -170,12 +170,14 @@ function advpoll_form($node, $form_values = NULL) {
     '#default_value' => $node->title,
   );
 
-  $form['body'] = array(
+  $form['body_filter']['body'] = array(
     '#type' => 'textarea',
     '#title' => t('Description'),
     '#required' => FALSE,
     '#default_value' => $node->body,
   );
+  
+  $form['body_filter']['format'] = filter_form($node->format);
 
   if (isset($form_values)) {
     $choices = $form_values['choices'];
@@ -306,8 +308,6 @@ function advpoll_form($node, $form_values = NULL) {
     '#default_value' => $date,
   );
 
-
-
   $form['settings']['runtime'] = array(
     '#type' => 'select',
     '#title' => t('Duration'),
@@ -315,7 +315,6 @@ function advpoll_form($node, $form_values = NULL) {
     '#options' => $_duration,
     '#description' => t('After this period, the poll will be closed automatically. This is relative to the start date if it is specified, otherwise the date the poll was created.')
   );
-
 
   $form['settings']['uselist'] = array(
     '#type' => 'checkbox',
@@ -337,9 +336,8 @@ function advpoll_form($node, $form_values = NULL) {
       '#value' => t('Reset votes'),
     );
   }
-  
-  $form['format'] = filter_form($node->form);
   $form['#multistep'] = TRUE;
+
   return $form;
 }
 
