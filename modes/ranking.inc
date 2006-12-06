@@ -687,3 +687,13 @@ function advpoll_voting_ranking_form_validate($form_id, $form_values) {
     return $ok;
   }
 }
+
+/**
+ * Render the voting form.
+ */
+function theme_advpoll_voting_ranking_form($form) {
+  $output = '<div class="poll">'. "\n";
+  $output .= drupal_render($form);
+  $output .= "</div>\n";
+  return $output;
+}
