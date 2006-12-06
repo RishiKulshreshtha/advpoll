@@ -1073,23 +1073,6 @@ function advpoll_view_electoral_list($node, $teaser = FALSE) {
   return $output;
 }
 
-/**
- * Render the voting form.
- */
-function theme_advpoll_view_voting($form) {
-  $output .= '<div class="advpoll">';
-  $output .= '  <div class="choice-form">';
-  $output .= '    <div class="choices">';
-  $output .= drupal_render($form['choice']);
-  $output .= '    </div>';
-  $output .= drupal_render($form['nid']);
-  $output .= drupal_render($form['vote']);
-  $output .= '  </div>';
-  $output .= drupal_render($form);
-  $output .= '</div>';
-  return $output;
-}
-
 function theme_advpoll_results($title, $results, $votes, $links, $block, $nid, $voted, $cancel_vote) {
   if ($block) {
     $output .= '<div class="poll">';
