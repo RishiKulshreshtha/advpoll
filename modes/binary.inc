@@ -1,5 +1,6 @@
 <?php
 // $Id$
+
 function advpoll_info_binary() {
   return array(
     'name' => 'binary',
@@ -71,7 +72,7 @@ function advpoll_voting_binary_form(&$node, $teaser, $page, $block) {
   }
 
   // Multistep is set to TRUE as a hack to allow in_block to be accessed
-  // when voting via ajax in a block - there may be a better way to do this
+  // when voting via ajax in a block - there may be a better way to do this.
   $form['#multistep'] = TRUE;
   $form['#action'] = url('node/'. $node->nid);
   return $form;
@@ -99,7 +100,7 @@ function advpoll_view_results_binary($node, $teaser, $page, $block) {
   }
 
   if ($node->choice && $total_votes > 0) {
-    // display results for each possible choice
+    // Display results for each possible choice
     foreach ($node->choice as $i => $ch) {
       if (!$votes[$i]) {
         $votes[$i] = 0;
@@ -127,7 +128,7 @@ function advpoll_calculate_results_binary(&$results, $votes, $node) {
 }
 
 /**
- * Registers the vote as a key for this node using votingapi_set_vote()
+ * Registers the vote as a key for this node using votingapi_set_vote().
  */
 function advpoll_voting_binary_form_submit($form_id, $form_values) {
   $vote = array();
@@ -181,7 +182,7 @@ function advpoll_voting_binary_form_validate($form_id, $form_values) {
   }
 
   if ($node->maxchoices == 1) {
-    // plurality voting
+    // Plurality voting
     if (!($ok = array_key_exists($form_values['choice'], $node->choice))) {
       $msg = t('At least one choice must be selected.');
       if ($ajax) {
@@ -194,10 +195,8 @@ function advpoll_voting_binary_form_validate($form_id, $form_values) {
     }
   }
   else {
-    // approval voting
-
+    // Approval voting
     $numchoices = 0;
-
     foreach ($node->choice as $i => $val) {
       // see if the box is checked
       if ($form_values['choice'][$i]) {
@@ -205,7 +204,7 @@ function advpoll_voting_binary_form_validate($form_id, $form_values) {
       }
     }
   
-    // too many choices ranked
+    // Too many choices ranked
     if ($node->maxchoices != 0 && $numchoices > $node->maxchoices) {
       $msg = t('%num choices were selected but only %max are allowed.',
         array('%num' => $numchoices, '%max' => $node->maxchoices));
@@ -218,7 +217,7 @@ function advpoll_voting_binary_form_validate($form_id, $form_values) {
       $ok = false;
     }
 
-    // not enough choices ranked
+    // Not enough choices ranked
     $minchoices = 1;
     if ($numchoices < $minchoices) {
       $msg = t('At least one choice must be selected.');
@@ -236,7 +235,7 @@ function advpoll_voting_binary_form_validate($form_id, $form_values) {
     print drupal_to_js(array('errors' => '<div class="messages error">'. implode('<br />', $errors) .'</div>'));
     exit;
   }
-  // Do as usual.
+  // Do as usual
   else {
     return $ok;
   }

@@ -52,8 +52,9 @@ function advpoll_voting_ranking_form(&$node, $teaser, $page, $block) {
     }
 
     $form['choice'] = array(
-      '#type' => 'checkboxes', //XXX: Workaround for FormAPI bug in PHP 4
       '#tree' => TRUE,
+      // XXX: Workaround for FormAPI bug in PHP 4, see http://drupal.org/node/86657
+      '#type' => 'checkboxes',
     );
 
     foreach ($node->choice as $key => $choice) {
@@ -89,9 +90,7 @@ function advpoll_voting_ranking_form(&$node, $teaser, $page, $block) {
   }
 
   // Multistep is set to TRUE as a hack to allow in_block to be accessed
-  // when voting via ajax in a block - there may be a better way to do this
-  // Multistep is set to TRUE as a hack to allow in_block to be accessed
-  // when voting via ajax in a block - there may be a better way to do this
+  // when voting via ajax in a block - there may be a better way to do this.
   $form['#multistep'] = TRUE;
   $form['#action'] = url('node/'. $node->nid);
   return $form;
@@ -100,11 +99,11 @@ function advpoll_voting_ranking_form(&$node, $teaser, $page, $block) {
 function advpoll_view_results_ranking($node, $teaser, $page, $block) {
   $results = votingapi_get_voting_results('advpoll', $node->nid);
 
-  // If no one has voted, $results = array() and thus is empty
+  // If no one has voted, $results = array() and thus is empty.
   if (!empty($results)) {
-    // temporary list of choices indexes for the ranking
+    // Temporary list of choices indexes for the ranking
     $ranking_list = array();
-    // result object
+    // Result object
     $ranking = array();
     $choices = array();
     $poll = array();
@@ -126,7 +125,6 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
     }
 
     // Re-construct the rankings object
-
     foreach ($ranking_list as $i => $choice_list) {
       $ranking[$i]->choices = array();
       foreach ($choice_list as $choice_i) {
@@ -178,10 +176,10 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
     }
     $output .= '</ol>';
 
-    // XXX: debugging code, currently broken due to caching
+    // XXX: Debugging code, currently broken due to caching
     if (FALSE && user_access('administer polls') && $results->matrix) {
       $output .= '<br />Internal values, for debugging purposes:';
-      // output the table of algorithm rounds
+      // Output the table of algorithm rounds
       $output .= '<table border="1"><tr><td>Round</td>';
       foreach ($node->choice as $choice) {
         $output .= '<td>' . check_plain($choice['label']) . '</td>';
@@ -207,7 +205,7 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
 }
 
 /**
- * Calculate the results for a ranking poll based on the algorithm
+ * Calculate the results for a ranking poll based on the algorithm.
  * 
  * @param $node
  *  The node object for the current poll
@@ -249,10 +247,10 @@ function advpoll_calculate_results_ranking(&$cache, $votes, $node) {
 }
 
 /**
- * Calculate the results using borda count
+ * Calculate the results using borda count.
  * 
  * @param $node
- *  The node object for the current poll
+ *  The node object for the current poll.
  *
  * @return 
  *   Should return an object that include the following attributes
@@ -270,21 +268,21 @@ function _advpoll_calculate_bordacount($node) {
   }
 
   if (count($votes) == 0) {
-    // no votes yet
+    // No votes yet
     return array();
   }
 
-  // aggregate votes by user (uid if logged in, IP if anonymous)
-  // in ascending order of value
+  // Aggregate votes by user (uid if logged in, IP if anonymous)
+  // in ascending order of value.
   $userVotes = array();
 
   foreach ($votes as $vote) {
     if ($vote->uid == 0) {
-      // anonymous user
+      // Anonymous user
       $key = $vote->hostname;
     }
     else {
-      // logged-in user
+      // Logged-in user
       $key = $vote->uid;
     }
 
@@ -314,7 +312,7 @@ function _advpoll_calculate_bordacount($node) {
     }
   }
 
-  // sort descending (although there may be ties)
+  // Sort descending (although there may be ties)
   arsort($choiceVotes);
 
   // Figure out the final ranking
@@ -345,13 +343,13 @@ function _advpoll_calculate_bordacount($node) {
 
 
 /**
- * Calculate the results using instant-runoff voting
+ * Calculate the results using instant-runoff voting.
  * 
  * @param $node
- *  The node object for the current poll
+ *  The node object for the current poll.
  *
  * @return 
- *   Should return an object that include the following attributes
+ *   Should return an object that include the following attributes.
  *   -results : 2d array listing the aggregate preference, including ties
  *   -rounds : 2d array listing the per-choice vote count for each round and
  *              a status message indicating who was eliminated
@@ -366,39 +364,39 @@ function _advpoll_calculate_instantrunoff($node) {
   }
 
   if (count($votes) == 0) {
-    // no votes yet
+    // No votes yet
     return array();
   }
 
-  // aggregate votes by user (uid if logged in, IP if anonymous)
-  // in ascending order of value
+  // Aggregate votes by user (uid if logged in, IP if anonymous)
+  // in ascending order of value.
   $userVotes = array();
 
   foreach ($votes as $vote) {
     if ($vote->uid == 0) {
-      // anonymous user
+      // Anonymous user
       $key = $vote->hostname;
     }
     else {
-      // logged-in user
+      // Logged-in user
       $key = $vote->uid;
     }
 
-    // Note: relies on ORDER BY value ASC in vote-getting SQL query
-    // Otherwise a later vote might have a lower value
+    // Note: relies on ORDER BY value ASC in vote-getting SQL query.
+    // Otherwise a later vote might have a lower value.
     $userVotes[$key][] = $vote->tag;
   }
 
   $totalVotes = count($userVotes);
 
-  // log of 1st-place votes per choice in each round
+  // Log of 1st-place votes per choice in each round
   $roundLog = array();
 
   // Gradually append candidates as they are eliminated; end with the winner
   $reverseRanking = array();
   
   // If we eliminate one choice per round and have n choices, we should
-  // not be able to do more than n - 1 rounds
+  // not be able to do more than n - 1 rounds.
   $maxRounds = count($node->choice); 
   for ($round = 0; $round < $maxRounds; $round++) {
 
@@ -418,8 +416,8 @@ function _advpoll_calculate_instantrunoff($node) {
     }
 
     if ($round == 0) {
-      // This is the first round
-      // Any choices with no first-place votes are considered eliminated
+      // This is the first round.
+      // Any choices with no first-place votes are considered eliminated.
       foreach ($curRound as $ch => $choiceVotes) {
         if (count($choiceVotes) == 0) {
           unset($curRound[$ch]);
@@ -432,35 +430,36 @@ function _advpoll_calculate_instantrunoff($node) {
     // Add the current round to the matrix
     $roundLog[] = $curRound;
 
-    //Calculate the min and max number of votes
+    // Calculate the min and max number of votes
     $minVotes = -1;
     $maxVotes = 0;
 
     // Number of choices that have already been discarded
     $num_discarded = 0;
 
-    // examine the number of votes each choice received this round
+    // Examine the number of votes each choice received this round
     foreach ($curRound as $ch => $choiceVotes) {
       $numVotes = count($choiceVotes);
 
       if ($numVotes > $maxVotes) {
         $maxVotes = $numVotes;
-        $curWinner = $ch; // store current winner in case it has a majority
+        // Store current winner in case it has a majority
+        $curWinner = $ch;
       }
 
       // This choice has already been eliminated (theoretically)
-      // so don't count it as the minimum
+      // so don't count it as the minimum.
       if ($numVotes == 0) {
-        $num_discarded++; // probably don't need this variable any more
+        $num_discarded++; // XXX: Probably don't need this variable any more
       }
       else if ($numVotes != 0 && ($numVotes < $minVotes || $minVotes == -1)) {
         $minVotes = $numVotes;
       }
     }
 
-    // If one choice has a majority of remaining users it wins
+    // If one choice has a majority of remaining users it wins.
     // Note: we use count($userVotes) because some users may have incomplete
-    // ballots and may have already had all of their choices eliminated
+    // ballots and may have already had all of their choices eliminated.
     if ($maxVotes > count($userVotes) / 2) {
     
       // Prune out the winning choice if it's still in there
@@ -483,8 +482,6 @@ function _advpoll_calculate_instantrunoff($node) {
             // New minimum
             $currentPlace = array($ch);
             $min = count($choiceVotes);
-            //drupal_set_message('New minimum: '. $ch .'('
-              //. count($choiceVotes) . ')');
           }
           else if (count($choiceVotes) == $min) {
             // Tied for minimum
@@ -494,7 +491,7 @@ function _advpoll_calculate_instantrunoff($node) {
 
         // currentPlace will be empty the first iteration if some
         // choices had no first-place votes and were eliminated
-        // at the beginning
+        // at the beginning.
         if (count($currentPlace) > 0) {
           $reverseRanking[]['choices'] = $currentPlace;  
           // Remove all choices that had the minimum
@@ -530,8 +527,8 @@ function _advpoll_calculate_instantrunoff($node) {
       }
      }
 
-    // Randomly select the choice to eliminate out of the available choices
-    // TODO: due to the randomness, this result must be cached after each vote
+    // Randomly select the choice to eliminate out of the available choices.
+    // TODO: due to the randomness, this result must be cached after each vote.
     $roundLoser = array_rand($minChoices);
 
     $reverseRanking[]['choices'] = array($minChoices[$roundLoser]);
@@ -542,25 +539,24 @@ function _advpoll_calculate_instantrunoff($node) {
       array_shift($userVotes[$userKey]);
 
       // Keep eliminating first preference until we run out or find an choice
-      // that hasn't been eliminated
+      // that hasn't been eliminated.
       while ($curRound[$userVotes[$userKey][0]] == array()
         && count($userVotes[$userKey]) > 0)
       {
         array_shift($userVotes[$userKey]);
       }
 
-      // If they have no more preferences, remove from list for simplicity
+      // If they have no more preferences, remove from list for simplicity.
       if (count($userVotes[$userKey]) == 0) {
         unset($userVotes[$userKey]);
       }
     }
   }
-  // loop detected. signal user and record.
+  // Loop detected. Signal user and record.
   drupal_set_message("Could not find a solution within $maxRounds iterations.");
   $resultObj->matrix = $roundLog;
   $resultObj->totalVotes = $totalVotes;
   return $resultObj;
-
 }
 
 /**
@@ -587,7 +583,7 @@ function advpoll_voting_ranking_form_submit($form_id, $form_values) {
 }
 
 /**
- * implementation of the vote validation hook for the runoff module.
+ * Implementation of the vote validation hook for the runoff module.
  *
  * This checks if the submitted values are within range, if they are
  * not empty, and if they are not repeated.
@@ -613,20 +609,20 @@ function advpoll_voting_ranking_form_validate($form_id, $form_values) {
   }
 
 
-  // array used to check which values are set
+  // Array used to check which values are set
   $setvalues = array();
   
   $numchoices = 0;
   foreach ($node->choice as $key => $choice) {
     
-    // count the number of choices that are ranked
+    // Count the number of choices that are ranked
     if ($form_values['choice'][$key]) {
       $numchoices++;
     }
     $intvalue = intval($form_values['choice'][$key]);
-    // mark this value as seen
+    // Mark this value as seen
     $setvalues[$intvalue]++;
-    // check range
+    // Check range
     if ($intvalue > count($node->choice) || $intvalue < 0) {
       // TODO: clean up this error message
       $msg = "Illegal rank for choice $key: $intvalue (min: 1, max: "
@@ -641,7 +637,7 @@ function advpoll_voting_ranking_form_validate($form_id, $form_values) {
     }
   }
   
-  // too many choices ranked
+  // Too many choices ranked
   if ($node->maxchoices != 0 && $numchoices > $node->maxchoices) {
     $msg = t('%num choices were selected but only %max are allowed.',
         array('%num' => $numchoices, '%max' => $node->maxchoices));
@@ -654,7 +650,7 @@ function advpoll_voting_ranking_form_validate($form_id, $form_values) {
     $ok = false;
   }
 
-  // not enough choices ranked
+  // Not enough choices ranked
   $minchoices = 1;
   if ($numchoices < $minchoices) {
     $msg = t('At least one choice must be selected.');
@@ -686,7 +682,7 @@ function advpoll_voting_ranking_form_validate($form_id, $form_values) {
     print drupal_to_js(array('errors' => '<div class="messages error">'. implode('<br />', $errors) .'</div>'));
     exit;
   }
-  // Do as usual.
+  // Do as usual
   else {
     return $ok;
   }

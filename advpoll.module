@@ -1,13 +1,13 @@
 <?php
 // $Id$
+
 /**
  * @file
  * Advanced Poll - a sophisticated polling module for voting, elections, and group decision-making.
  */
 
-
 define('ADVPOLL_DEFAULT_ELECTORAL_LIST', 0);
-// always, aftervote, or afterclose
+// Options: always, aftervote, or afterclose.
 define('ADVPOLL_DEFAULT_VIEW_RESULTS', 'aftervote');
 
 /**
@@ -54,7 +54,7 @@ function advpoll_block($op = 'list', $delta = 'mostrecent', $edit = array()) {
 }
 
 /**
- * Content of the block, as returned by advpoll_block('view')
+ * Content of the block, as returned by advpoll_block('view').
  */
 function advpoll_block_mostrecent() {
   $output = '';
@@ -71,9 +71,6 @@ function advpoll_block_mostrecent() {
   return $output;
 }
 
-/**
- *
- */
 function advpoll_page() {
   // List all polls
   $sql = 'SELECT n.nid, n.title, p.active, n.created, c.value AS votes FROM {node} n INNER JOIN {advpoll} p ON n.nid = p.nid INNER JOIN {votingapi_cache} c ON n.nid = c.content_id WHERE n.status = 1 AND c.tag = "_advpoll" AND c.function="total_votes" AND c.content_type="advpoll" GROUP BY n.nid, n.title, p.active, n.created ORDER BY n.created DESC';
@@ -89,8 +86,9 @@ function advpoll_page() {
 }
 
 /**
- * Implementation of VotingAPI's hook_calculate
- * Recalculate results whenever a vote is added or removed
+ * Implementation of VotingAPI's hook_calculate.
+ * 
+ * Recalculate results whenever a vote is added or removed.
  */
 function advpoll_votingapi_calculate(&$results, $votes, $content_type, $content_id) {
   // Make sure it's an Advanced Poll content type
@@ -131,14 +129,13 @@ function advpoll_cron() {
 
 /**
  * Implementation of hook_delete().
- *
  */
 function advpoll_delete($node) {
   db_query("DELETE FROM {advpoll} WHERE nid = %d", $node->nid);
   db_query("DELETE FROM {advpoll_choices} WHERE nid = %d", $node->nid);
   db_query("DELETE FROM {advpoll_electoral_list} WHERE nid = %d", $node->nid);
 
-  // Note: these should be converted to a votingapi method eventually
+  // TODO: These should be converted to a votingapi method eventually.
   db_query('DELETE FROM {votingapi_vote} WHERE content_id = %d AND 
     content_type="advpoll"', $node->nid);
   db_query('DELETE FROM {votingapi_cache} WHERE content_id = %d AND
@@ -153,7 +150,7 @@ function advpoll_delete($node) {
 function advpoll_form($node, $form_values = NULL) {
   $mode = _advpoll_get_mode($node);
   
-  // Only add javascript once, even if _form is called multiple times
+  // Only add javascript once, even if _form is called multiple times.
   static $add_js;
   if (!$add_js) {
     // Pass translatable strings
@@ -209,7 +206,7 @@ function advpoll_form($node, $form_values = NULL) {
     '#type' => 'checkbox',
     '#title' => t('Need more choices'),
     '#value' => 0,
-    '#parents' => array('morechoices'), // don't pollute $form['choice']
+    '#parents' => array('morechoices'), // Don't pollute $form['choice']
     '#prefix' => '<div id="morechoices">',
     '#suffix' => '</div>',
     '#description' => t("If the amount of boxes above isn't enough, check this box and click the Preview button below to add some more."),
@@ -243,7 +240,7 @@ function advpoll_form($node, $form_values = NULL) {
     '#title' => t('Maximum choices'),
     '#default_value' => ($node->maxchoices? $node->maxchoices : 0),
     '#options' => $maxChoiceList,
-    '#DANGEROUS_SKIP_CHECK' => true, // allow jQuery to add new options
+    '#DANGEROUS_SKIP_CHECK' => true, // Allow jQuery to add new options
     '#description' => t('Limits the total number of choices voters may select.')
   );
 
@@ -341,7 +338,6 @@ function advpoll_form($node, $form_values = NULL) {
   return $form;
 }
 
-
 /**
  * Implementation of hook_help().
  */
@@ -372,9 +368,9 @@ function advpoll_load($node) {
 }
 
 /**
- * Check if a user has voted on a poll
+ * Check if a user has voted on a poll.
  *
- * @return array indicating if user voted and, if so, if the vote is cancellable
+ * @return Array indicating if user voted and, if so, if the vote is cancellable.
  */
 function _advpoll_user_voted($node) {
   global $user;
@@ -404,13 +400,12 @@ function _advpoll_user_voted($node) {
 
 /**
  * Implementation of hook_menu().
- *
  */
 function advpoll_menu($may_cache) {
   global $user;
 
   // Load the modes in here instead of _init() toprofit from caching,
-  // as recommended by http://api.drupal.org/api/head/function/hook_init
+  // as recommended by http://api.drupal.org/api/head/function/hook_init.
   $modes = _advpoll_list_modes();
 
   $items = array();
@@ -450,11 +445,11 @@ function advpoll_menu($may_cache) {
     );
   }
   else {
-    // Use Poll modules stylesheet, no need to duplicate at this point 
-    // We put this in !$may_cache so it's only added once per request
+    // Use Poll modules stylesheet, no need to duplicate at this point.
+    // We put this in !$may_cache so it's only added once per request.
     drupal_add_css(drupal_get_path('module', 'poll') .'/poll.css');
     
-    // need to be able to extract the nid
+    // Need to be able to extract the nid
     if (arg(0) == 'node' && is_numeric(arg(1))) {
       $nid = arg(1);
       $node = node_load($nid);
@@ -515,8 +510,6 @@ function advpoll_menu($may_cache) {
           'weight' => 3,
           'type' => MENU_CALLBACK,
         );
-
-      
       }
     }
   }
@@ -525,7 +518,7 @@ function advpoll_menu($may_cache) {
 }
 
 /**
- * Display the electoral list tab
+ * Display the electoral list tab.
  */
 function advpoll_tab_electoral_list() {
   if ($node = node_load(arg(1))) {
@@ -599,9 +592,8 @@ function advpoll_electoral_list_form($nid) {
   return $form;        
 }
 
-
 /**
- * Remove an individual voter from the electoral list
+ * Remove an individual voter from the electoral list.
  */
 function advpoll_remove_voter() {
   $nid = arg(1);
@@ -623,7 +615,7 @@ function advpoll_remove_voter() {
 }
 
 /**
- * Validate changes to the electoral list
+ * Validate changes to the electoral list.
  */
 function advpoll_electoral_list_form_validate($form_id, $form_values) {
   if ($form_values['op'] == t('Reset electoral list')) {
@@ -646,7 +638,7 @@ function advpoll_electoral_list_form_validate($form_id, $form_values) {
 }
 
 /**
- * Submit changes to the electoral list
+ * Submit changes to the electoral list.
  */
 function advpoll_electoral_list_form_submit($form_id, $form_values) {
   $add_user = $form_values['electoral_list']['add_user'];
@@ -657,7 +649,7 @@ function advpoll_electoral_list_form_submit($form_id, $form_values) {
 }
 
 /**
- * Display the votes tab
+ * Display the votes tab.
  */
 function advpoll_tab_votes() {
   if ($node = node_load(arg(1))) {
@@ -689,7 +681,7 @@ function advpoll_tab_votes() {
     
     $separators = array('advpoll_ranking' => ' > ', 'advpoll_binary' => ', ');
 
-    // create strings out of each vote
+    // Create strings out of each vote
     $results = array();
 
     foreach ($rows as $key => $container) {
@@ -722,14 +714,14 @@ function advpoll_tab_votes() {
 
 
 /**
- * Helper function to abstract view results checking
+ * Helper function to abstract view results checking.
  */
 function _advpoll_can_view_results($node) {
   $view_results = variable_get('advpoll_view_results'
     , ADVPOLL_DEFAULT_VIEW_RESULTS);
-  return (!$node->active  // node is closed
-        || ($node->voted && $view_results == 'aftervote') // user voted
-        || ($view_results == 'always')); // all can view
+  return (!$node->active  // Node is closed
+        || ($node->voted && $view_results == 'aftervote') // User voted
+        || ($view_results == 'always')); // All can view
 }
 
 /**
@@ -756,7 +748,7 @@ function advpoll_perm() {
 }
 
 /**
- * Settings page for Drupal 5.0
+ * Settings page.
  */
 function advpoll_admin_settings() {
   $enabled = array(0 => t('Disabled'), 1 => t('Enabled'));
@@ -787,7 +779,7 @@ function advpoll_admin_settings() {
 
 
 /**
- * Helper function to display 'cancel vote' button if user has voted
+ * Helper function to display 'cancel vote' button if user has voted.
  */
 function advpoll_cancel_form($nid) {
   $form['#action'] = url("advpoll/cancel/$nid");
@@ -818,9 +810,9 @@ function advpoll_update($node) {
 
 
 /**
- * Determine if node should be active for _insert and _update operations
+ * Determine if node should be active for _insert and _update operations.
  *
- * This function is needed when changing the startdate and/or duration
+ * This function is needed when changing the startdate and/or duration.
  */
 function _advpoll_calculate_active($node) {
   $startdate = _advpoll_create_startdate($node);
@@ -837,7 +829,7 @@ function _advpoll_calculate_active($node) {
 }
 
 /*
- * Create a unix timestamp for startdate based on FormAPI inputs
+ * Create a unix timestamp for startdate based on FormAPI inputs.
  */
 function _advpoll_create_startdate($node) {
   list($hour, $min) = explode(':', date('h:m', time()));
@@ -870,9 +862,9 @@ function _advpoll_get_mode($node) {
 }
 
 /**
- * Implementation of hook_insert()
+ * Implementation of hook_insert().
  *
- * This is called upon node creation
+ * This is called upon node creation.
  */
 function advpoll_insert($node) {
   $mode = _advpoll_get_mode($node);
@@ -888,14 +880,15 @@ function advpoll_insert($node) {
     $node->settings['algorithm'], $node->settings['showvotes'],
     $node->settings['usestart']? _advpoll_create_startdate($node): 'NULL');
 
-  // create the electoral list if desired
-
+  /* Create the electoral list if desired */
   if ($node->settings['uselist']) {
-    // Check if authenticated users have the right to vote, because authenticated users are not added to the users_roles permission, probably for performance reasons
+    // Check if authenticated users have the right to vote, because 
+    // authenticated users are not added to the users_roles permission,
+    // probably for performance reasons.
     $result = db_fetch_object(db_query("SELECT COUNT(*) AS hit FROM {permission} JOIN role ON role.rid = permission.rid WHERE FIND_IN_SET(' vote on advpoll', perm) AND role.name = 'authenticated user'"));
     if ($result->hit) {
-      // Special case: any authenticated user can vote
-      // Add all current users to electoral list
+      // Special case: any authenticated user can vote.
+      // Add all current users to electoral list.
       db_query("INSERT INTO {advpoll_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users u WHERE u.uid != 0", $node->nid);
     }
     else {
@@ -909,7 +902,7 @@ function advpoll_insert($node) {
 }
 
 /**
- * Callback to display a reset votes confirmation form
+ * Callback to display a reset votes confirmation form.
  */ 
 function advpoll_reset_confirm() {
   global $form_values;
@@ -929,7 +922,7 @@ function advpoll_reset_confirm() {
 }
 
 /**
- * Reset votes once the confirmation is given
+ * Reset votes once the confirmation is given.
  */
 function advpoll_reset_confirm_submit($form_id, $form_values) {
   if ($form_values['confirm']) {
@@ -972,8 +965,7 @@ function advpoll_validate(&$node) {
       form_set_error("choice][$realchoices][label", t('You must fill in at least two choices.'));
     }
 
-    // Validate maxchoices since it has #DANGEROUS_SKIP_CHECK set to true
-
+    /* Validate maxchoices since it has #DANGEROUS_SKIP_CHECK set to true */
     if ($node->settings['maxchoices'] < 0) {
       form_set_error('settings][maxchoices]', t('Maximum choices must be a non-negative integer.'));
     }
@@ -1003,7 +995,7 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
     $node->links[] = _advpoll_block_oldlink();
   }
 
-  // Previewing a node, so don't show results
+  // Previewing a node, so don't show results.
   if ($node->in_preview) {
     // Show the voting form but don't let them vote
     $node->content['body'] = array(
@@ -1014,7 +1006,7 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
     // User hasn't voted and we're not on the results tab
 
     if ($block) {
-      // Note: currently this isn't displayed anywhere
+      // XXX: Currently this isn't displayed anywhere
       $node->links[] = _advpoll_block_resultslink($node);
     }
 
@@ -1024,7 +1016,7 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
     );
     static $addjs = TRUE;
     if ($addjs) {
-      // Add javascript for posting voting forms with ajax
+      // Add javascript for posting voting forms with Ajax
       drupal_add_js(array('advPoll' => array('vote' => t('Vote'))), 'setting');
       drupal_add_js(drupal_get_path('module', 'advpoll') .'/advpoll-vote.js', 'module');
       drupal_add_js(drupal_get_path('module', 'advpoll') .'/jquery.form.js', 'module');
@@ -1058,7 +1050,7 @@ function _advpoll_block_oldlink() {
 }
 
 /**
- * Currently deprecated
+ * XXX: Currently deprecated.
  */
 function advpoll_view_electoral_list($node, $teaser = FALSE) {
   $output = '';
@@ -1140,7 +1132,7 @@ function theme_advpoll_bar($title, $percentage, $votes, $block) {
 }
 
 /**
- * Callback for 'results' tab for advpoll you can vote on
+ * Callback for 'results' tab for advpoll you can vote on.
  */
 function advpoll_results() {
   if ($node = node_load(arg(1))) {
@@ -1174,9 +1166,9 @@ function _advpoll_vote_response($node, $form_values) {
 }
 
 /**
- * Show results of the vote
+ * Show results of the vote.
  *
- * this calls the appropriate vote results function, depending on the
+ * This calls the appropriate vote results function, depending on the
  * mode. It will call advpoll_view_results_$mode, similarly to
  * advpoll_view_voting().
  */
@@ -1196,7 +1188,7 @@ function advpoll_view_results(&$node, $teaser, $page, $block) {
 }
 
 /**
- * Callback for canceling a vote
+ * Callback for canceling a vote.
  */
 function advpoll_cancel($nid) {
   global $user;
@@ -1223,7 +1215,7 @@ function advpoll_cancel($nid) {
 }
 
 /**
- * Check if user is eligible to vote in this poll
+ * Check if user is eligible to vote in this poll.
  */
 function advpoll_eligible($node, $uid = NULL) {
   global $user;
@@ -1251,8 +1243,6 @@ function advpoll_algorithms($mode) {
  * This scans the modes subdirectory to find mode.inc files, where
  * mode is considered to be the mode name. Found files are loaded and
  * added to the mode list.
- *
- * @uses _advpoll_mode_list()
  */
 function _advpoll_list_modes() {
   static $_advpoll_modes;
