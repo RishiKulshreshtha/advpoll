@@ -411,14 +411,6 @@ function advpoll_menu($may_cache) {
   $items = array();
 
   if ($may_cache) {
-    foreach ($modes as $mode) {
-      $items[] = array(
-        'path' => 'node/add/advpoll-' . $mode['name'],
-        'title' => t('Advanced Poll - ' . $mode['name']),
-        'access' => user_access('create polls'),
-      );
-    }
-
     $items[] = array(
       'path' => 'advpoll/cancel',
       'title' => t('Cancel'),
