@@ -41,8 +41,11 @@ function advpoll_block($op = 'list', $delta = 'mostrecent', $edit = array()) {
       if (user_access('view polls')) {
         switch ($delta) {
           case 'mostrecent': default:
-            $block['content'] = advpoll_block_mostrecent();
-            $block['subject'] = t('Advanced Poll - Newest');
+            $mostrecent = advpoll_block_mostrecent();
+            if ($mostrecent) {
+              $block['content'] = $mostrecent;
+              $block['subject'] = t('Advanced Poll - Newest');
+            }
         }
 
         if ($block['content']) {
@@ -59,14 +62,11 @@ function advpoll_block($op = 'list', $delta = 'mostrecent', $edit = array()) {
 function advpoll_block_mostrecent() {
   $output = '';
   $result = db_query('SELECT MAX(n.nid) nid FROM {node} n INNER JOIN {advpoll} p ON p.nid = n.nid WHERE n.status = 1 AND p.active=1');
-  // Check that there is an active poll
-  if (db_num_rows($result) > 0) {
-    $poll = db_fetch_object($result);
+  $poll = db_fetch_object($result);
+  // The nid will be NULL if there are no active polls.
+  if ($poll->nid) {
     $node = advpoll_view(node_load($poll->nid), FALSE, FALSE, TRUE);
     $output = drupal_render($node->content);
-  }
-  else {
-    $output .= t('No active Advanced Poll.');
   }
   return $output;
 }
