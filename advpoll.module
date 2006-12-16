@@ -990,7 +990,7 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
   // Previewing a node, so don't show results.
   if ($node->in_preview) {
     // Show the voting form but don't let them vote
-    $node->content['body'] = array(
+    $node->content['poll'] = array(
       '#value' => drupal_get_form('advpoll_voting_' . $mode . '_form', $node, $teaser, $page, $block),
     );
   }
@@ -1002,7 +1002,7 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
       $node->links[] = _advpoll_block_resultslink($node);
     }
 
-    $node->content['body'] = array(
+    $node->content['poll'] = array(
       '#value' => drupal_get_form('advpoll_voting_' . $node->mode . '_form',
         $node, $teaser, $page, $block)
     );
@@ -1017,12 +1017,12 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
   }
   else {
     // Show results only if the user has voted or poll is closed
-    $node->content['body'] = array(
+    $node->content['poll'] = array(
       '#value' => advpoll_view_results($node, $teaser, $page, $block)
     );  
   }
 
-  return $node;
+  return node_prepare($node, $teaser);
 }
 
 function _advpoll_block_resultslink($node) {
