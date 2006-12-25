@@ -113,7 +113,6 @@ function advpoll_cron() {
   // Open polls with a startdate that is in the past but that need to be opened
   $sql = 'SELECT p.nid FROM {advpoll} p WHERE p.startdate IS NOT NULL AND (p.runtime = 0 OR p.startdate + p.runtime >= ' . (time() - time() % (3600 * 24)) . ') AND p.startdate < ' . time() . ' AND p.active = 0';
   $result = db_query($sql);
-  drupal_set_message($sql);
   while ($poll = db_fetch_object($result)) {
     db_query("UPDATE {advpoll} SET active = 1 WHERE nid=%d", $poll->nid);
   }
