@@ -329,7 +329,7 @@ function _advpoll_calculate_bordacount($node) {
     $ranking[$curResult]['rawscore'] = $total;
     $ranking[$curResult]['viewscore'] = format_plural($total, '1 point',
       '@count points');
-    $ranking[$curResult]['percentage'] = $total / $totalPoints;
+    $ranking[$curResult]['percentage'] = $totalPoints? $total / $totalPoints : 0;
     $previousTotal = $total;
   }
 
