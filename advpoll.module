@@ -1040,30 +1040,6 @@ function _advpoll_block_oldlink() {
   );
 }
 
-/**
- * XXX: Currently deprecated.
- */
-function advpoll_view_electoral_list($node, $teaser = FALSE) {
-  $output = '';
-  if ($node->uselist) {
-     $result = db_query("SELECT COUNT(*) AS voters FROM {advpoll_electoral_list} WHERE nid=%d", $node->nid);
-     $electoral_list = db_fetch_object($result);
-  }
-  $result = db_query("SELECT COUNT(DISTINCT uid) AS voters FROM {votingapi_vote} WHERE content_id=%d GROUP BY uid", $node->nid);
-  $votes = db_num_rows($result);
-
-  $output = '<div class="advpoll-electoral-list">';
-
-  $output .= t('Total votes: %d', array('%d' => $votes));
-  if ($node->uselist) {
-     $output .= t(' (out of %v eligible voter' . 
-      ($electoral_list->voters == 1? '' : 's') . ')',
-        array('%v' => $electoral_list->voters));
-  }
-  $output .= '</div>';
-  return $output;
-}
-
 function theme_advpoll_results($title, $results, $votes, $links, $block, $nid, $voted, $cancel_vote) {
   if ($block) {
     $output .= '<div class="poll">';
