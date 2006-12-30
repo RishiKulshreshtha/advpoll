@@ -70,6 +70,7 @@ function advpoll_view_voting_ranking(&$node, $teaser, $page, $block) {
 
 function advpoll_view_results_ranking($node, $teaser, $page, $block) {
 	$results = votingapi_get_voting_results('advpoll', $node->nid);
+  $round_table = '';
 
 	// If no one has voted, $results = array() and thus is empty
 	if (!empty($results)) {
@@ -85,6 +86,16 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
 				// Poll-wide cached value
 				$poll[$result->function] = $result->value;
 			}
+      else if (strstr($tag, '_rounds_')) {
+        // Reconstruct round data.
+        // Extract the round from the tag.
+        $round = str_replace('_rounds_', '', $tag);
+        if (!isset($rounds[$round])) {
+          $rounds[$round] = array();
+        }
+        // $result->function actually stores $choice.
+        $rounds[$round][$result->function] = $result->value;
+      }
 			else if (isset($node->choice[$tag])) {
 				// Choice-specific cached value
 				if ($result->function == 'ranking') {
@@ -144,37 +155,37 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
 
 				// Show the ranking's score if it exists (depends on algorithm)
 				if ($ranking[$i]->viewscore) {
-					$output .= ' (' . $ranking[$i]->viewscore . ')';
+					$output .= ' (' . $ranking[$i]->viewscore . '%)';
 				}
 				$output .= '</li>';
 			}
 		}
 		$output .= '</ol>';
 
-    // XXX: debugging code, currently broken
-		if (FALSE && user_access('administer advanced poll') && $results->matrix) {
-    	$output .= '<br />Internal values, for debugging purposes:';
-    	// output the table of algorithm rounds
-    	$output .= '<table border="1"><tr><td>Round</td>';
-    	foreach ($node->choice as $choice) {
-      	$output .= '<td>' . check_plain($choice['label']) . '</td>';
-    	}
-    	$output .= '</tr>';
-    	$round = 1;
-			if (count($results->matrix) > 0) {
-    		foreach ($results->matrix as $aRound) {
-      		$output .= "<tr><td>$round.</td>";
-      		foreach ($node->choice as $key => $choicename) {
-        		$output .= '<td>' . count($aRound[$key]) . '</td>';
-      		}
-      		$output .= '</tr>';
-      		$round++;
-    		}
+		if (!$block && user_access('inspect all votes') && isset($rounds)) {
+			if (count($rounds) > 0) {
+        $header[0] = t('Rounds');
+        $total_rounds = count($rounds);
+        foreach ($rounds as $i => $choices) {
+          if ($i + 1 == $total_rounds) {
+            // This is the last round.
+            $header[$i + 1] = t('Final');
+          }
+          else {
+            $header[$i + 1] = $i + 1;
+          }
+          if ($i == 0) {
+            $rows = array();
+          }
+          foreach ($node->choice as $key => $data) {
+            $rows[$key][0] = $data['label'];
+            $rows[$key][$i + 1] = isset($choices[$key])? count($choices[$key]) : 0;
+          }
+        }
+        $round_table = theme('table', $header, $rows, array(), '') . '<br />';
 			}
-
-    	$output .= '</table>';
 		}
-
+    $output .= $round_table;
     return $output;
 	}
 }
@@ -201,6 +212,7 @@ function advpoll_calculate_results_ranking(&$cache, $votes, $node) {
 	}
 
 	// Cache rankings
+  // API: $cache[$tag][$type][$function] = $value (0 is the default $type)
 	for ($i = 0; $i < count($results->ranking); $i++) {
 		foreach ($results->ranking[$i]['choices'] as $choice) {
 			$cache[$choice][0]['ranking'] = $i;
@@ -211,6 +223,17 @@ function advpoll_calculate_results_ranking(&$cache, $votes, $node) {
 			}
 		}
 	}
+
+  // Cache round results
+  if (isset($results->matrix)) {
+    foreach ($results->matrix as $i => $round) {
+      $key = '_rounds_' . $i;
+      $cache[$key] = array();
+      foreach ($round as $choice => $votes) {
+        $cache[$key][0][$choice] = count($votes);
+      }
+    }
+  }
 
 	// Cache total votes
 	$cache['_advpoll'][0]['total_voters'] = $results->totalVotes;
