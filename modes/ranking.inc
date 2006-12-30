@@ -218,7 +218,7 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
 
 /**
  * Calculate the results for a ranking poll based on the algorithm.
- *_table 
+ *
  * @param $node
  *  The node object for the current poll
  *
