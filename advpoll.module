@@ -905,8 +905,8 @@ function advpoll_view(&$node, $teaser = FALSE, $page = FALSE, $block = FALSE) {
       advpoll_vote($node);
       drupal_set_message(t('Your vote was registered.'));
 			// Transferring makes the results tab display correctly
-			drupal_goto('node/' . $node->nid);
     }
+		drupal_goto('node/' . $node->nid);
   }
 
 	// Previewing a node, so don't show results
