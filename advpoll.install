@@ -74,14 +74,31 @@ function advpoll_install() {
  * Implementation of hook_uninstall().
  */
 function advpoll_uninstall() {
+  // Needs to be included due to _advpoll_list_modes().
+  include_once './'. drupal_get_path('module', 'advpoll') .'/advpoll.module';
+
+  // Remove all advpoll content types.
+  foreach (_advpoll_list_modes() as $mode) {
+     node_type_delete($mode);
+  }
+  // Remove all votes.
   db_query('DELETE FROM {votingapi_vote} WHERE content_type="advpoll"');
+
+  // Remove all cache data.
+  db_query('DELETE FROM {votingapi_cache} WHERE content_type="advpoll"');
+
+  // Remove all advpoll nodes.
   $result = db_query('SELECT nid FROM {advpoll}');
   while ($obj = db_fetch_object($result)) {
     node_delete($obj->nid);
   }
+
+  // Remove all database tables.
   db_query('DROP TABLE {advpoll}');
   db_query('DROP TABLE {advpoll_electoral_list}');
   db_query('DROP TABLE {advpoll_choices}');
+
+  // Remove all variables.
   variable_del('advpoll_default_mode');
   variable_del('advpoll_default_electoral_list');
 }
