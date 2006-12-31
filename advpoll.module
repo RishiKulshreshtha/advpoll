@@ -723,7 +723,7 @@ function advpoll_node_info() {
   $info = array();
   foreach ($modes as $mode) {
     $info['advpoll_' . $mode['name']] = array(
-      'name' => t('Advanced Poll - ' . $mode['name']),
+      'name' => t(ucfirst($mode['name']) . ' poll'),
       'module' => 'advpoll',
       'description' => $mode['description'],
     );

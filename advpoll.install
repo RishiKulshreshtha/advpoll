@@ -79,7 +79,7 @@ function advpoll_uninstall() {
 
   // Remove all advpoll content types.
   foreach (_advpoll_list_modes() as $mode) {
-     node_type_delete($mode);
+     node_type_delete('advpoll_' . $mode);
   }
   // Remove all votes.
   db_query('DELETE FROM {votingapi_vote} WHERE content_type="advpoll"');
