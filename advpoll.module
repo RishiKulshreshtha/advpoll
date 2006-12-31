@@ -35,7 +35,7 @@ function advpoll_access($op, $node) {
 function advpoll_block($op = 'list', $delta = 'mostrecent', $edit = array()) {
   switch($op) {
     case 'list':
-      $blocks['mostrecent']['info'] = t('Advanced Poll - Newest');
+      $blocks['mostrecent']['info'] = t('Latest poll');
       return $blocks;
     case 'view':
       if (user_access('view polls')) {
@@ -44,7 +44,7 @@ function advpoll_block($op = 'list', $delta = 'mostrecent', $edit = array()) {
             $mostrecent = advpoll_block_mostrecent();
             if ($mostrecent) {
               $block['content'] = $mostrecent;
-              $block['subject'] = t('Advanced Poll - Newest');
+              $block['subject'] = t('Latest poll');
             }
         }
 
