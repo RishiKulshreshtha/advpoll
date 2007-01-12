@@ -192,7 +192,8 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
       if (count($rounds) > 0) {
         $header[0] = t('Rounds');
         $total_rounds = count($rounds);
-        foreach ($rounds as $i => $choices) {
+        for ($i = 0; $i < count($rounds); $i++) {
+          $choices = $rounds[$i];
           if ($i + 1 == $total_rounds) {
             // This is the last round.
             $header[$i + 1] = t('Final');
@@ -205,7 +206,7 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
           }
           foreach ($node->choice as $key => $data) {
             $rows[$key][0] = $data['label'];
-            $rows[$key][$i + 1] = isset($choices[$key])? count($choices[$key]) : 0;
+            $rows[$key][$i + 1] = isset($choices[$key]) && $choices[$key]? $choices[$key] : '';
           }
         }
         $round_table = theme('table', $header, $rows, array(), t('Per-round breakdown of votes for each choice'));
