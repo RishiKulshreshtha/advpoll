@@ -384,16 +384,21 @@ function _advpoll_user_voted($node) {
   global $user;
   $voted = FALSE;
   $cancel_vote = FALSE;
+
+  // Check if the uid has already voted.
   if ($user->uid) {
     $voted = (count(votingapi_get_user_votes('advpoll', $node->nid)) > 0);
     if ($voted) {
       $cancel_vote = TRUE;
     }
   }
-  else {
+
+  // Check if the user's IP has already voted.
+  if (!$cancel_vote) {
+    $host = $_SERVER['HTTP_X_FORWARDED_FOR']? $_SERVER['HTTP_X_FORWARDED_FOR'] : $_SERVER['REMOTE_ADDR'];
     $result = db_query('SELECT uid, value FROM {votingapi_vote} '
       . 'WHERE content_id=%d AND content_type="advpoll" AND hostname="%s"',
-      $node->nid, $_SERVER['REMOTE_ADDR']);
+      $node->nid, $host);
     if (db_num_rows($result) > 0) {
       $voted = TRUE;
       $obj = db_fetch_object($result);
@@ -1154,11 +1159,12 @@ function advpoll_cancel($nid) {
   $nid = arg(2);
   if ($node = node_load(array('nid' => $nid))) {
     if ($node->voted && $node->active) {
-      if ($user->uid) {
+      if ($user->uid && count(votingapi_get_user_votes('advpoll', $node->nid)) > 0) {
         votingapi_unset_vote('advpoll', $node->nid, $user->uid);
       }
       else {
-        db_query("DELETE FROM {votingapi_vote} WHERE content_id=%d and hostname = '%s' AND uid=0", $node->nid, $_SERVER['REMOTE_ADDR']);
+        $host = $_SERVER['HTTP_X_FORWARDED_FOR']? $_SERVER['HTTP_X_FORWARDED_FOR'] : $_SERVER['REMOTE_ADDR'];
+        db_query("DELETE FROM {votingapi_vote} WHERE content_id=%d and hostname = '%s' AND uid=0", $node->nid, $host);
         votingapi_recalculate_results('advpoll', $nid);
       }
       drupal_set_message(t('Your vote was canceled.'));
