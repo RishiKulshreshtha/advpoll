@@ -93,7 +93,8 @@ function advpoll_page() {
 function advpoll_votingapi_calculate(&$results, $votes, $content_type, $content_id) {
   // Make sure it's an Advanced Poll content type
   if ($content_type == 'advpoll') {
-    $node = node_load($content_id);
+    // Don't load the node from cache in case the mode or algorithm changed.
+    $node = node_load($content_id, NULL, TRUE);
     $mode = _advpoll_get_mode($node);
     $function = 'advpoll_calculate_results_' . $mode;
     if (function_exists($function)) {
