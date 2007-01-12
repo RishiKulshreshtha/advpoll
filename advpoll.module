@@ -362,6 +362,15 @@ function advpoll_load($node) {
   }
   $poll->choices = count($poll->choice);
 
+  $result = db_query('SELECT value FROM {votingapi_cache} where content_type="advpoll" AND content_id=%d AND tag="_advpoll" AND function="total_votes"', $node->nid);
+  if (db_num_rows($result) > 0) {
+    $cache = db_fetch_object($result);
+    $poll->votes = $cache->value;
+  }
+  else {
+    $poll->votes = 0;
+  }
+
   list($poll->voted, $poll->cancel_vote) = _advpoll_user_voted($node);
   return $poll;
 }
