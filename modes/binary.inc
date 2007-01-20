@@ -19,7 +19,7 @@ function advpoll_algorithms_binary() {
  */
 function advpoll_voting_binary_form(&$node, $teaser, $page, $block) {
   static $binary_form_count = 0; 
-  $form['#id'] = 'advpoll_voting_binary_form-' . $binary_form_count++;
+  $form['#id'] = 'advpoll_voting_binary_form-'. $binary_form_count++;
   $form['#attributes'] = array('class' => 'advpoll-vote');
   
   $form['ajax'] = array(
@@ -245,7 +245,7 @@ function advpoll_voting_binary_form_validate($form_id, $form_values) {
  * Render the voting form.
  */
 function theme_advpoll_voting_binary_form($form) {
-  $output = '<div class="poll">'. "\n";
+  $output = '<div class="poll">' . "\n";
   $output .= drupal_render($form);
   $output .= "</div>\n";
   return $output;
