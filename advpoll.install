@@ -21,13 +21,13 @@ function advpoll_install() {
           `showvotes` tinyint,
           `startdate` int unsigned,
           PRIMARY KEY  (`nid`)
-      ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */");
+      ) /*!40100 DEFAULT CHARACTER SET utf8 */");
 
       db_query("CREATE TABLE {advpoll_electoral_list} (
           `nid` int(10) NOT NULL,
           `uid` int(10) NOT NULL,
           PRIMARY KEY  (`nid`,`uid`)
-      ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */");
+      ) /*!40100 DEFAULT CHARACTER SET utf8 */");
 
       db_query("CREATE TABLE {advpoll_choices} (
           `nid` int(10) NOT NULL,
@@ -35,7 +35,7 @@ function advpoll_install() {
           `vote_offset` int(2) unsigned default NULL,
           PRIMARY KEY  (`nid`, `vote_offset`),
           KEY `vote_offset` (`vote_offset`)
-        ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */");
+        ) /*!40100 DEFAULT CHARACTER SET utf8 */");
 
       break;
     case 'pgsql':
