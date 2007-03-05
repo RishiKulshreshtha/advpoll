@@ -946,7 +946,15 @@ function advpoll_view_electoral_list($node, $teaser = FALSE) {
    	$result = db_query("SELECT COUNT(*) AS voters FROM {advpoll_electoral_list} WHERE nid=%d", $node->nid);
    	$electoral_list = db_fetch_object($result);
 	}
-  $result = db_query("SELECT COUNT(DISTINCT CONCAT(uid, '-', hostname)) AS votes FROM {votingapi_vote} WHERE content_id=%d", $node->nid);
+  switch($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $result = db_query("SELECT COUNT(DISTINCT CONCAT(uid, '-', hostname)) AS votes FROM {votingapi_vote} WHERE content_id=%d", $node->nid);
+      break;
+    case 'pgsql':
+      $result = db_query("SELECT COUNT(DISTINCT uid||'-'||hostname) AS votes FROM {votingapi_vote} WHERE content_id=%d", $node->nid);
+      break;
+  }
   $votes = db_fetch_object($result);
 
   $output = '<div class="advpoll-electoral-list">';
