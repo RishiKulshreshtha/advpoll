@@ -41,7 +41,7 @@ function advpoll_install() {
     case 'pgsql':
       db_query("CREATE TABLE {advpoll} (
           nid integer NOT NULL,
-          quorum integer NOT NULL,
+          quorum integer NOT NULL DEFAULT '0',
           mode varchar(32) NOT NULL,
           uselist smallint DEFAULT '0',
           active smallint DEFAULT '1',
