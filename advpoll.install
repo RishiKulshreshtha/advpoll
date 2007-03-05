@@ -83,10 +83,10 @@ function advpoll_uninstall() {
   }
 
   // Remove all votes.
-  db_query('DELETE FROM {votingapi_vote} WHERE content_type="advpoll"');
+  db_query("DELETE FROM {votingapi_vote} WHERE content_type='advpoll'");
 
   // Remove all cache data.
-  db_query('DELETE FROM {votingapi_cache} WHERE content_type="advpoll"');
+  db_query("DELETE FROM {votingapi_cache} WHERE content_type='advpoll'");
 
   // Remove all advpoll nodes.
   $result = db_query('SELECT nid FROM {advpoll}');

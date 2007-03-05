@@ -73,7 +73,7 @@ function advpoll_block_mostrecent() {
 
 function advpoll_page() {
   // List all polls
-  $sql = 'SELECT n.nid, n.title, p.active, n.created, c.value AS votes FROM {node} n INNER JOIN {advpoll} p ON n.nid = p.nid INNER JOIN {votingapi_cache} c ON n.nid = c.content_id WHERE n.status = 1 AND c.tag = "_advpoll" AND c.function="total_votes" AND c.content_type="advpoll" GROUP BY n.nid, n.title, p.active, n.created ORDER BY n.created DESC';
+  $sql = "SELECT n.nid, n.title, p.active, n.created, c.value AS votes FROM {node} n INNER JOIN {advpoll} p ON n.nid = p.nid INNER JOIN {votingapi_cache} c ON n.nid = c.content_id WHERE n.status = 1 AND c.tag = '_advpoll' AND c.function='total_votes' AND c.content_type='advpoll' GROUP BY n.nid, n.title, p.active, n.created ORDER BY n.created DESC";
   $sql = db_rewrite_sql($sql);
   $result = pager_query($sql, 15);
   $output = '<ul>';
@@ -136,10 +136,10 @@ function advpoll_delete($node) {
   db_query("DELETE FROM {advpoll_electoral_list} WHERE nid = %d", $node->nid);
 
   // TODO: These should be converted to a votingapi method eventually.
-  db_query('DELETE FROM {votingapi_vote} WHERE content_id = %d AND 
-    content_type="advpoll"', $node->nid);
-  db_query('DELETE FROM {votingapi_cache} WHERE content_id = %d AND
-    content_type="advpoll"', $node->nid);
+  db_query("DELETE FROM {votingapi_vote} WHERE content_id = %d AND 
+    content_type='advpoll'", $node->nid);
+  db_query("DELETE FROM {votingapi_cache} WHERE content_id = %d AND
+    content_type='advpoll'", $node->nid);
 }
 
 /**
@@ -363,7 +363,7 @@ function advpoll_load($node) {
   }
   $poll->choices = count($poll->choice);
 
-  $result = db_query('SELECT value FROM {votingapi_cache} where content_type="advpoll" AND content_id=%d AND tag="_advpoll" AND function="total_votes"', $node->nid);
+  $result = db_query("SELECT value FROM {votingapi_cache} where content_type='advpoll' AND content_id=%d AND tag='_advpoll' AND function='total_votes'", $node->nid);
   if (db_num_rows($result) > 0) {
     $cache = db_fetch_object($result);
     $poll->votes = $cache->value;
@@ -397,8 +397,8 @@ function _advpoll_user_voted($node) {
   // Check if the user's IP has already voted.
   if (!$cancel_vote) {
     $host = $_SERVER['HTTP_X_FORWARDED_FOR']? $_SERVER['HTTP_X_FORWARDED_FOR'] : $_SERVER['REMOTE_ADDR'];
-    $result = db_query('SELECT uid, value FROM {votingapi_vote} '
-      .'WHERE content_id=%d AND content_type="advpoll" AND hostname="%s"',
+    $result = db_query("SELECT uid, value FROM {votingapi_vote} "
+      ."WHERE content_id=%d AND content_type='advpoll' AND hostname='%s'",
       $node->nid, $host);
     if (db_num_rows($result) > 0) {
       $voted = TRUE;
@@ -633,7 +633,7 @@ function advpoll_electoral_list_form_validate($form_id, $form_values) {
   $add_user = $form_values['electoral_list']['add_user'];
   if ($add_user) {
     // Check that the user exists
-    $result = db_query('SELECT uid FROM {users} WHERE name="%s"', $add_user);
+    $result = db_query("SELECT uid FROM {users} WHERE name='%s'", $add_user);
     if (db_num_rows($result) == 0) {
       form_set_error('electoral_list][add_user', t('User %user does not exist.', array('%user' => $add_user)));
       return FALSE;
@@ -647,7 +647,7 @@ function advpoll_electoral_list_form_validate($form_id, $form_values) {
 function advpoll_electoral_list_form_submit($form_id, $form_values) {
   $add_user = $form_values['electoral_list']['add_user'];
   if ($add_user) {
-    db_query('REPLACE INTO {advpoll_electoral_list} (nid, uid) SELECT "%d", u.uid FROM users u WHERE u.name = "%s"', $form_values['nid'], $add_user);
+    db_query("REPLACE INTO {advpoll_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users u WHERE u.name = '%s'", $form_values['nid'], $add_user);
     drupal_set_message(t('%user added to electoral list.', array('%user' => $add_user)));
   }
 }
@@ -668,7 +668,7 @@ function advpoll_tab_votes() {
     $header[] = array('data' => t('Visitor'), 'field' => 'u.name');
     $header[] = array('data' => t('Vote'), '');
 
-    $result = pager_query('SELECT v.value, v.uid, v.hostname, v.tag, u.name FROM {votingapi_vote} v LEFT JOIN {users} u ON v.uid = u.uid WHERE v.content_type="advpoll" AND v.content_id = %d'. tablesort_sql($header), 20, 0, NULL, $node->nid);
+    $result = pager_query("SELECT v.value, v.uid, v.hostname, v.tag, u.name FROM {votingapi_vote} v LEFT JOIN {users} u ON v.uid = u.uid WHERE v.content_type='advpoll' AND v.content_id = %d". tablesort_sql($header), 20, 0, NULL, $node->nid);
     $rows = array();
     while ($vote = db_fetch_object($result)) {
       $key = $vote->uid? $vote->uid : $vote->hostname;
@@ -876,7 +876,7 @@ function advpoll_insert($node) {
     $node->settings['active'] = _advpoll_calculate_active($node);
   }
 
-  db_query('INSERT INTO {advpoll} (nid, mode, uselist, active, runtime, maxchoices, algorithm, showvotes, startdate) VALUES (%d, "%s", %d, %d, %d, %d, "%s", %d, %s)',
+  db_query("INSERT INTO {advpoll} (nid, mode, uselist, active, runtime, maxchoices, algorithm, showvotes, startdate) VALUES (%d, '%s', %d, %d, %d, %d, '%s', %d, %s)",
     $node->nid, $mode, $node->settings['uselist'], $node->settings['active'],
     $node->settings['runtime'], $node->settings['maxchoices'],
     $node->settings['algorithm'], $node->settings['showvotes'],
@@ -930,7 +930,7 @@ function advpoll_reset_confirm_submit($form_id, $form_values) {
   if ($form_values['confirm']) {
     if ($node = node_load(array('nid' => arg(1)))) {
       // Delete any votes for the poll
-      db_query('DELETE FROM {votingapi_vote} WHERE content_type="advpoll" AND content_id = %d', $node->nid);
+      db_query("DELETE FROM {votingapi_vote} WHERE content_type='advpoll' AND content_id = %d", $node->nid);
       drupal_set_message('Votes have been reset.');
       drupal_goto('node/'. $node->nid .'/edit');
     }
