@@ -13,13 +13,13 @@ function advpoll_install() {
           `nid` int(10) NOT NULL,
           `quorum` int(10) NOT NULL,
           `mode` varchar(32) NOT NULL,
-					`uselist` tinyint default '0',
-					`active` tinyint default '1',
-					`runtime` int NOT NULL default '0',
-					`maxchoices` int unsigned NOT NULL default '0',
-					`algorithm` VARCHAR(100),
-					`showvotes` tinyint,
-					`startdate` int unsigned,
+          `uselist` tinyint default '0',
+          `active` tinyint default '1',
+          `runtime` int NOT NULL default '0',
+          `maxchoices` int unsigned NOT NULL default '0',
+          `algorithm` VARCHAR(100),
+          `showvotes` tinyint,
+          `startdate` int unsigned,
           PRIMARY KEY  (`nid`)
       ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */");
 
@@ -38,6 +38,39 @@ function advpoll_install() {
         ) ENGINE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */");
 
       break;
+      
+    case 'pgsql':
+      db_query("CREATE TABLE {advpoll} (
+          nid int4 NOT NULL default '0',
+          quorum int4 NOT NULL default '0',
+          mode varchar(32),
+          uselist smallint default '0',
+          active smallint default '1',
+          runtime int NOT NULL default '0',
+          maxchoices int NOT NULL default '0',
+          algorithm varchar(100),
+          showvotes smallint,
+          startdate int,
+        CONSTRAINT advpoll_pkey PRIMARY KEY (nid)
+        );"
+      );
+
+      db_query("CREATE TABLE {advpoll_electoral_list} (
+          nid int4 NOT NULL default '0',
+          uid int4 NOT NULL default '0',
+        CONSTRAINT advpoll_list_pkey PRIMARY KEY (nid, uid)
+        );"
+      );
+
+      db_query("CREATE TABLE {advpoll_choices} (
+          nid int4 NOT NULL default '0',
+          label text,
+          vote_offset int2 default NULL,
+        CONSTRAINT advpoll_choices_pkey PRIMARY KEY (nid, vote_offset)
+        );"
+      );
+
+      break;
   }
 }
 
@@ -45,10 +78,10 @@ function advpoll_install() {
  * Implementation of hook_uninstall().
  */
 function advpoll_uninstall() {
-	db_query("DELETE FROM {votingapi_vote} WHERE content_type='advpoll'");
-	db_query('DROP TABLE {advpoll}');
-	db_query('DROP TABLE {advpoll_electoral_list}');
-	db_query('DROP TABLE {advpoll_choices}');
-	variable_del('advpoll_default_mode');
-	variable_del('advpoll_default_electoral_list');
+  db_query("DELETE FROM {votingapi_vote} WHERE content_type='advpoll'");
+  db_query('DROP TABLE {advpoll}');
+  db_query('DROP TABLE {advpoll_electoral_list}');
+  db_query('DROP TABLE {advpoll_choices}');
+  variable_del('advpoll_default_mode');
+  variable_del('advpoll_default_electoral_list');
 }

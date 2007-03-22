@@ -359,8 +359,8 @@ function advpoll_load($node) {
 		}
 	}
 	else {
-		$result = db_query('SELECT uid, value FROM {votingapi_vote} '
-			. 'WHERE content_id=%d AND hostname="%s"',
+		$result = db_query("SELECT uid, value FROM {votingapi_vote} "
+			. "WHERE content_id=%d AND hostname='%s'",
 			$node->nid, $_SERVER['REMOTE_ADDR']);
 		if (db_num_rows($result) > 0) {
 			$poll->voted = TRUE;
