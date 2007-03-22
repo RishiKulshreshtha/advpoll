@@ -132,6 +132,7 @@ function advpoll_vote_binary($node) {
 				$temp->value = 1;
 				$vote[] = $temp;
 			}
+			unset($temp);
 		}
   }
 	votingapi_set_vote('advpoll', $node->nid, $vote);
