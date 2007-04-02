@@ -1117,6 +1117,7 @@ function _advpoll_vote_response($node, $form_values) {
     $ajax_output .= advpoll_view_results($node, NULL, NULL, $form_values['in_block']);
     // Remove linebreaks as they will break jQuery's insert-HTML methods
     $ajax_output = str_replace("\n", '', $ajax_output);
+    drupal_set_header('Content-Type: text/plain; charset=utf-8');
     print drupal_to_js(array('statusMsgs' => '<div class="messages status">'. $msg .'</div>', 'response' => $ajax_output));
     exit();
   }
