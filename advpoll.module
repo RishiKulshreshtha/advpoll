@@ -675,11 +675,11 @@ function advpoll_tab_votes() {
       $rows[$key]['name'] = $vote->name ? theme('username', $vote) : check_plain($vote->hostname);
       if ($node->type == 'advpoll_ranking') {
         // Need two dimensional results (if equal rankings are allowed)
-        $rows[$key]['votes'][$vote->value][] = check_plain($node->choice[$vote->tag]['label']);
+        $rows[$key]['votes'][$vote->value][] = _advpoll_choice_markup($node->choice[$vote->tag]['label'], $node->format);
       }
       else {
         // Just need one dimensional results
-        $rows[$key]['votes'][] = check_plain($node->choice[$vote->tag]['label']);
+        $rows[$key]['votes'][] = _advpoll_choice_markup($node->choice[$vote->tag]['label'], $node->format);
       }
     }
     
@@ -1220,4 +1220,18 @@ function _advpoll_list_modes() {
     }
   }
   return $_advpoll_modes;
+}
+
+/**
+ * Helper function for rich text in choices.
+ *  
+ * We strip out the paragraphs which are not allowed within the label element
+ * and created by check_markup() when "Line break converter"-filter is used.
+ */
+function _advpoll_choice_markup($text, $format = FILTER_FORMAT_DEFAULT) {
+  $text = check_markup($text, $format);
+  $text = str_replace(array('<p>', '</p>'), '', $text);
+  $text = trim($text);
+
+  return $text; 
 }

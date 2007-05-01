@@ -32,7 +32,7 @@ function advpoll_voting_binary_form(&$node, $teaser, $page, $block) {
     foreach ($node->choice as $i => $choice) {
       // Don't show blank choices
       if ($choice['label']) {
-         $list[$i] = check_plain($choice['label']);
+         $list[$i] = _advpoll_choice_markup($choice['label'], $node->format);
       }
     }
     $form['choice'] = array(
@@ -106,7 +106,7 @@ function advpoll_view_results_binary($node, $teaser, $page, $block) {
         $votes[$i] = 0;
       }
       $percentage = round(100 * $votes[$i] / $total_votes, 0);
-      $output .= theme('advpoll_bar',  check_plain($ch['label']), $percentage, format_plural($votes[$i], '1 vote', '@count votes'), $block);
+      $output .= theme('advpoll_bar',  _advpoll_choice_markup($ch['label'], $node->format), $percentage, format_plural($votes[$i], '1 vote', '@count votes'), $block);
     }
   }
 

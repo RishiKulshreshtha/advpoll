@@ -62,7 +62,7 @@ function advpoll_voting_ranking_form(&$node, $teaser, $page, $block) {
       if ($choice['label']) {
         $form['choice'][$key] = array(
           '#type' => 'select',
-          '#title' => check_plain($choice['label']),
+          '#title' => _advpoll_choice_markup($choice['label'], $node->format),
           '#options' => $choices,
         );
       }
@@ -156,8 +156,7 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
 
         // Loop through all choices with this ranking
         foreach ($ranking[$i]->choices as $choice) {
-          $this_rank .= ($first_one? '' : ', ')
-            . check_plain($node->choice[$choice]['label']);
+          $this_rank .= ($first_one? '' : ', ') . _advpoll_choice_markup($node->choice[$choice]['label'], $node->format);
           $first_one = false;
         }
 
@@ -175,7 +174,7 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
 
         // Loop through all choices with this ranking
         foreach ($ranking[$i]->choices as $choice) {
-          $output .= ($first_one? '' : ', ') . check_plain($node->choice[$choice]['label']);
+          $output .= ($first_one? '' : ', ') . _advpoll_choice_markup($node->choice[$choice]['label'], $node->format);
           $first_one = false;
         }
 
