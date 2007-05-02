@@ -46,7 +46,7 @@ function advpoll_voting_ranking_form(&$node, $teaser, $page, $block) {
         $val = t('3rd');
       }
       else {
-        $val = t(strval($i) .'th');
+        $val = t($i .'th');
       }
       $choices[$i] = $val;
     }
