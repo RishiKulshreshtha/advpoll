@@ -882,23 +882,6 @@ function advpoll_insert($node) {
     $node->settings['algorithm'], $node->settings['showvotes'],
     $node->settings['usestart']? _advpoll_create_startdate($node): 'NULL');
 
-  /* Create the electoral list if desired */
-  if ($node->settings['uselist']) {
-    // Check if authenticated users have the right to vote, because 
-    // authenticated users are not added to the users_roles permission,
-    // probably for performance reasons.
-    $result = db_fetch_object(db_query("SELECT COUNT(*) AS hit FROM {permission} JOIN role ON role.rid = permission.rid WHERE FIND_IN_SET(' vote on advpoll', perm) AND role.name = 'authenticated user'"));
-    if ($result->hit) {
-      // Special case: any authenticated user can vote.
-      // Add all current users to electoral list.
-      db_query("INSERT INTO {advpoll_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users u WHERE u.uid != 0", $node->nid);
-    }
-    else {
-      // All users must not be allowed to vote, add relevant users only
-      db_query("INSERT INTO {advpoll_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users_roles u, permission p WHERE FIND_IN_SET(' view advpoll', p.perm) AND u.rid = p.rid AND u.uid != 0", $node->nid);
-    }
-  }
-
   // Insert the choices
   _advpoll_insert_choices($node);
 }
