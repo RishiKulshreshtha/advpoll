@@ -15,7 +15,7 @@ function advpoll_algorithms_ranking() {
   );
 }
 
-function advpoll_voting_ranking_form(&$node, $teaser, $page, $block) {
+function advpoll_voting_ranking_form(&$node, $teaser, $page) {
   $form = array();
 
   static $ranking_form_count = 0; 
@@ -69,11 +69,6 @@ function advpoll_voting_ranking_form(&$node, $teaser, $page, $block) {
     }
   }
 
-  $form['in_block'] = array(
-    '#type' => 'hidden',
-    '#value' => $block,
-  );
-
   $form['nid'] = array(
     '#type' => 'hidden',
     '#value' => $node->nid,
@@ -89,14 +84,11 @@ function advpoll_voting_ranking_form(&$node, $teaser, $page, $block) {
     );
   }
 
-  // Multistep is set to TRUE as a hack to allow in_block to be accessed
-  // when voting via ajax in a block - there may be a better way to do this.
-  $form['#multistep'] = TRUE;
   $form['#action'] = url('node/'. $node->nid);
   return $form;
 }
 
-function advpoll_view_results_ranking($node, $teaser, $page, $block) {
+function advpoll_view_results_ranking($node, $teaser, $page) {
   $results = votingapi_get_voting_results('advpoll', $node->nid);
   $round_table = '';
 
@@ -161,7 +153,7 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
         }
 
         $percentage = round(100 * $ranking[$i]->percentage, 0);
-        $output .= theme('advpoll_bar',  $this_rank, $percentage, $ranking[$i]->viewscore, $block);
+        $output .= theme('advpoll_bar', $this_rank, $percentage, $ranking[$i]->viewscore);
 
       }
     }
@@ -187,7 +179,7 @@ function advpoll_view_results_ranking($node, $teaser, $page, $block) {
     }
     $output .= '</ol>';
 
-    if (!$block && user_access('inspect all votes') && isset($rounds)) {
+    if (user_access('inspect all votes') && isset($rounds)) {
       if (count($rounds) > 0) {
         $header[0] = t('Rounds');
         $total_rounds = count($rounds);

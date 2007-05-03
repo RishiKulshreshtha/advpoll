@@ -17,7 +17,7 @@ function advpoll_algorithms_binary() {
  * 
  * This creates a list of choices to allow the user to vote on choices.
  */
-function advpoll_voting_binary_form(&$node, $teaser, $page, $block) {
+function advpoll_voting_binary_form(&$node, $teaser, $page) {
   static $binary_form_count = 0; 
   $form['#id'] = 'advpoll_voting_binary_form-'. $binary_form_count++;
   $form['#attributes'] = array('class' => 'advpoll-vote');
@@ -36,7 +36,6 @@ function advpoll_voting_binary_form(&$node, $teaser, $page, $block) {
       }
     }
     $form['choice'] = array(
-       '#title' => $page ? '' : check_plain($node->title),
       '#options' => $list,
     );
 
@@ -50,11 +49,6 @@ function advpoll_voting_binary_form(&$node, $teaser, $page, $block) {
       $form['choice']['#type'] = 'checkboxes';
     }
   }
-
-  $form['in_block'] = array(
-    '#type' => 'hidden',
-    '#value' => $block,
-  );
 
   $form['nid'] = array(
     '#type' => 'hidden',
@@ -71,14 +65,11 @@ function advpoll_voting_binary_form(&$node, $teaser, $page, $block) {
     );
   }
 
-  // Multistep is set to TRUE as a hack to allow in_block to be accessed
-  // when voting via ajax in a block - there may be a better way to do this.
-  $form['#multistep'] = TRUE;
   $form['#action'] = url('node/'. $node->nid);
   return $form;
 }
 
-function advpoll_view_results_binary($node, $teaser, $page, $block) {
+function advpoll_view_results_binary($node, $teaser, $page) {
   $content_type = 'advpoll';
   $content_id = $node->nid;
 
@@ -106,7 +97,7 @@ function advpoll_view_results_binary($node, $teaser, $page, $block) {
         $votes[$i] = 0;
       }
       $percentage = round(100 * $votes[$i] / $total_votes, 0);
-      $output .= theme('advpoll_bar',  _advpoll_choice_markup($ch['label'], $node->format), $percentage, format_plural($votes[$i], '1 vote', '@count votes'), $block);
+      $output .= theme('advpoll_bar', _advpoll_choice_markup($ch['label'], $node->format), $percentage, format_plural($votes[$i], '1 vote', '@count votes'));
     }
   }
 
