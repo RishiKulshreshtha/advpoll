@@ -567,23 +567,37 @@ function advpoll_tab_electoral_list() {
 
 function advpoll_electoral_list_form($nid) {
   $form['electoral_list'] = array(
-     '#type' => 'fieldset',
-     '#tree' => TRUE,
-     '#title' => t('Administer electoral list'),
-     '#collapsible' => TRUE,
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Administer electoral list'),
+    '#collapsible' => TRUE,
     '#weight' => 2,
     '#collapsed' => TRUE,
-   );
+  );
 
- $form['electoral_list']['add_user'] = array(
+  $form['electoral_list']['add_user'] = array(
     '#type' => 'textfield',
     '#title' => t('Add user'),
     '#size' => 40,
     '#autocomplete_path' => 'user/autocomplete',
-    '#description' => t('Add an individual user to the electoral list'),
+    '#description' => t('Add an individual user to the electoral list.'),
   );
 
-   $form['electoral_list']['submit'] = array(
+  // List all roles with "vote on polls" permission, but don't include anonymous users.
+  $result = db_query("SELECT r.name, r.rid FROM {role} r LEFT JOIN {permission} p ON p.rid=r.rid WHERE p.perm LIKE '%vote on polls%' AND r.rid != 1 ORDER BY r.name");
+  $role_options = array(0 => t('(Select a role)'));
+  while ($role = db_fetch_object($result)) {
+    $role_options[$role->rid] = $role->name;
+  }
+
+  $form['electoral_list']['add_role'] = array(
+    '#type' => 'select',
+    '#title' => t('Add users by role'),
+    '#description' => t('Only roles that have the "vote on polls" permission are listed.'),
+    '#options' => $role_options,
+  );
+
+  $form['electoral_list']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Modify electoral list'),
   );
@@ -594,7 +608,7 @@ function advpoll_electoral_list_form($nid) {
   );
 
   $form['nid'] = array('#type' => 'hidden', '#value' => $nid);
-  return $form;        
+  return $form;
 }
 
 /**
@@ -650,6 +664,31 @@ function advpoll_electoral_list_form_submit($form_id, $form_values) {
   if ($add_user) {
     db_query("REPLACE INTO {advpoll_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users u WHERE u.name = '%s'", $form_values['nid'], $add_user);
     drupal_set_message(t('%user added to electoral list.', array('%user' => $add_user)));
+  }
+
+  $add_role = $form_values['electoral_list']['add_role'];
+  if ($add_role) {
+    // Get the current electoral list.
+    $result = db_query('SELECT uid FROM {advpoll_electoral_list} WHERE nid=%d', $form_values['nid']);
+    $current_list = array(0);
+    while ($user = db_fetch_object($result)) {
+      $current_list[] = $user->uid;
+    }
+
+    $user_in_string = implode(',', $current_list);
+    // Check if all authenticated users should be added.
+    $result = db_fetch_object(db_query("SELECT COUNT(*) AS hit FROM {role} r WHERE r.name = 'authenticated user' AND r.rid = %d", $add_role));
+    if ($result->hit) {
+      // Special case: any authenticated user can vote.
+      // Add all current users to electoral list.
+      $result = db_query("INSERT INTO {advpoll_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users u WHERE u.uid NOT IN(%s)", $form_values['nid'], $user_in_string);
+    }
+    else {
+      // Insert new users into the electoral_list based on the role chosen.
+      $result = db_query("INSERT INTO {advpoll_electoral_list} (nid, uid) SELECT '%d', u.uid FROM {users} u LEFT JOIN {users_roles} ur ON u.uid = ur.uid WHERE ur.rid = %d AND u.uid NOT IN(%s)", $form_values['nid'], $add_role, $user_in_string);
+    }
+    drupal_set_message(format_plural(db_affected_rows($result), 'Added <em>1</em> user to the electoral list.', 'Added @count users to the electoral list.'));
+
   }
 }
 
