@@ -599,12 +599,12 @@ function advpoll_electoral_list_form($nid) {
 
   $form['electoral_list']['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Modify electoral list'),
+    '#value' => t('Add to electoral list'),
   );
 
   $form['electoral_list']['reset'] = array(
     '#type' => 'button',
-    '#value' => t('Reset electoral list'),
+    '#value' => t('Clear electoral list'),
   );
 
   $form['nid'] = array('#type' => 'hidden', '#value' => $nid);
