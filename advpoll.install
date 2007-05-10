@@ -11,7 +11,7 @@ function advpoll_install() {
     case 'mysqli':
       db_query("CREATE TABLE {advpoll} (
           `nid` int(10) NOT NULL,
-          `quorum` int(10) NOT NULL,
+          `quorum` int(10) NOT NULL default '0',
           `mode` varchar(32) NOT NULL,
           `uselist` tinyint default '0',
           `active` tinyint default '1',
@@ -102,4 +102,22 @@ function advpoll_uninstall() {
   // Remove all variables.
   variable_del('advpoll_default_mode');
   variable_del('advpoll_default_electoral_list');
+}
+
+/**
+ * Make sure that quorum has a default value of 0.
+ */
+function advpoll_update_1() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'pgsql':
+      // This was fixed for new installs of pgsql, but not upgrades.
+        db_change_column($ret, 'advpoll', 'quorum', 'quorum', 'integer', array('not null' => TRUE, 'default' => 0));
+        break;
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {advpoll} CHANGE quorum quorum int(10) NOT NULL default '0'");
+      break;
+  }
+  return $ret;  
 }
