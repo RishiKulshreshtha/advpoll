@@ -387,27 +387,24 @@ function _advpoll_user_voted($node) {
   $voted = FALSE;
   $cancel_vote = FALSE;
 
-  // Check if the uid has already voted.
   if ($user->uid) {
+    // Voter is logged in.
     $voted = (count(votingapi_get_user_votes('advpoll', $node->nid)) > 0);
     if ($voted) {
       $cancel_vote = TRUE;
     }
   }
+  else {
+    // Voter is anonymous.
 
-  // Check if the user's IP has already voted.
-  if (!$cancel_vote) {
-    $host = $_SERVER['HTTP_X_FORWARDED_FOR']? $_SERVER['HTTP_X_FORWARDED_FOR'] : $_SERVER['REMOTE_ADDR'];
-    $result = db_query("SELECT uid, value FROM {votingapi_vote} "
-      ."WHERE content_id=%d AND content_type='advpoll' AND hostname='%s'",
-      $node->nid, $host);
+    // TODO: add options to check cookie rather than IP for anonymous votes.
+
+    // Check if there is already an anonymous vote for this IP.
+    $host =  $_SERVER['REMOTE_ADDR'] . ($_SERVER['HTTP_X_FORWARDED_FOR'] ? '-'. $_SERVER['HTTP_X_FORWARDED_FOR'] : '');
+    $result = db_query("SELECT value FROM {votingapi_vote} WHERE content_id=%d AND content_type='advpoll' AND hostname='%s' AND uid=0", $node->nid, $host);
     if (db_num_rows($result) > 0) {
       $voted = TRUE;
-      $obj = db_fetch_object($result);
-      if ($obj->uid == 0) {
-        // Only allow cancelling if initial vote was also anonymous
-        $cancel_vote = TRUE;
-      }
+      $cancel_vote = TRUE;
     }
   }
   return array($voted, $cancel_vote);
