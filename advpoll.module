@@ -298,7 +298,7 @@ function advpoll_form($node, $form_values = NULL) {
     '#type' => 'date',
     '#title' => t('Starting date'),
     '#description' => t('Date that the poll opens'),
-    '#default_value' => array('year' => date('Y', $date), 'month' => date('m', $date), 'day' => date('d', $date)),
+    '#default_value' => array('year' => date('Y', $date), 'month' => date('n', $date), 'day' => date('d', $date)),
   );
 
   $form['settings']['startdatejs'] = array(
