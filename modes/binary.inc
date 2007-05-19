@@ -39,7 +39,13 @@ function advpoll_voting_binary_form(&$node, $teaser, $page) {
       '#options' => $list,
     );
 
-    if ($node->maxchoices == 1) {
+    if ($node->in_preview) {
+      $maxchoices = $node->settings['maxchoices'];
+    }
+    else {
+      $maxchoices = $node->maxchoices; 
+    }
+    if ($maxchoices == 1) {
       // Plurality voting
       $form['choice']['#type'] = 'radios';
       $form['choice']['#default_value'] = -1;
