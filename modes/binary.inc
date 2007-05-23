@@ -97,13 +97,21 @@ function advpoll_view_results_binary($node, $teaser, $page) {
   }
 
   if ($node->choice && $total_votes > 0) {
-    // Display results for each possible choice
+    // Add in any choices that received no votes.
     foreach ($node->choice as $i => $ch) {
-      if (!$votes[$i]) {
+      if (!isset($votes[$i])) {
         $votes[$i] = 0;
       }
+    }
+
+    // Sort results by votes, descending.
+    arsort($votes);
+
+    // Display results for each possible choice
+    foreach ($votes as $i => $count) {
+      $choice = $node->choice[$i];
       $percentage = round(100 * $votes[$i] / $total_votes, 0);
-      $output .= theme('advpoll_bar', _advpoll_choice_markup($ch['label'], $node->format), $percentage, format_plural($votes[$i], '1 vote', '@count votes'));
+      $output .= theme('advpoll_bar', _advpoll_choice_markup($choice['label'], $node->format), $percentage, format_plural($count, '1 vote', '@count votes'));
     }
   }
 
