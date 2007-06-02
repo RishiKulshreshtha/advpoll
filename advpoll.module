@@ -53,7 +53,7 @@ function theme_advpoll_block_mostrecent() {
   $node = advpoll_mostrecent();
   $output = '';
   if ($node) {
-    $output .= '<h3>'. $node->title .'</h3>'; 
+    $output .= '<h3>'. check_plain($node->title) .'</h3>';  
     $output .= drupal_render($node->content);
     if ($node->voted) {
       $output .= '<p>'. l(t('Older polls'), 'polls', array('class' => 'old-polls', 'title' => t('View the list of polls on this site.'))) .'</p>'; 
