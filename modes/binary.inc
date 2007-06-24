@@ -174,7 +174,7 @@ function advpoll_voting_binary_form_validate($form_id, $form_values) {
   $ok = TRUE;
 
   // Check if user has already voted
-  list($voted, $cancel_vote) = _advpoll_user_voted($node);
+  list($voted, $cancel_vote) = _advpoll_user_voted($node->nid);
   if ($voted) {
     $msg = t('You have already voted in this poll.');
     if ($ajax) {

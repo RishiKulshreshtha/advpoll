@@ -373,7 +373,7 @@ function advpoll_load($node) {
     $poll->votes = 0;
   }
 
-  list($poll->voted, $poll->cancel_vote) = _advpoll_user_voted($node);
+  list($poll->voted, $poll->cancel_vote) = _advpoll_user_voted($node->nid);
   return $poll;
 }
 
@@ -382,14 +382,14 @@ function advpoll_load($node) {
  *
  * @return Array indicating if user voted and, if so, if the vote is cancellable.
  */
-function _advpoll_user_voted($node) {
+function _advpoll_user_voted($nid) {
   global $user;
   $voted = FALSE;
   $cancel_vote = FALSE;
 
   if ($user->uid) {
     // Voter is logged in.
-    $voted = (count(votingapi_get_user_votes('advpoll', $node->nid)) > 0);
+    $voted = (count(votingapi_get_user_votes('advpoll', $nid)) > 0);
     if ($voted) {
       $cancel_vote = TRUE;
     }
@@ -401,7 +401,7 @@ function _advpoll_user_voted($node) {
 
     // Check if there is already an anonymous vote for this IP.
     $host =  $_SERVER['REMOTE_ADDR'] . ($_SERVER['HTTP_X_FORWARDED_FOR'] ? '-'. $_SERVER['HTTP_X_FORWARDED_FOR'] : '');
-    $result = db_query("SELECT value FROM {votingapi_vote} WHERE content_id=%d AND content_type='advpoll' AND hostname='%s' AND uid=0", $node->nid, $host);
+    $result = db_query("SELECT value FROM {votingapi_vote} WHERE content_id=%d AND content_type='advpoll' AND hostname='%s' AND uid=0", $nid, $host);
     if (db_num_rows($result) > 0) {
       $voted = TRUE;
       $cancel_vote = TRUE;
@@ -845,7 +845,7 @@ function advpoll_update($node) {
     $node->settings['usestart']? _advpoll_create_startdate($node): 'NULL',
     $node->nid);
 
-  _advpoll_insert_choices($node);
+  _advpoll_insert_choices($node->nid);
   votingapi_recalculate_results('advpoll', $node->nid);
 }
 
@@ -880,13 +880,13 @@ function _advpoll_create_startdate($node) {
       $node->settings['startdate']['year']);
 }
 
-function _advpoll_insert_choices($node) {
-  db_query('DELETE FROM {advpoll_choices} WHERE nid = %d', $node->nid);
+function _advpoll_insert_choices($nid) {
+  db_query('DELETE FROM {advpoll_choices} WHERE nid = %d', $nid);
   // Start at one rather than 0 due to Drupal FormAPI
   $i = 1;
   foreach ($_POST['choice'] as $choice) {
     if ($choice['label'] != '') {
-      db_query("INSERT INTO {advpoll_choices} (nid, label, vote_offset) VALUES (%d, '%s', %d)", $node->nid, $choice['label'], $i++);
+      db_query("INSERT INTO {advpoll_choices} (nid, label, vote_offset) VALUES (%d, '%s', %d)", $nid, $choice['label'], $i++);
     }
   }
 }
@@ -1097,7 +1097,7 @@ function _advpoll_vote_response($node, $form_values) {
   $msg = t('Your vote was registered.');
   // Ajax response
   if ($form_values['ajax']) {
-    list($node->voted, $node->cancel_vote) = _advpoll_user_voted($node);
+    list($node->voted, $node->cancel_vote) = _advpoll_user_voted($node->nid);
     $ajax_output .= advpoll_view_results($node, NULL, NULL);
     // Remove linebreaks as they will break jQuery's insert-HTML methods
     $ajax_output = str_replace("\n", '', $ajax_output);
