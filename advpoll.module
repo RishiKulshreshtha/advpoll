@@ -920,7 +920,7 @@ function advpoll_insert($node) {
     $node->settings['usestart']? _advpoll_create_startdate($node): 'NULL');
 
   // Insert the choices
-  _advpoll_insert_choices($node);
+  _advpoll_insert_choices($node->nid);
 }
 
 /**
