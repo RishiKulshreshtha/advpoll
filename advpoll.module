@@ -1015,12 +1015,14 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
   if ($node->in_preview) {
     // Show the voting form but don't let them vote
     $node->content['poll'] = array(
+      '#weight' => 1,
       '#value' => drupal_get_form('advpoll_voting_'. $mode .'_form', $node, $teaser, $page),
     );
   }
   else if (!$node->voted && arg(2) != 'results' && $node->active && ($eligible = advpoll_eligible($node))) {
     // User hasn't voted and we're not on the results tab
     $node->content['poll'] = array(
+      '#weight' => 1,
       '#value' => drupal_get_form('advpoll_voting_'. $node->mode .'_form', $node, $teaser, $page)
     );
     static $addjs = TRUE;
@@ -1041,10 +1043,10 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
     }
     // Show results only if the user has voted or poll is closed
     $node->content['poll'] = array(
+      '#weight' => 1,
       '#value' => advpoll_view_results($node, $teaser, $page)
     );  
   }
-
   return node_prepare($node, $teaser);
 }
 
