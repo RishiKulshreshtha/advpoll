@@ -1061,9 +1061,14 @@ function _advpoll_block_resultslink($node) {
 }
 
 function theme_advpoll_results($title, $results, $votes, $links, $nid, $voted, $cancel_vote) {
-  $output .= '<div class="poll">';
-  $output .= $results;
-  $output .= '<div class="total">'. t('Total votes: %votes', array('%votes' => $votes)) .'</div>';
+  $output = '<div class="poll">';
+  if ($results) {
+    $output .= $results;
+    $output .= '<div class="total">'. t('Total votes: %votes', array('%votes' => $votes)) .'</div>';
+  }
+  else {
+    $output .= '<p>'. t('No votes have been recorded for this poll.') .'</p>';
+  }
   $output .= '</div>';
   return $output;
 } 
