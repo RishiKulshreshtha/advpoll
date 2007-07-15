@@ -1075,7 +1075,7 @@ function theme_advpoll_results($title, $results, $votes, $links, $nid, $voted, $
 
 function _advpoll_show_cancel_form($node) {
   $output = '';
-  if ($node->voted && $node->cancel_vote && user_access('cancel own vote')) {
+  if ($node->voted && $node->cancel_vote && user_access('cancel own vote') && $node->active) {
     $output .= drupal_get_form('advpoll_cancel_form', $node->nid);
   }
   return $output;
