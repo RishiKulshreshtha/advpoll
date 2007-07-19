@@ -150,6 +150,7 @@ function advpoll_delete($node) {
  */
 function advpoll_form($node, $form_values = NULL) {
   $mode = _advpoll_get_mode($node);
+  $type = node_get_types('type', $node);
   
   // Only add javascript once, even if _form is called multiple times.
   static $add_js;
@@ -163,14 +164,14 @@ function advpoll_form($node, $form_values = NULL) {
 
   $form['title'] = array(
     '#type' => 'textfield',
-    '#title' => ucfirst($mode) .' '. t('question'),
+    '#title' => check_plain($type->title_label),
     '#required' => TRUE,
     '#default_value' => $node->title,
   );
 
   $form['body_filter']['body'] = array(
     '#type' => 'textarea',
-    '#title' => t('Description'),
+    '#title' => check_plain($type->body_label),
     '#required' => FALSE,
     '#default_value' => $node->body,
   );
@@ -773,9 +774,11 @@ function advpoll_node_info() {
   $info = array();
   foreach ($modes as $mode) {
     $info['advpoll_'. $mode['name']] = array(
-      'name' => t(ucfirst($mode['name']) .' poll'),
+      'name' => t('@name poll', array('@name' => $mode['name_label'])),
       'module' => 'advpoll',
       'description' => $mode['description'],
+      'title_label' => t('@name question', array('@name' => $mode['name_label'])),
+      'body_label' => t('Description'),
     );
   }
   return $info;

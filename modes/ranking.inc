@@ -4,6 +4,7 @@
 function advpoll_info_ranking() {
   return array(
     'name' => 'ranking',
+    'name_label' => t('Ranking'),
     'description' => t('Rank a number of choices.'),
   );
 }

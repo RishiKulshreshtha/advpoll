@@ -4,6 +4,7 @@
 function advpoll_info_binary() {
   return array(
     'name' => 'binary',
+    'name_label' => t('Binary'),
     'description' => t('Vote for or against a number of choices.'),
   );
 }
