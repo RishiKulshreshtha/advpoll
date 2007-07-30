@@ -149,7 +149,7 @@ function advpoll_view_results_ranking($node, $teaser, $page) {
 
         // Loop through all choices with this ranking
         foreach ($ranking[$i]->choices as $choice) {
-          $this_rank .= ($first_one? '' : ', ') . _advpoll_choice_markup($node->choice[$choice]['label'], $node->format);
+          $this_rank .= ($first_one? '' : ', ') . _advpoll_choice_markup($node->choice[$choice]['label'], $node->format, false);
           $first_one = false;
         }
 
@@ -164,10 +164,12 @@ function advpoll_view_results_ranking($node, $teaser, $page) {
       for ($i = 0; $i < count($ranking); $i++) {
         $output .= '<li> ';
         $first_one = true;
+        // If previewing check the format against the current users permissions.
+        $check = $node->in_preview;
 
         // Loop through all choices with this ranking
         foreach ($ranking[$i]->choices as $choice) {
-          $output .= ($first_one? '' : ', ') . _advpoll_choice_markup($node->choice[$choice]['label'], $node->format);
+          $output .= ($first_one? '' : ', ') . _advpoll_choice_markup($node->choice[$choice]['label'], $node->format, $check);
           $first_one = false;
         }
 

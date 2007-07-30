@@ -30,10 +30,12 @@ function advpoll_voting_binary_form(&$node, $teaser, $page) {
 
   if ($node->choice) {
     $list = array();
+    // If previewing check the format against the current users permissions.
+    $check = $node->in_preview;
     foreach ($node->choice as $i => $choice) {
       // Don't show blank choices
       if ($choice['label']) {
-         $list[$i] = _advpoll_choice_markup($choice['label'], $node->format);
+         $list[$i] = _advpoll_choice_markup($choice['label'], $node->format, $check);
       }
     }
     $form['choice'] = array(
@@ -112,7 +114,7 @@ function advpoll_view_results_binary($node, $teaser, $page) {
     foreach ($votes as $i => $count) {
       $choice = $node->choice[$i];
       $percentage = round(100 * $votes[$i] / $total_votes, 0);
-      $output .= theme('advpoll_bar', _advpoll_choice_markup($choice['label'], $node->format), $percentage, format_plural($count, '1 vote', '@count votes'));
+      $output .= theme('advpoll_bar', _advpoll_choice_markup($choice['label'], $node->format, false), $percentage, format_plural($count, '1 vote', '@count votes'));
     }
   }
 
