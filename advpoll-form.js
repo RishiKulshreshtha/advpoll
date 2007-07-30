@@ -47,8 +47,6 @@ Drupal.advpoll.removeChoiceClick = function()  {
     });
     
     Drupal.advpoll.maxChoices(i-1);
-    
-    return false;
   });
 }
 
@@ -76,7 +74,7 @@ Drupal.advpoll.nodeFormAutoAttach = function() {
   $("#edit-settings-usestart").click(Drupal.advpoll.updateStartDate);
   
   // Insert Remove links
-  $('<a class="remove-choice" href="#">' + Drupal.settings.advPoll.remove + '</a>').insertAfter("input.choices");
+  $('<a class="remove-choice">' + Drupal.settings.advPoll.remove + '</a>').insertAfter("input.choices");
   Drupal.advpoll.removeChoiceClick();
   
   // "Backup" of the first choice
