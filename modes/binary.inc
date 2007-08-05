@@ -74,7 +74,16 @@ function advpoll_voting_binary_form(&$node, $teaser, $page) {
     );
   }
 
+  // Disable button and display message for non-eligible users.
+  if (!advpoll_eligible($node)) {
+    global $user;
+    $form['vote']['#disabled'] = TRUE;
+    $login_message = t('<a href="@login">Login</a> to vote in this poll.', array('@login' => url('user/login', drupal_get_destination())));
+    $form['vote']['#suffix'] = ($user->uid ? t('You are not eligible to vote in this poll.') : $login_message);
+  }
+  
   $form['#action'] = url('node/'. $node->nid);
+  
   return $form;
 }
 
@@ -175,6 +184,18 @@ function advpoll_voting_binary_form_validate($form_id, $form_values) {
   $node = node_load($form_values['nid']);
   $ajax = $form_values['ajax'];
   $ok = TRUE;
+  
+  // Check if user is eligible to vote
+  if (!advpoll_eligible($node)) {
+    $msg = t('You are not allowed to vote in this poll.');
+    if ($ajax) {
+      $errors[] = $msg;
+    }
+    else {
+      form_set_error('choice[', $msg);
+    }
+    $ok = FALSE;
+  }
 
   // Check if user has already voted
   list($voted, $cancel_vote) = _advpoll_user_voted($node->nid);

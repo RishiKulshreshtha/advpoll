@@ -1024,7 +1024,7 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
       '#value' => drupal_get_form('advpoll_voting_'. $mode .'_form', $node, $teaser, $page),
     );
   }
-  else if (!$node->voted && arg(2) != 'results' && $node->active && ($eligible = advpoll_eligible($node))) {
+  else if (!$node->voted && arg(2) != 'results' && $node->active) {
     // User hasn't voted and we're not on the results tab
     $node->content['poll'] = array(
       '#weight' => 1,
@@ -1040,13 +1040,7 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
     }
   }
   else {
-    if (isset($eligible) && !$eligible) {
-      $node->content['message'] = array(
-        '#weight' => -1,
-        '#value' => t('You are not eligible to vote in this poll.'),
-      );
-    }
-    // Show results only if the user has voted or poll is closed
+    // Show results (the user has voted or poll is closed).
     $node->content['poll'] = array(
       '#weight' => 1,
       '#value' => advpoll_view_results($node, $teaser, $page)
