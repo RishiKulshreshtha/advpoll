@@ -1223,3 +1223,17 @@ function _advpoll_choice_markup($text, $format = FILTER_FORMAT_DEFAULT, $check =
 
   return $text; 
 }
+
+/**
+ * Wrapper function around form_set_error() to support validating of Ajax voting.
+ */
+function _advpoll_form_set_error($name = NULL, $message = '', $ajax = false) {
+  if ($ajax) {
+    drupal_set_header('Content-Type: text/plain; charset=utf-8');
+    print drupal_to_js(array('errors' => '<div class="messages error">'. $message .'</div>'));
+    exit;
+  }
+  else {
+    return form_set_error('choice[', $message);
+  }
+}

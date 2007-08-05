@@ -619,33 +619,17 @@ function advpoll_voting_ranking_form_submit($form_id, $form_values) {
 function advpoll_voting_ranking_form_validate($form_id, $form_values) {
   $node = node_load($form_values['nid']);
   $ajax = $form_values['ajax'];
-  $ok = TRUE;
   
   // Check if user is eligible to vote
   if (!advpoll_eligible($node)) {
-    $msg = t('You are not allowed to vote in this poll.');
-    if ($ajax) {
-      $errors[] = $msg;
-    }
-    else {
-      form_set_error('choice[', $msg);
-    }
-    $ok = FALSE;
+    _advpoll_form_set_error('choice[', t('You are not allowed to vote in this poll.'), $ajax);
   }
 
   // Check if user has already voted
   list($voted, $cancel_vote) = _advpoll_user_voted($node->nid);
   if ($voted) {
-    $msg = t('You have already voted in this poll.');
-    if ($ajax) {
-      $errors[] = $msg;
-    }
-    else {
-      form_set_error('choice[', $msg);
-    }
-    $ok = FALSE;
+    _advpoll_form_set_error('choice[', t('You have already voted in this poll.'), $ajax);
   }
-
 
   // Array used to check which values are set
   $setvalues = array();
@@ -663,67 +647,29 @@ function advpoll_voting_ranking_form_validate($form_id, $form_values) {
     // Check range
     if ($intvalue > count($node->choice) || $intvalue < 0) {
       // TODO: clean up this error message
-      $msg = "Illegal rank for choice $key: $intvalue (min: 1, max: "
-        . count($node->choice) .')';
-      if ($ajax) {
-        $errors[] = $msg;
-      }
-      else {
-        form_set_error('choice]['. $key, $msg);
-      }
-      $ok = FALSE;
+      $message = "Illegal rank for choice $key: $intvalue (min: 1, max: ". count($node->choice) .')';
+      _advpoll_form_set_error('choice]['. $key, $message, $ajax);
     }
   }
   
   // Too many choices ranked
   if ($node->maxchoices != 0 && $numchoices > $node->maxchoices) {
-    $msg = t('%num choices were selected but only %max are allowed.',
-        array('%num' => $numchoices, '%max' => $node->maxchoices));
-    if ($ajax) {
-      $errors[] = $msg;
-    }
-    else {
-      form_set_error('choice', $msg);
-    }
-    $ok = false;
+    $message = t('%num choices were selected but only %max are allowed.', array('%num' => $numchoices, '%max' => $node->maxchoices));
+    _advpoll_form_set_error('choice', $message, $ajax);
   }
 
   // Not enough choices ranked
   $minchoices = 1;
   if ($numchoices < $minchoices) {
-    $msg = t('At least one choice must be selected.');
-    if ($ajax) {
-      $errors[] = $msg;
-    }
-    else {
-      form_set_error('choice', $msg);
-    }
-    $ok = false;
+    _advpoll_form_set_error('choice', t('At least one choice must be selected.'), $ajax);
   }
 
   // Check that multiple choices are not set to the same value
   foreach ($setvalues as $val => $count) {
     if ($val != 0 && $count > 1) {
-      $msg = t('Multiple choices given the rank of %val.', array('%val' => $val));
-      if ($ajax) {
-        $errors[] = $msg;
-      }
-      else {
-        form_set_error('choice', $msg);
-      }
-    
-      $ok = false;
+      $message = t('Multiple choices given the rank of %value.', array('%value' => $val));
+      _advpoll_form_set_error('choice', $message, $ajax);
     }
-  }
-  // If the form was posted with AJAX and has errors, print the error message.
-  if ($ajax && !$ok) {
-    drupal_set_header('Content-Type: text/plain; charset=utf-8');
-    print drupal_to_js(array('errors' => '<div class="messages error">'. implode('<br />', $errors) .'</div>'));
-    exit;
-  }
-  // Do as usual
-  else {
-    return $ok;
   }
 }
 
