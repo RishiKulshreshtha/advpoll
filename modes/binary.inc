@@ -10,7 +10,7 @@ function advpoll_info_binary() {
 }
 
 function advpoll_algorithms_binary() {
-  return array('plurality' => t('plurality'));
+  return array('plurality' => t('Plurality'));
 }
 
 /**

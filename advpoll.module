@@ -246,28 +246,15 @@ function advpoll_form($node, $form_values = NULL) {
     '#description' => t('Limits the total number of choices voters may select.')
   );
 
-  $voting_algorithms = array();
-
-  foreach (advpoll_algorithms($mode) as $alg) {
-    $voting_algorithms[$alg] = ucfirst($alg);
-  }
-
-  $defaultalg = ($form_values['settings']['algorithm']?
-    $form_values['settings']['algorithm'] : $node->algorithm);
-      
+  $voting_algorithms = advpoll_algorithms($mode);
+  
   if (count($voting_algorithms) > 1) {
     $form['settings']['algorithm'] = array(
       '#type' => 'select',
       '#title' => t('Algorithm'),
       '#options' => $voting_algorithms,
-      '#default_value' => $defaultalg,
+      '#default_value' => $node->algorithm ? $node->algorithm : key($voting_algorithms),
       '#description' => 'Voting algorithm to use to calculate the winner.',
-    );
-  }
-  else {
-    $form['settings']['algorithm'] = array(
-      '#type' => 'hidden',
-      '#value' => $defaultalg,
     );
   }
 

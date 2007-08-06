@@ -11,8 +11,8 @@ function advpoll_info_ranking() {
 
 function advpoll_algorithms_ranking() {
   return array(
-    'borda count' => t('borda count'),
-    'instant runoff' => t('instant runoff'),
+    'borda_count' => t('Borda count'),
+    'instant_runoff' => t('Instant runoff'),
   );
 }
 
@@ -151,7 +151,7 @@ function advpoll_view_results_ranking($node, $teaser, $page) {
       }
     }
 
-    if ($node->algorithm == 'borda count') {
+    if ($node->algorithm == 'borda_count') {
       for ($i = 0; $i < count($ranking); $i++) {
         $first_one = true;
         $this_rank = '';
@@ -234,7 +234,7 @@ function advpoll_view_results_ranking($node, $teaser, $page) {
  *   -totalVoters : the total number of voters who participated
  */
 function advpoll_calculate_results_ranking(&$cache, $votes, $node) {
-  if ($node->algorithm == 'borda count') {
+  if ($node->algorithm == 'borda_count') {
     $results = _advpoll_calculate_bordacount($node);
   }
   else {
