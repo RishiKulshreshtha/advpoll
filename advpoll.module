@@ -137,10 +137,8 @@ function advpoll_delete($node) {
   db_query("DELETE FROM {advpoll_electoral_list} WHERE nid = %d", $node->nid);
 
   // TODO: These should be converted to a votingapi method eventually.
-  db_query("DELETE FROM {votingapi_vote} WHERE content_id = %d AND 
-    content_type='advpoll'", $node->nid);
-  db_query("DELETE FROM {votingapi_cache} WHERE content_id = %d AND
-    content_type='advpoll'", $node->nid);
+  db_query("DELETE FROM {votingapi_vote} WHERE content_id = %d AND content_type='advpoll'", $node->nid);
+  db_query("DELETE FROM {votingapi_cache} WHERE content_id = %d AND content_type='advpoll'", $node->nid);
 }
 
 /**
@@ -606,8 +604,7 @@ function advpoll_remove_voter() {
     $result = db_query('SELECT name FROM {users} WHERE uid=%d', $uid);
     if (db_num_rows($result) > 0) {
       $user = db_fetch_object($result);
-      db_query('DELETE FROM {advpoll_electoral_list} WHERE nid=%d AND uid=%d',
-        $nid, $uid);
+      db_query('DELETE FROM {advpoll_electoral_list} WHERE nid=%d AND uid=%d', $nid, $uid);
       drupal_set_message(t('%user removed from the electoral list.', array('%user' => $user->name)));
     }
     else {
@@ -666,11 +663,11 @@ function advpoll_electoral_list_form_submit($form_id, $form_values) {
     if ($result->hit) {
       // Special case: any authenticated user can vote.
       // Add all current users to electoral list.
-      $result = db_query("INSERT INTO {advpoll_electoral_list} (nid, uid) SELECT '%d', u.uid FROM {users} u WHERE u.uid NOT IN(%s)", $form_values['nid'], $user_in_string);
+      $result = db_query("INSERT INTO {advpoll_electoral_list} (nid, uid) SELECT '%d', u.uid FROM {users} u WHERE u.uid NOT IN('%s')", $form_values['nid'], $user_in_string);
     }
     else {
       // Insert new users into the electoral_list based on the role chosen.
-      $result = db_query("INSERT INTO {advpoll_electoral_list} (nid, uid) SELECT '%d', u.uid FROM {users} u LEFT JOIN {users_roles} ur ON u.uid = ur.uid WHERE ur.rid = %d AND u.uid NOT IN(%s)", $form_values['nid'], $add_role, $user_in_string);
+      $result = db_query("INSERT INTO {advpoll_electoral_list} (nid, uid) SELECT '%d', u.uid FROM {users} u LEFT JOIN {users_roles} ur ON u.uid = ur.uid WHERE ur.rid = %d AND u.uid NOT IN('%s')", $form_values['nid'], $add_role, $user_in_string);
     }
     drupal_set_message(format_plural(db_affected_rows($result), 'Added <em>1</em> user to the electoral list.', 'Added @count users to the electoral list.'));
 
@@ -828,12 +825,7 @@ function advpoll_update($node) {
     $node->settings['active'] = _advpoll_calculate_active($node);
   }
 
-  db_query("UPDATE {advpoll} SET active=%d, runtime=%d, maxchoices=%d, algorithm='%s', uselist=%d, showvotes=%d, startdate=%s WHERE nid = %d",
-    $node->settings['active'], $node->settings['runtime'],
-    $node->settings['maxchoices'], $node->settings['algorithm'],
-    $node->settings['uselist'], $node->settings['showvotes'],
-    $node->settings['usestart']? _advpoll_create_startdate($node): 'NULL',
-    $node->nid);
+  db_query("UPDATE {advpoll} SET active=%d, runtime=%d, maxchoices=%d, algorithm='%s', uselist=%d, showvotes=%d, startdate='%s' WHERE nid = %d", $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['uselist'], $node->settings['showvotes'], $node->settings['usestart'] ? _advpoll_create_startdate($node) : 'NULL', $node->nid);
 
   _advpoll_insert_choices($node->nid);
   votingapi_recalculate_results('advpoll', $node->nid);
@@ -903,11 +895,7 @@ function advpoll_insert($node) {
     $node->settings['active'] = _advpoll_calculate_active($node);
   }
 
-  db_query("INSERT INTO {advpoll} (nid, mode, uselist, active, runtime, maxchoices, algorithm, showvotes, startdate) VALUES (%d, '%s', %d, %d, %d, %d, '%s', %d, %s)",
-    $node->nid, $mode, $node->settings['uselist'], $node->settings['active'],
-    $node->settings['runtime'], $node->settings['maxchoices'],
-    $node->settings['algorithm'], $node->settings['showvotes'],
-    $node->settings['usestart']? _advpoll_create_startdate($node): 'NULL');
+  db_query("INSERT INTO {advpoll} (nid, mode, uselist, active, runtime, maxchoices, algorithm, showvotes, startdate) VALUES (%d, '%s', %d, %d, %d, %d, '%s', %d, '%s')", $node->nid, $mode, $node->settings['uselist'], $node->settings['active'], $node->settings['runtime'], $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['showvotes'], $node->settings['usestart'] ? _advpoll_create_startdate($node) : 'NULL');
 
   // Insert the choices
   _advpoll_insert_choices($node->nid);
