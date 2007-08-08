@@ -63,7 +63,7 @@ function theme_advpoll_block_mostrecent() {
 }
 
 function advpoll_mostrecent() {
-  $result = db_query('SELECT MAX(n.nid) nid FROM {node} n INNER JOIN {advpoll} p ON p.nid = n.nid WHERE n.status = 1 AND p.active=1');
+  $result = db_query('SELECT MAX(n.nid) AS nid FROM {node} n INNER JOIN {advpoll} p ON p.nid = n.nid WHERE n.status = 1 AND p.active=1');
   $poll = db_fetch_object($result);
   // The nid will be NULL if there are no active polls.
   if ($poll->nid) {
@@ -74,7 +74,7 @@ function advpoll_mostrecent() {
 
 function advpoll_page() {
   // List all polls
-  $sql = "SELECT n.nid, n.title, p.active, n.created, c.value AS votes FROM {node} n INNER JOIN {advpoll} p ON n.nid = p.nid INNER JOIN {votingapi_cache} c ON n.nid = c.content_id WHERE n.status = 1 AND c.tag = '_advpoll' AND c.function='total_votes' AND c.content_type='advpoll' GROUP BY n.nid, n.title, p.active, n.created ORDER BY n.created DESC";
+  $sql = "SELECT n.nid, n.title, p.active, n.created, c.value AS votes FROM {node} n INNER JOIN {advpoll} p ON n.nid = p.nid INNER JOIN {votingapi_cache} c ON n.nid = c.content_id WHERE n.status = 1 AND c.tag = '_advpoll' AND c.function='total_votes' AND c.content_type='advpoll' GROUP BY n.nid, n.title, p.active, n.created, c.value ORDER BY n.created DESC";
   $sql = db_rewrite_sql($sql);
   $result = pager_query($sql, 15);
   $output = '<ul>';
