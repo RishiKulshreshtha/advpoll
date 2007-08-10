@@ -48,6 +48,14 @@ function advpoll_voting_ranking_form(&$node, $teaser, $page) {
       }
       else {
         $val = t($i .'th');
+        // Fix to work around limitations in the current translation system. By 
+        // listing the strings here they are made immediately available for 
+        // translating. Listing up to 15 here, as it should be enough for most 
+        // users. If more are needed they are made available for translating in 
+        // Drupal when a poll with more than 15 choices has been created.
+        // TODO: Find a better solution for this.
+        $_make_translatable = array(t('4th'), t('5th'), t('6th'), t('7th'), t('8th'), t('9th'), t('10th'), t('11th'), t('12th'), t('13th'), t('14th'), t('15th'));
+
       }
       $choices[$i] = $val;
     }
