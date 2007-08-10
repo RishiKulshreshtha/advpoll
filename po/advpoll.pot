@@ -1,0 +1,549 @@
+# $Id$
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  advpoll.module,v 1.21.2.52 2007/08/08 11:49:27 fajerstarter
+#  advpoll.info,v 1.1.4.5 2007/06/09 20:18:42 chriskennedy
+#  binary.inc,v 1.7.2.23 2007/08/06 08:47:19 fajerstarter
+#  ranking.inc,v 1.8.2.28 2007/08/10 06:38:06 fajerstarter
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2007-08-10 08:41+0200\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: advpoll.module:38;42
+msgid "Latest poll"
+msgstr ""
+
+#: advpoll.module:59
+msgid "Older polls"
+msgstr ""
+
+#: advpoll.module:59
+msgid "View the list of polls on this site."
+msgstr ""
+
+#: advpoll.module:82
+msgid "open"
+msgstr ""
+
+#: advpoll.module:82
+msgid "closed"
+msgstr ""
+
+#: advpoll.module:157
+msgid "Remove"
+msgstr ""
+
+#: advpoll.module:157
+msgid "Add choice"
+msgstr ""
+
+#: advpoll.module:157
+msgid "No limit"
+msgstr ""
+
+#: advpoll.module:197
+msgid "Poll choices"
+msgstr ""
+
+#: advpoll.module:207
+msgid "Need more choices"
+msgstr ""
+
+#: advpoll.module:212
+msgid "If the amount of boxes above isn't enough, check this box and click the Preview button below to add some more."
+msgstr ""
+
+#: advpoll.module:219
+msgid "Choice %n"
+msgstr ""
+
+#: advpoll.module:227
+msgid "Poll settings"
+msgstr ""
+
+#: advpoll.module:240
+msgid "Maximum choices"
+msgstr ""
+
+#: advpoll.module:244
+msgid "Limits the total number of choices voters may select."
+msgstr ""
+
+#: advpoll.module:252
+msgid "Algorithm"
+msgstr ""
+
+#: advpoll.module:259
+msgid "Active"
+msgstr ""
+
+#: advpoll.module:259
+msgid "Closed"
+msgstr ""
+
+#: advpoll.module:262
+msgid "Status"
+msgstr ""
+
+#: advpoll.module:265
+msgid "When a poll is closed users may no longer vote on it."
+msgstr ""
+
+#: advpoll.module:268
+msgid "Unlimited"
+msgstr ""
+
+#: advpoll.module:272
+msgid "Use start date"
+msgstr ""
+
+#: advpoll.module:273
+msgid "Specify a date that the poll opens."
+msgstr ""
+
+#: advpoll.module:285
+msgid "Starting date"
+msgstr ""
+
+#: advpoll.module:286
+msgid "Date that the poll opens"
+msgstr ""
+
+#: advpoll.module:297
+msgid "Duration"
+msgstr ""
+
+#: advpoll.module:300
+msgid "After this period, the poll will be closed automatically. This is relative to the start date if it is specified, otherwise the date the poll was created."
+msgstr ""
+
+#: advpoll.module:305
+msgid "Restrict voting to electoral list"
+msgstr ""
+
+#: advpoll.module:306
+msgid "If enabled, a list of eligible voters will be created and only that group will be able to vote in the poll."
+msgstr ""
+
+#: advpoll.module:312
+msgid "Show individual votes"
+msgstr ""
+
+#: advpoll.module:313
+msgid "Users with the appropriate permissions will be able to see how each person voted."
+msgstr ""
+
+#: advpoll.module:320;919;947
+msgid "Reset votes"
+msgstr ""
+
+#: advpoll.module:334
+msgid "A sophisticated polling module for voting, elections, and group decision-making."
+msgstr ""
+
+#: advpoll.module:414;920
+msgid "Cancel"
+msgstr ""
+
+#: advpoll.module:422 advpoll.info:0
+msgid "Advanced Poll"
+msgstr ""
+
+#: advpoll.module:423
+msgid "Update settings for Advanced Poll"
+msgstr ""
+
+#: advpoll.module:431
+msgid "Advanced Polls"
+msgstr ""
+
+#: advpoll.module:453;1029
+msgid "Results"
+msgstr ""
+
+#: advpoll.module:465
+msgid "Votes"
+msgstr ""
+
+#: advpoll.module:477
+msgid "Electoral list"
+msgstr ""
+
+#: advpoll.module:525
+msgid "This table lists all the eligible voters for this poll."
+msgstr ""
+
+#: advpoll.module:527
+msgid "Voter"
+msgstr ""
+
+#: advpoll.module:537
+msgid "remove"
+msgstr ""
+
+#: advpoll.module:555
+msgid "Administer electoral list"
+msgstr ""
+
+#: advpoll.module:563
+msgid "Add user"
+msgstr ""
+
+#: advpoll.module:566
+msgid "Add an individual user to the electoral list."
+msgstr ""
+
+#: advpoll.module:571
+msgid "(Select a role)"
+msgstr ""
+
+#: advpoll.module:578
+msgid "Add users by role"
+msgstr ""
+
+#: advpoll.module:579
+msgid "Only roles that have the \"vote on polls\" permission are listed."
+msgstr ""
+
+#: advpoll.module:585
+msgid "Add to electoral list"
+msgstr ""
+
+#: advpoll.module:590
+msgid "Clear electoral list"
+msgstr ""
+
+#: advpoll.module:608
+msgid "%user removed from the electoral list."
+msgstr ""
+
+#: advpoll.module:611
+msgid "No user found with a uid of %uid."
+msgstr ""
+
+#: advpoll.module:622
+msgid "Reset electoral list"
+msgstr ""
+
+#: advpoll.module:625
+msgid "Electoral list cleared."
+msgstr ""
+
+#: advpoll.module:635
+msgid "User %user does not exist."
+msgstr ""
+
+#: advpoll.module:648
+msgid "%user added to electoral list."
+msgstr ""
+
+#: advpoll.module:688
+msgid "This table lists all the recorded votes for this poll. If anonymous users are allowed to vote, they will be identified by the IP address of the computer they used when they voted."
+msgstr ""
+
+#: advpoll.module:690
+msgid "Visitor"
+msgstr ""
+
+#: advpoll.module:691;1011 modes/binary.inc:72 modes/ranking.inc:91
+msgid "Vote"
+msgstr ""
+
+#: advpoll.module:761
+msgid "@name poll"
+msgstr ""
+
+#: advpoll.module:764
+msgid "@name question"
+msgstr ""
+
+#: advpoll.module:765
+msgid "Description"
+msgstr ""
+
+#: advpoll.module:782
+msgid "Disabled"
+msgstr ""
+
+#: advpoll.module:782
+msgid "Enabled"
+msgstr ""
+
+#: advpoll.module:786
+msgid "Use electoral list by default"
+msgstr ""
+
+#: advpoll.module:787
+msgid "Use an electoral list by default for new advpoll."
+msgstr ""
+
+#: advpoll.module:793
+msgid "Always"
+msgstr ""
+
+#: advpoll.module:794
+msgid "After user has voted"
+msgstr ""
+
+#: advpoll.module:795
+msgid "After voting has closed"
+msgstr ""
+
+#: advpoll.module:800
+msgid "When should results be displayed"
+msgstr ""
+
+#: advpoll.module:801
+msgid "Determines when users may view the results of the poll."
+msgstr ""
+
+#: advpoll.module:814
+msgid "Cancel your vote"
+msgstr ""
+
+#: advpoll.module:882
+msgid "No type specified for node %nid"
+msgstr ""
+
+#: advpoll.module:915
+msgid "Are you sure you want to reset the votes for %title?"
+msgstr ""
+
+#: advpoll.module:918
+msgid "This action cannot be undone."
+msgstr ""
+
+#: advpoll.module:967
+msgid "You must fill in at least two choices."
+msgstr ""
+
+#: advpoll.module:972
+msgid "Maximum choices must be a non-negative integer."
+msgstr ""
+
+#: advpoll.module:976
+msgid "Maximum choices cannot be larger than the number of choices submitted."
+msgstr ""
+
+#: advpoll.module:1031
+msgid "View the current poll results."
+msgstr ""
+
+#: advpoll.module:1039
+msgid "Total votes: %votes"
+msgstr ""
+
+#: advpoll.module:1042
+msgid "No votes have been recorded for this poll."
+msgstr ""
+
+#: advpoll.module:1078
+msgid "Your vote was registered."
+msgstr ""
+
+#: advpoll.module:1131
+msgid "Your vote was canceled."
+msgstr ""
+
+#: advpoll.module:1134
+msgid "You are not allowed to cancel an invalid choice."
+msgstr ""
+
+#: advpoll.module:82 modes/binary.inc:126
+msgid "1 vote"
+msgid_plural "@count votes"
+msgstr[0] ""
+msgstr[1] ""
+
+#: advpoll.module:672
+msgid "Added <em>1</em> user to the electoral list."
+msgid_plural "Added @count users to the electoral list."
+msgstr[0] ""
+msgstr[1] ""
+
+#: advpoll.module:775
+msgid "create polls"
+msgstr ""
+
+#: advpoll.module:775
+msgid "delete polls"
+msgstr ""
+
+#: advpoll.module:775
+msgid "view polls"
+msgstr ""
+
+#: advpoll.module:775
+msgid "vote on polls"
+msgstr ""
+
+#: advpoll.module:775
+msgid "cancel own vote"
+msgstr ""
+
+#: advpoll.module:775
+msgid "administer polls"
+msgstr ""
+
+#: advpoll.module:775
+msgid "inspect all votes"
+msgstr ""
+
+#: advpoll.module:0
+msgid "advpoll"
+msgstr ""
+
+#: advpoll.info:0
+msgid "An advanced polling module for voting, elections, and group decision-making."
+msgstr ""
+
+#: advpoll.info:0
+msgid "Voting"
+msgstr ""
+
+#: modes/binary.inc:7
+msgid "Binary"
+msgstr ""
+
+#: modes/binary.inc:8
+msgid "Vote for or against a number of choices."
+msgstr ""
+
+#: modes/binary.inc:13
+msgid "Plurality"
+msgstr ""
+
+#: modes/binary.inc:81 modes/ranking.inc:100
+msgid "<a href=\"@login\">Login</a> to vote in this poll."
+msgstr ""
+
+#: modes/binary.inc:82 modes/ranking.inc:101
+msgid "You are not eligible to vote in this poll."
+msgstr ""
+
+#: modes/binary.inc:189 modes/ranking.inc:633
+msgid "You are not allowed to vote in this poll."
+msgstr ""
+
+#: modes/binary.inc:195 modes/ranking.inc:639
+msgid "You have already voted in this poll."
+msgstr ""
+
+#: modes/binary.inc:201;224 modes/ranking.inc:672
+msgid "At least one choice must be selected."
+msgstr ""
+
+#: modes/binary.inc:216 modes/ranking.inc:665
+msgid "%num choices were selected but only %max are allowed."
+msgstr ""
+
+#: modes/ranking.inc:7
+msgid "Ranking"
+msgstr ""
+
+#: modes/ranking.inc:8
+msgid "Rank a number of choices."
+msgstr ""
+
+#: modes/ranking.inc:14
+msgid "Borda count"
+msgstr ""
+
+#: modes/ranking.inc:15
+msgid "Instant runoff"
+msgstr ""
+
+#: modes/ranking.inc:41
+msgid "1st"
+msgstr ""
+
+#: modes/ranking.inc:44
+msgid "2nd"
+msgstr ""
+
+#: modes/ranking.inc:47
+msgid "3rd"
+msgstr ""
+
+#: modes/ranking.inc:57
+msgid "4th"
+msgstr ""
+
+#: modes/ranking.inc:57
+msgid "5th"
+msgstr ""
+
+#: modes/ranking.inc:57
+msgid "6th"
+msgstr ""
+
+#: modes/ranking.inc:57
+msgid "7th"
+msgstr ""
+
+#: modes/ranking.inc:57
+msgid "8th"
+msgstr ""
+
+#: modes/ranking.inc:57
+msgid "9th"
+msgstr ""
+
+#: modes/ranking.inc:57
+msgid "10th"
+msgstr ""
+
+#: modes/ranking.inc:57
+msgid "11th"
+msgstr ""
+
+#: modes/ranking.inc:57
+msgid "12th"
+msgstr ""
+
+#: modes/ranking.inc:57
+msgid "13th"
+msgstr ""
+
+#: modes/ranking.inc:57
+msgid "14th"
+msgstr ""
+
+#: modes/ranking.inc:57
+msgid "15th"
+msgstr ""
+
+#: modes/ranking.inc:204
+msgid "Rounds"
+msgstr ""
+
+#: modes/ranking.inc:210
+msgid "Final"
+msgstr ""
+
+#: modes/ranking.inc:223
+msgid "Per-round breakdown of votes for each choice"
+msgstr ""
+
+#: modes/ranking.inc:678
+msgid "Multiple choices given the rank of %value."
+msgstr ""
+
+#: modes/ranking.inc:366
+msgid "1 point"
+msgid_plural "@count points"
+msgstr[0] ""
+msgstr[1] ""
+
