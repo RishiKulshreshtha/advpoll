@@ -229,6 +229,7 @@ function advpoll_form($node, $form_values = NULL) {
     '#type' => 'fieldset',
     '#title' => t('Poll settings'),
     '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
     '#weight' => 2,
     '#tree' => TRUE,
   );
