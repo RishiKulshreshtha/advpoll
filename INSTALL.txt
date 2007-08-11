@@ -26,5 +26,5 @@ INSTALLATION
    vote, see results etc.: Browse to "Administer" -> "User management" ->
    "Access control" to set permissions for the module.
    
-   Other settings can be found at "Administer" -> 
-   "Site configuration" -> "Advanced Poll".
+   Other settings can be found for each content type at "Administer" -> 
+   "Content management" -> "Content types".

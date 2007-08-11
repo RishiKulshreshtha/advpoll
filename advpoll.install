@@ -121,3 +121,25 @@ function advpoll_update_1() {
   }
   return $ret;  
 }
+
+/** 
+ * Migrate old global settings to new per-content-type settings.
+ */
+function advpoll_update_2() {
+  $ret = array();
+  $variables = array();
+  $variables[] = array('name' => 'advpoll_electoral_list', 'old_name' => 'advpoll_default_electoral_list');
+  $variables[] = array('name' => 'advpoll_view_results', 'old_name' => 'advpoll_view_results');
+  $types = node_get_types();
+  foreach ($variables as $variable) {
+    if (!is_null($value = variable_get($variable['old_name'], NULL))) {
+      foreach ($types as $type) {
+        if ($type->module == 'advpoll') {
+          variable_set($variable['name'] .'_'. $type->type, $value);
+        }
+      }
+    }
+    variable_del($variable['old_name']);
+  }
+  return $ret;
+}

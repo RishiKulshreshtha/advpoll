@@ -6,9 +6,12 @@
  * Advanced Poll - a sophisticated polling module for voting, elections, and group decision-making.
  */
 
-define('ADVPOLL_DEFAULT_ELECTORAL_LIST', 0);
+define('ADVPOLL_MAXCHOICES', 0);
+define('ADVPOLL_RUNTIME', 0);
+define('ADVPOLL_ELECTORAL_LIST', 0);
+define('ADVPOLL_SHOWVOTES', 1);
 // Options: always, aftervote, or afterclose.
-define('ADVPOLL_DEFAULT_VIEW_RESULTS', 'aftervote');
+define('ADVPOLL_VIEW_RESULTS', 'aftervote');
 
 /**
  * Implementation of hook_access().
@@ -96,7 +99,7 @@ function advpoll_votingapi_calculate(&$results, $votes, $content_type, $content_
   if ($content_type == 'advpoll') {
     // Don't load the node from cache in case the mode or algorithm changed.
     $node = node_load($content_id, NULL, TRUE);
-    $mode = _advpoll_get_mode($node);
+    $mode = _advpoll_get_mode($node->type);
     $function = 'advpoll_calculate_results_'. $mode;
     if (function_exists($function)) {
       $function($results, $votes, $node);
@@ -147,7 +150,7 @@ function advpoll_delete($node) {
  * This hook displays the form necessary to create/edit the poll.
  */
 function advpoll_form($node, $form_values = NULL) {
-  $mode = _advpoll_get_mode($node);
+  $mode = _advpoll_get_mode($node->type);
   $type = node_get_types('type', $node);
   
   // Only add javascript once, even if _form is called multiple times.
@@ -238,7 +241,7 @@ function advpoll_form($node, $form_values = NULL) {
   $form['settings']['maxchoices'] = array(
     '#type' => 'select',
     '#title' => t('Maximum choices'),
-    '#default_value' => ($node->maxchoices? $node->maxchoices : 0),
+    '#default_value' => ($node->maxchoices? $node->maxchoices : variable_get('advpoll_maxchoices_'. $type->type, ADVPOLL_MAXCHOICES)),
     '#options' => $max_choice_list,
     '#DANGEROUS_SKIP_CHECK' => true, // Allow jQuery to add new options
     '#description' => t('Limits the total number of choices voters may select.')
@@ -251,8 +254,8 @@ function advpoll_form($node, $form_values = NULL) {
       '#type' => 'select',
       '#title' => t('Algorithm'),
       '#options' => $voting_algorithms,
-      '#default_value' => $node->algorithm ? $node->algorithm : key($voting_algorithms),
-      '#description' => 'Voting algorithm to use to calculate the winner.',
+      '#default_value' => $node->algorithm ? $node->algorithm : variable_get('advpoll_algorithm_'. $type->type, key($voting_algorithms)),
+      '#description' => t('Voting algorithm to use to calculate the winner.'),
     );
   }
 
@@ -295,7 +298,7 @@ function advpoll_form($node, $form_values = NULL) {
   $form['settings']['runtime'] = array(
     '#type' => 'select',
     '#title' => t('Duration'),
-    '#default_value' => ($node->runtime? $node->runtime : 0),
+    '#default_value' => ($node->runtime ? $node->runtime : variable_get('advpoll_runtime_'. $type->type, ADVPOLL_RUNTIME)),
     '#options' => $_duration,
     '#description' => t('After this period, the poll will be closed automatically. This is relative to the start date if it is specified, otherwise the date the poll was created.')
   );
@@ -304,14 +307,14 @@ function advpoll_form($node, $form_values = NULL) {
     '#type' => 'checkbox',
     '#title' => t('Restrict voting to electoral list'),
     '#description' => t('If enabled, a list of eligible voters will be created and only that group will be able to vote in the poll.'),
-    '#default_value' => isset($node->uselist)? $node->uselist : variable_get('advpoll_default_electoral_list', ADVPOLL_DEFAULT_ELECTORAL_LIST),
+    '#default_value' => isset($node->uselist) ? $node->uselist : variable_get('advpoll_electoral_list_'. $type->type, ADVPOLL_ELECTORAL_LIST),
   );
 
   $form['settings']['showvotes'] = array(
     '#type' => 'checkbox',
     '#title' => t('Show individual votes'),
     '#description' => t('Users with the appropriate permissions will be able to see how each person voted.'),
-    '#default_value' => isset($node->showvotes)? $node->showvotes : 1,
+    '#default_value' => isset($node->showvotes) ? $node->showvotes : variable_get('advpoll_showvotes_'. $type->type, ADVPOLL_SHOWVOTES),
   );
 
   if (user_access('administer polls') && $node->nid) {
@@ -323,6 +326,80 @@ function advpoll_form($node, $form_values = NULL) {
   $form['#multistep'] = TRUE;
 
   return $form;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function advpoll_form_alter($form_id, &$form) {
+  if ($form_id == 'node_type_form' && isset($form['identity']['type'])) {
+    $node_type = $form['old_type']['#value'];
+    // Display poll settings if this is an advpoll content type.
+    if ($form['module']['#value'] == 'advpoll') {
+      $form['advpoll'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Poll settings'),
+        '#collapsible' => TRUE,
+      );
+      
+      $form['advpoll']['advpoll_maxchoices'] = array(
+        '#type' => 'select',
+        '#title' => t('Default maximum choices'),
+        '#options' => array(0 => t('No limit')) + drupal_map_assoc(array(1, 2, 3, 4, 5)),
+        '#default_value' => variable_get('advpoll_maxchoices_'. $node_type, ADVPOLL_MAXCHOICES),
+        '#description' => t('The default number of maximum choices for new polls. This setting can be overridden on the poll edit page.'),
+      );
+      
+      $mode = _advpoll_get_mode($node_type);
+      $voting_algorithms = advpoll_algorithms($mode);
+      
+      if (count($voting_algorithms) > 1) {
+        $form['advpoll']['advpoll_algorithm'] = array(
+          '#type' => 'select',
+          '#title' => t('Default algorithm'),
+          '#options' => $voting_algorithms,
+          '#default_value' => variable_get('advpoll_algorithm_'. $node_type, key($voting_algorithms)),
+          '#description' => t('Default voting algorithm for calculating the winner.'),
+        );
+      }
+      
+      $form['advpoll']['advpoll_runtime'] = array(
+        '#type' => 'select',
+        '#title' => t('Default duration'),
+        '#default_value' => variable_get('advpoll_runtime_'. $node_type, ADVPOLL_RUNTIME),
+        '#options' => array(0 => t('Unlimited')) + drupal_map_assoc(array(86400, 172800, 345600, 604800, 1209600, 2419200, 4838400, 9676800, 31536000), 'format_interval'),
+        '#description' => t('The date the poll was created is used as start date for the default duration. This setting can be overridden on the poll edit page.'),
+      );
+
+      $form['advpoll']['advpoll_electoral_list'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Use electoral list by default'),
+        '#description' => t('Use an electoral list by default for new polls. Users with the <em>administer polls</em> permission will be able to override this setting.'),
+        '#default_value' => variable_get('advpoll_electoral_list_'. $node_type, ADVPOLL_ELECTORAL_LIST),
+      );
+      
+      $form['advpoll']['advpoll_showvotes'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Show individual votes by default'),
+        '#description' => t('Let users with appropriate permissions see how each person voted by default for new polls. Users with the <em>administer polls</em> permission will be able to override this setting.'),
+        '#default_value' => variable_get('advpoll_showvotes_'. $node_type, ADVPOLL_SHOWVOTES),
+      );
+    
+      $view_results = array(
+        'always' => t('Always'),
+        'aftervote' => t('After user has voted'),
+        'afterclose' => t('After voting has closed'),
+      );
+    
+      $form['advpoll']['advpoll_view_results'] = array(
+        '#type' => 'radios',
+        '#title' => t('Display results'),
+        '#description' => t('Determines when users may view the results of the poll.'),
+        '#default_value' => variable_get('advpoll_view_results_'. $node_type, ADVPOLL_VIEW_RESULTS),
+        '#options' => $view_results,
+      );
+    }
+  }
 }
 
 /**
@@ -417,15 +494,6 @@ function advpoll_menu($may_cache) {
       'type' => MENU_CALLBACK
     );
     
-    $items[] = array(
-      'path' => 'admin/settings/advanced-poll',
-      'title' => t('Advanced Poll'),
-      'description' => t('Update settings for Advanced Poll'),
-      'callback' => 'drupal_get_form',
-      'callback arguments' => array('advpoll_admin_settings'),
-      'access' => user_access('administer polls'),
-    );
-
     $items[] = array(
       'path' => 'polls',
       'title' => t('Advanced Polls'),
@@ -738,13 +806,11 @@ function advpoll_tab_votes() {
   }
 }
 
-
 /**
  * Helper function to abstract view results checking.
  */
 function _advpoll_can_view_results($node) {
-  $view_results = variable_get('advpoll_view_results'
-    , ADVPOLL_DEFAULT_VIEW_RESULTS);
+  $view_results = variable_get('advpoll_view_results_'. $node->type, ADVPOLL_VIEW_RESULTS);
   return (!$node->active  // Node is closed
         || ($node->voted && $view_results == 'aftervote') // User voted
         || ($view_results == 'always')); // All can view
@@ -774,37 +840,6 @@ function advpoll_node_info() {
 function advpoll_perm() {
   return array('create polls', 'delete polls', 'view polls', 'vote on polls', 'cancel own vote', 'administer polls', 'inspect all votes');
 }
-
-/**
- * Settings page.
- */
-function advpoll_admin_settings() {
-  $enabled = array(0 => t('Disabled'), 1 => t('Enabled'));
-
-  $form['main']['advpoll_default_electoral_list'] = array(
-    '#type' => 'radios',
-    '#title' => t('Use electoral list by default'),
-    '#description' => t('Use an electoral list by default for new advpoll.'),
-    '#default_value' => variable_get('advpoll_default_electoral_list', ADVPOLL_DEFAULT_ELECTORAL_LIST),
-    '#options' => $enabled,
-  );
-
-  $view_results = array(
-    'always' => t('Always'),
-    'aftervote' => t('After user has voted'),
-    'afterclose' => t('After voting has closed'),
-  );
-
-  $form['main']['advpoll_view_results'] = array(
-    '#type' => 'radios',
-    '#title' => t('When should results be displayed'),
-    '#description' => t('Determines when users may view the results of the poll.'),
-    '#default_value' => variable_get('advpoll_view_results', ADVPOLL_DEFAULT_VIEW_RESULTS),
-    '#options' => $view_results,
-  );
-  return system_settings_form($form);
-}
-
 
 /**
  * Helper function to display 'cancel vote' button if user has voted.
@@ -873,13 +908,13 @@ function _advpoll_insert_choices($nid) {
   }
 }
 
-function _advpoll_get_mode($node) {
-  if ($node->type) {
-    $types = explode('_', $node->type, 2);
-    return $types[1];
+function _advpoll_get_mode($node_type) {
+  if ($node_type) {
+    $mode = explode('advpoll_', $node_type, 2);
+    return $mode[1];
   }
   else {
-    drupal_set_message(t('No type specified for node %nid', array('%nid' => $node->nid)), 'error');
+    drupal_set_message(t('No mode specified for this content type'), 'error');
     return '';
   }
 }
@@ -890,7 +925,7 @@ function _advpoll_get_mode($node) {
  * This is called upon node creation.
  */
 function advpoll_insert($node) {
-  $mode = _advpoll_get_mode($node);
+  $mode = _advpoll_get_mode($node->type);
   if ($node->settings['usestart']) {
     $node->settings['active'] = _advpoll_calculate_active($node);
   }
@@ -989,7 +1024,7 @@ function advpoll_submit(&$node) {
  * Implementation of hook_view().
  */
 function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
-  $mode = _advpoll_get_mode($node);
+  $mode = _advpoll_get_mode($node->type);
 
   // Previewing a node, so don't show results.
   if ($node->in_preview) {
@@ -1100,7 +1135,7 @@ function _advpoll_vote_response($node, $form_values) {
  * advpoll_view_voting().
  */
 function advpoll_view_results(&$node, $teaser, $page) {
-  $mode = _advpoll_get_mode($node);
+  $mode = _advpoll_get_mode($node->type);
   if (_advpoll_can_view_results($node)) {
     if (function_exists("advpoll_view_results_$mode")) {
       $results = call_user_func("advpoll_view_results_$mode", $node, $teaser, $page);
