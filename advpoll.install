@@ -10,60 +10,60 @@ function advpoll_install() {
     case 'mysql':
     case 'mysqli':
       db_query("CREATE TABLE {advpoll} (
-          `nid` int(10) NOT NULL,
-          `quorum` int(10) NOT NULL default '0',
-          `mode` varchar(32) NOT NULL,
-          `uselist` tinyint default '0',
-          `active` tinyint default '1',
-          `runtime` int NOT NULL default '0',
-          `maxchoices` int unsigned NOT NULL default '0',
-          `algorithm` VARCHAR(100),
-          `showvotes` tinyint,
-          `startdate` int unsigned,
-          PRIMARY KEY  (`nid`)
+        nid int(10) NOT NULL,
+        quorum int(10) NOT NULL default '0',
+        mode varchar(32) NOT NULL,
+        uselist tinyint default '0',
+        active tinyint default '1',
+        runtime int NOT NULL default '0',
+        maxchoices int unsigned NOT NULL default '0',
+        algorithm VARCHAR(100),
+        showvotes tinyint,
+        startdate int unsigned,
+        PRIMARY KEY (nid)
       ) /*!40100 DEFAULT CHARACTER SET utf8 */");
 
       db_query("CREATE TABLE {advpoll_electoral_list} (
-          `nid` int(10) NOT NULL,
-          `uid` int(10) NOT NULL,
-          PRIMARY KEY  (`nid`,`uid`)
+        nid int(10) NOT NULL,
+        uid int(10) NOT NULL,
+        PRIMARY KEY (nid, uid)
       ) /*!40100 DEFAULT CHARACTER SET utf8 */");
 
       db_query("CREATE TABLE {advpoll_choices} (
-          `nid` int(10) NOT NULL,
-          `label` text NOT NULL,
-          `vote_offset` int(2) unsigned default NULL,
-          PRIMARY KEY  (`nid`, `vote_offset`),
-          KEY `vote_offset` (`vote_offset`)
-        ) /*!40100 DEFAULT CHARACTER SET utf8 */");
-
+        nid int(10) NOT NULL,
+        label text NOT NULL,
+        vote_offset int(2) unsigned default NULL,
+        PRIMARY KEY (nid, vote_offset),
+        KEY vote_offset (vote_offset)
+      ) /*!40100 DEFAULT CHARACTER SET utf8 */");
       break;
+
     case 'pgsql':
       db_query("CREATE TABLE {advpoll} (
-          nid integer NOT NULL,
-          quorum integer NOT NULL DEFAULT '0',
-          mode varchar(32) NOT NULL,
-          uselist smallint DEFAULT '0',
-          active smallint DEFAULT '1',
-          runtime integer NOT NULL DEFAULT '0',
-          maxchoices integer NOT NULL DEFAULT '0',
-          algorithm varchar(100),
-          showvotes smallint,
-          startdate integer,
-          PRIMARY KEY (nid)
+        nid integer NOT NULL,
+        quorum integer NOT NULL DEFAULT '0',
+        mode varchar(32) NOT NULL,
+        uselist smallint DEFAULT '0',
+        active smallint DEFAULT '1',
+        runtime integer NOT NULL DEFAULT '0',
+        maxchoices integer NOT NULL DEFAULT '0',
+        algorithm varchar(100),
+        showvotes smallint,
+        startdate integer,
+        PRIMARY KEY (nid)
       )");
 
       db_query("CREATE TABLE {advpoll_electoral_list} ( 
-          nid integer NOT NULL,
-          uid integer NOT NULL,
-          PRIMARY KEY (nid, uid)   
+        nid integer NOT NULL,
+        uid integer NOT NULL,
+        PRIMARY KEY (nid, uid)   
       )");
 
       db_query("CREATE TABLE {advpoll_choices} (
-          nid integer NOT NULL,
-          label text NOT NULL,
-          vote_offset smallint DEFAULT NULL,
-          PRIMARY KEY (nid, vote_offset)
+        nid integer NOT NULL,
+        label text NOT NULL,
+        vote_offset smallint DEFAULT NULL,
+        PRIMARY KEY (nid, vote_offset)
       )");
       db_query("CREATE INDEX {advpoll_choices}_vote_offset_idx ON {advpoll_choices} (vote_offset)");
       break;
@@ -79,7 +79,7 @@ function advpoll_uninstall() {
 
   // Remove all advpoll content types.
   foreach (_advpoll_list_modes() as $mode) {
-     node_type_delete('advpoll_'. $mode['name']);
+    node_type_delete('advpoll_'. $mode['name']);
   }
 
   // Remove all votes.
@@ -112,8 +112,8 @@ function advpoll_update_1() {
   switch ($GLOBALS['db_type']) {
     case 'pgsql':
       // This was fixed for new installs of pgsql, but not upgrades.
-        db_change_column($ret, 'advpoll', 'quorum', 'quorum', 'integer', array('not null' => TRUE, 'default' => 0));
-        break;
+      db_change_column($ret, 'advpoll', 'quorum', 'quorum', 'integer', array('not null' => TRUE, 'default' => 0));
+      break;
     case 'mysql':
     case 'mysqli':
       $ret[] = update_sql("ALTER TABLE {advpoll} CHANGE quorum quorum int(10) NOT NULL default '0'");
