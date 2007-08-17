@@ -269,7 +269,7 @@ function advpoll_form($node, $form_values = NULL) {
     '#description' => t('When a poll is closed users may no longer vote on it.'),
   );
 
-  $_duration = array(0 => t('Unlimited')) + drupal_map_assoc(array(86400, 172800, 345600, 604800, 1209600, 2419200, 4838400, 9676800, 31536000), 'format_interval');
+  $_duration = array(0 => t('Unlimited')) + drupal_map_assoc(array(86400, 172800, 345600, 604800, 1209600, 1814400, 2419200, 4838400, 9676800, 31536000), 'format_interval');
 
   $form['settings']['usestart'] = array(
     '#type' => 'checkbox',
@@ -368,7 +368,7 @@ function advpoll_form_alter($form_id, &$form) {
         '#type' => 'select',
         '#title' => t('Default duration'),
         '#default_value' => variable_get('advpoll_runtime_'. $node_type, ADVPOLL_RUNTIME),
-        '#options' => array(0 => t('Unlimited')) + drupal_map_assoc(array(86400, 172800, 345600, 604800, 1209600, 2419200, 4838400, 9676800, 31536000), 'format_interval'),
+        '#options' => array(0 => t('Unlimited')) + drupal_map_assoc(array(86400, 172800, 345600, 604800, 1209600, 1814400, 2419200, 4838400, 9676800, 31536000), 'format_interval'),
         '#description' => t('The date the poll was created is used as start date for the default duration. This setting can be overridden on the poll edit page.'),
       );
 
