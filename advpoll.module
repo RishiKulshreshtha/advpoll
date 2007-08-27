@@ -624,7 +624,6 @@ function advpoll_electoral_list_form($nid) {
     '#title' => t('Administer electoral list'),
     '#collapsible' => TRUE,
     '#weight' => 2,
-    '#collapsed' => TRUE,
   );
 
   $form['electoral_list']['add_user'] = array(
