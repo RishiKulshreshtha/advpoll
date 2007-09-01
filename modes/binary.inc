@@ -18,7 +18,7 @@ function advpoll_algorithms_binary() {
  * 
  * This creates a list of choices to allow the user to vote on choices.
  */
-function advpoll_voting_binary_form(&$node, $teaser, $page) {
+function advpoll_voting_binary_form(&$node, $teaser, $page, $status) {
   static $binary_form_count = 0; 
   $form['#id'] = 'advpoll_voting_binary_form-'. $binary_form_count++;
   $form['#attributes'] = array('class' => 'advpoll-vote');
@@ -65,7 +65,8 @@ function advpoll_voting_binary_form(&$node, $teaser, $page) {
     '#attributes' => array('class' => 'edit-nid'),
   );
 
-  if (!$node->in_preview) {
+  // Hide vote button if user can't vote and instead display appropriate message.
+  if (!$node->in_preview && advpoll_eligible($node) && $status == 'open') {
     static $binary_vote_count = 0;
     $form['vote'] = array(
       '#type' => 'submit',
@@ -73,15 +74,18 @@ function advpoll_voting_binary_form(&$node, $teaser, $page) {
       '#attributes' => array('id' => 'edit-vote-binary-'. $binary_vote_count++),
     );
   }
-
-  // Disable button and display message for non-eligible users.
-  if (!advpoll_eligible($node)) {
-    global $user;
-    $form['vote']['#disabled'] = TRUE;
-    $login_message = t('<a href="@login">Login</a> to vote in this poll.', array('@login' => url('user/login', drupal_get_destination())));
-    $form['vote']['#suffix'] = ($user->uid ? t('You are not eligible to vote in this poll.') : $login_message);
+  elseif ($node->in_preview) {
+    //Display nothing
   }
-  
+  elseif ($status == 'pending') {
+    $form['message']['#value'] = t('This poll opens @time.', array('@time' => format_date($node->startdate)));
+  }
+  else {
+    global $user;
+    $login_message = t('<a href="@login">Login</a> to vote in this poll.', array('@login' => url('user/login', drupal_get_destination())));
+    $form['message']['#value'] = $user->uid ? t('You are not eligible to vote in this poll.') : $login_message;
+  }
+
   $form['#action'] = url('node/'. $node->nid);
   
   return $form;
@@ -188,6 +192,11 @@ function advpoll_voting_binary_form_validate($form_id, $form_values) {
   if (!advpoll_eligible($node)) {
     _advpoll_form_set_error('choice[', t('You are not allowed to vote in this poll.'), $ajax);
   }
+  
+  // Check if poll is active
+  if (!_advpoll_is_active($node)) {
+    _advpoll_form_set_error('choice[', t('This poll is closed.'), $ajax);
+  }
 
   // Check if user has already voted
   list($voted, $cancel_vote) = _advpoll_user_voted($node->nid);
@@ -230,8 +239,13 @@ function advpoll_voting_binary_form_validate($form_id, $form_values) {
  * Render the voting form.
  */
 function theme_advpoll_voting_binary_form($form) {
+  $message = drupal_render($form['message']);
+  
   $output = "<div class=\"poll\">\n";
   $output .= drupal_render($form);
+  if ($message) {
+    $output .= "<p class=\"message\">$message</p>\n";
+  }
   $output .= "</div>\n";
   return $output;
 }

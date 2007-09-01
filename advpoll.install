@@ -15,11 +15,11 @@ function advpoll_install() {
         mode varchar(32) NOT NULL,
         uselist tinyint default '0',
         active tinyint default '1',
-        runtime int NOT NULL default '0',
         maxchoices int unsigned NOT NULL default '0',
         algorithm VARCHAR(100),
         showvotes tinyint,
-        startdate int unsigned,
+        startdate int NOT NULL default '0',
+        enddate int NOT NULL default '0',
         PRIMARY KEY (nid)
       ) /*!40100 DEFAULT CHARACTER SET utf8 */");
 
@@ -45,11 +45,11 @@ function advpoll_install() {
         mode varchar(32) NOT NULL,
         uselist smallint DEFAULT '0',
         active smallint DEFAULT '1',
-        runtime integer NOT NULL DEFAULT '0',
         maxchoices integer NOT NULL DEFAULT '0',
         algorithm varchar(100),
         showvotes smallint,
-        startdate integer,
+        startdate integer NOT NULL DEFAULT '0',
+        enddate integer NOT NULL DEFAULT '0',
         PRIMARY KEY (nid)
       )");
 
@@ -140,6 +140,41 @@ function advpoll_update_2() {
       }
     }
     variable_del($variable['old_name']);
+  }
+  return $ret;
+}
+
+/**
+ * Switch date handling from a duration to an enddate.
+ */
+function advpoll_update_3() {
+  $ret = array();
+  
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      // New default '0' instead of NULL for startdate
+      $ret[] = update_sql("ALTER TABLE {advpoll} CHANGE startdate startdate int NOT NULL DEFAULT '0'");
+      $ret[] = update_sql("UPDATE {advpoll} SET startdate = 0 WHERE startdate IS NULL");
+      // Add the new column.
+      $ret[] = update_sql("ALTER TABLE {advpoll} ADD COLUMN enddate int NOT NULL default '0' AFTER startdate");
+      // Calculate the new value.
+      $ret[] = update_sql("UPDATE {advpoll} SET enddate = startdate + runtime WHERE runtime != 0");
+      // Drop the old column.
+      $ret[] = update_sql("ALTER TABLE {advpoll} DROP COLUMN runtime");
+      break;
+    
+    case 'pgsql':
+      // New default '0' instead of NULL for startdate
+      db_change_column($ret, 'advpoll', 'startdate', 'startdate', 'integer', array('not null' => TRUE, 'default' => '0'));
+      $ret[] = update_sql("UPDATE {advpoll} SET startdate = 0 WHERE startdate IS NULL");
+      // Add the new column.
+      db_add_column($ret, 'advpoll', 'enddate', 'integer', array('not null' => TRUE, 'default' => '0'));
+      // Calculate the new value.
+      $ret[] = update_sql("UPDATE {advpoll} SET enddate = startdate + runtime WHERE runtime != 0");
+      // Drop the old column.
+      db_drop_column($ret, 'advpoll', 'runtime');
+      break;
   }
   return $ret;
 }

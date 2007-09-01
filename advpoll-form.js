@@ -50,28 +50,9 @@ Drupal.advpoll.removeChoiceClick = function()  {
   });
 }
 
-Drupal.advpoll.updateStartDate = function() {
-  if ($("#edit-settings-usestart").attr("checked")) {
-    $(".edit-settings-startdate").show();
-    $("#edit-settings-startdate-year").removeAttr("disabled");
-    $("#edit-settings-startdate-month").removeAttr("disabled");
-    $("#edit-settings-startdate-day").removeAttr("disabled");
-  }
-  else {
-    $(".edit-settings-startdate").hide();
-    $("#edit-settings-startdate-year").attr("disabled", "disabled");
-    $("#edit-settings-startdate-month").attr("disabled", "disabled");
-    $("#edit-settings-startdate-day").attr("disabled", "disabled");
-  }
-}
-
 Drupal.advpoll.nodeFormAutoAttach = function() {
   // Hide "need more choices" checkbox
   $("#morechoices").hide();
-  
-  // Disable starting date if necessary
-  Drupal.advpoll.updateStartDate();
-  $("#edit-settings-usestart").click(Drupal.advpoll.updateStartDate);
   
   // Insert Remove links
   $('<a class="remove-choice">' + Drupal.settings.advPoll.remove + '</a>').insertAfter("input.choices");
