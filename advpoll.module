@@ -22,11 +22,8 @@ function advpoll_access($op, $node) {
   if ($op == 'create') {
     return user_access('create polls');
   }
-  if ($op == 'delete') {
-    return user_access('delete polls');
-  }
   if ($op == 'update') {
-    if (user_access('create polls') && ($user->uid == $node->uid)) {
+    if (user_access('edit polls') || ($node->uid == $user->uid && user_access('edit own polls'))) {
       return TRUE;
     }
   }
@@ -41,11 +38,9 @@ function advpoll_block($op = 'list') {
       $blocks['mostrecent']['info'] = t('Latest poll');
       return $blocks;
     case 'view':
-      if (user_access('view polls')) {
-        $block['subject'] = t('Latest poll');
-        $block['content'] = theme('advpoll_block_mostrecent');
-        return $block;
-      }
+      $block['subject'] = t('Latest poll');
+      $block['content'] = theme('advpoll_block_mostrecent');
+      return $block;
   }
 }
 
@@ -270,27 +265,49 @@ function advpoll_form($node, $form_values = NULL) {
     '#maxlength' => 25,
     '#default_value' => $node->enddate ? format_date($node->enddate, 'custom', 'Y-m-d H:i:s O') : $default_enddate,
   );
-
-  $form['settings']['uselist'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Restrict voting to electoral list'),
-    '#description' => t('If enabled, a list of eligible voters will be created and only that group will be able to vote in the poll.'),
-    '#default_value' => isset($node->uselist) ? $node->uselist : variable_get('advpoll_electoral_list_'. $type->type, ADVPOLL_ELECTORAL_LIST),
-  );
-
-  $form['settings']['showvotes'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Show individual votes'),
-    '#description' => t('Users with the appropriate permissions will be able to see how each person voted.'),
-    '#default_value' => isset($node->showvotes) ? $node->showvotes : variable_get('advpoll_showvotes_'. $type->type, ADVPOLL_SHOWVOTES),
-  );
-
-  if (user_access('administer polls') && $node->nid) {
-    $form['settings']['reset'] = array(
-      '#type' => 'button',
-      '#value' => t('Reset votes'),
+  
+  // Settings available for users with 'administer polls' permission.
+  $default_uselist = isset($node->uselist) ? $node->uselist : variable_get('advpoll_electoral_list_'. $type->type, ADVPOLL_ELECTORAL_LIST);
+  $default_showvotes = isset($node->showvotes) ? $node->showvotes : variable_get('advpoll_showvotes_'. $type->type, ADVPOLL_SHOWVOTES);
+  if (user_access('administer polls')) {
+    $form['settings']['admin_note'] = array(
+      '#value' => '<div id="edit-settings-admin-note" class="description">'. t('The settings below are only available for users with the <em>administer polls</em> permission.') .'</div>',
+    );
+    $form['settings']['uselist'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Restrict voting to electoral list'),
+      '#description' => t('If enabled, a list of eligible voters will be created and only that group will be able to vote in the poll.'),
+      '#default_value' => $default_uselist,
+    );
+  
+    $form['settings']['showvotes'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Show individual votes'),
+      '#description' => t('Users with the appropriate permissions will be able to see how each person voted.'),
+      '#default_value' => $default_showvotes,
+    );
+    
+    // Only show when editing a poll, not creating.
+    if ($node->nid) {
+      $form['settings']['reset'] = array(
+        '#type' => 'button',
+        '#value' => t('Reset votes'),
+      );
+    }
+  }
+  else {
+    // Just pass the values for users without the 'administer polls' permission.
+    $form['settings']['uselist'] = array(
+      '#type' => 'value',
+      '#default_value' => $default_uselist,
+    );
+  
+    $form['settings']['showvotes'] = array(
+      '#type' => 'value',
+      '#default_value' => $default_showvotes,
     );
   }
+  
   $form['#multistep'] = TRUE;
 
   return $form;
@@ -466,7 +483,7 @@ function advpoll_menu($may_cache) {
       'path' => 'polls',
       'title' => t('Advanced Polls'),
       'callback' => 'advpoll_page',
-      'access' => user_access('view polls'),
+      'access' => user_access('access content'),
       'type' => MENU_SUGGESTED_ITEM,
     );
   }
@@ -487,7 +504,7 @@ function advpoll_menu($may_cache) {
             'path' => 'node/'. $nid .'/results',
             'title' => t('Results'),
             'callback' => 'advpoll_results',
-            'access' => user_access('view polls'),
+            'access' => user_access('access content'),
             'weight' => 3,
             'type' => MENU_LOCAL_TASK,
           );
@@ -511,7 +528,7 @@ function advpoll_menu($may_cache) {
             'path' => 'node/'. $nid .'/electoral_list',
             'title' => t('Electoral list'),
             'callback' => 'advpoll_tab_electoral_list',
-            'access' => user_access('view polls'),
+            'access' => user_access('access electoral list'),
             'weight' => 3,
             'type' => MENU_LOCAL_TASK,
           );
@@ -596,9 +613,13 @@ function advpoll_electoral_list_form($nid) {
     '#type' => 'textfield',
     '#title' => t('Add user'),
     '#size' => 40,
-    '#autocomplete_path' => 'user/autocomplete',
     '#description' => t('Add an individual user to the electoral list.'),
   );
+  
+  // Enable autocompletion if user has required permission.
+  if (user_access('access user profiles')) {
+    $form['electoral_list']['add_user']['#autocomplete_path'] = 'user/autocomplete';
+  }
 
   // List all roles with "vote on polls" permission, but don't include anonymous users.
   $result = db_query("SELECT r.name, r.rid FROM {role} r LEFT JOIN {permission} p ON p.rid=r.rid WHERE p.perm LIKE '%vote on polls%' AND r.rid != 1 ORDER BY r.name");
@@ -804,7 +825,7 @@ function advpoll_node_info() {
  * Implementation of hook_perm().
  */
 function advpoll_perm() {
-  return array('create polls', 'delete polls', 'view polls', 'vote on polls', 'cancel own vote', 'administer polls', 'inspect all votes');
+  return array('create polls', 'edit polls', 'edit own polls', 'vote on polls', 'cancel own vote', 'administer polls', 'inspect all votes', 'access electoral list');
 }
 
 /**
