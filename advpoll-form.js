@@ -24,7 +24,7 @@ Drupal.advpoll.maxChoices = function(newChoiceN) {
   // Remove old maxchoices
   $("#edit-settings-maxchoices").remove();
   
-  $(newMaxChoices).insertAfter(label);
+  label.after(newMaxChoices);
 }
 
 // Click event for Remove link, called on pageload and when Add choice is clicked
