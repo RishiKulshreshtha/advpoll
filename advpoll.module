@@ -208,7 +208,7 @@ function advpoll_form($node, $form_values = NULL) {
 
   $max_choice_list = array();
   for ($i = 0; $i <= $choices; $i++) {
-    $max_choice_list[$i] = ($i == 0? 'No limit' : $i);
+    $max_choice_list[$i] = ($i == 0 ? t('No limit') : $i);
   }
 
   $form['settings']['maxchoices'] = array(
