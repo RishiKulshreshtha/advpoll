@@ -403,7 +403,7 @@ function advpoll_form_alter($form_id, &$form) {
         '#description' => t('The date the poll was created is used as start date for the default duration. This setting can be overridden on the poll edit page.'),
       );
 
-      $form['advpoll']['writeins'] = array(
+      $form['advpoll']['advpoll_writeins'] = array(
         '#type' => 'checkbox',
         '#title' => t('Allow users to cast a write-in vote by default'),
         '#default_value' => variable_get('advpoll_writeins_'. $node_type, ADVPOLL_WRITEINS),
@@ -411,7 +411,7 @@ function advpoll_form_alter($form_id, &$form) {
         '#attributes' => array('class' => 'settings-writeins'),
       );
 
-      $form['advpoll']['show_writeins'] = array(
+      $form['advpoll']['advpoll_show_writeins'] = array(
         '#type' => 'checkbox',
         '#title' => t('Display write-in votes as choices for future voters by default'),
         '#default_value' => variable_get('advpoll_show_writeins_'. $node_type, ADVPOLL_SHOW_WRITEINS),
