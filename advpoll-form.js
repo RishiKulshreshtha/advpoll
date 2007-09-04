@@ -5,13 +5,13 @@ if (!Drupal.advpoll) {
 }
 
 // Update maxchoices, called when adding and removing choices
-Drupal.advpoll.maxChoices = function(newChoiceN) {
+Drupal.advpoll.maxChoices = function(numChoices) {
   var selected = $("#edit-settings-maxchoices").val();
   var label = $("#edit-settings-maxchoices").prev();
   // Hard-code the HTML (not clone) as .html() doesn't work for select fields in IE and Opera.
   var newMaxChoices = '<select id="edit-settings-maxchoices" class="form-select" name="settings[maxchoices]">';
   // Build the options
-  for (var i = 0; i <= newChoiceN; i++) {
+  for (var i = 0; i <= numChoices; i++) {
     var name = (i ? i : Drupal.settings.advPoll.noLimit);
     newMaxChoices += '<option ';
     // Set the option user had selected
@@ -50,7 +50,31 @@ Drupal.advpoll.removeChoiceClick = function()  {
   });
 }
 
+// Show/hide "display write-ins" option when user checks unchecks the write-ins
+// box.
+Drupal.advpoll.updateWriteins = function() {
+  if ($("input.settings-writeins").attr("checked")) {
+    $(".edit-settings-show-writeins").show();
+    $("#edit-settings-show-writeins").removeAttr("disabled");
+  }
+  else {
+    $(".edit-settings-show-writeins").hide();
+    $("#edit-settings-show-writeins").attr("disabled", "disabled");
+  }
+}
+
 Drupal.advpoll.nodeFormAutoAttach = function() {
+  // This code is used on the node edit page and the content-type settings page.
+
+  // Add behavior when write-in box is (un)checked.
+  Drupal.advpoll.updateWriteins();
+  $("input.settings-writeins").click(Drupal.advpoll.updateWriteins);
+
+  if ($("div.poll-form").length == 0) {
+    // We're just on the settings page.
+    return;
+  }
+
   // Hide "need more choices" checkbox
   $("#morechoices").hide();
   
@@ -62,11 +86,15 @@ Drupal.advpoll.nodeFormAutoAttach = function() {
   var newChoice = $("input.choices:first").parent().clone();
   
   $('<a class="add-choice" href="#">' + Drupal.settings.advPoll.addChoice + '</a>').insertAfter("#morechoices").click(function() {
-    var newChoiceN = $("input.choices").length + 1;
+    var numChoices = $("input.choices").length + 1;
+    // Extract the last choice's offset from its id.
+    var newChoiceN = parseInt($("input.choices:last").id().match(/\d+/)) + 1;
     // If all choices are removed, use a "backup" of the first choice, else clone the first.
     newChoice = ($("input.choices:first").parent().html() ? $("input.choices:first").parent().clone() : newChoice);
     // Replace choice numbers in label, name and id with the new choice number
     newChoice.html(newChoice.html().replace(/\d+(?=<)|\d+(?=-)|\d+(?=\])/g, newChoiceN));
+    // Replace the label to use a more accurate count of choices.
+    $("label", newChoice).html($("label", newChoice).html().replace(/\d+(?=<)|\d+(?=-)|\d+(?=\])/g, numChoices));
     // Clear the value, insert and fade in.
     newChoice.find("input").val("").end().insertBefore("#morechoices").fadeIn();
     // Update hidden form values
@@ -75,7 +103,7 @@ Drupal.advpoll.nodeFormAutoAttach = function() {
     
     Drupal.advpoll.removeChoiceClick();
     
-    Drupal.advpoll.maxChoices(newChoiceN);
+    Drupal.advpoll.maxChoices(numChoices);
     
     return false;
   });

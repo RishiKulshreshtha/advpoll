@@ -64,18 +64,45 @@ function advpoll_voting_ranking_form(&$node, $teaser, $page, $status) {
       '#tree' => TRUE,
       // XXX: Workaround for FormAPI bug in PHP 4, see http://drupal.org/node/86657
       '#type' => 'checkboxes',
+      '#prefix' => '<div class="vote-choices">',
+      '#suffix' => '</div>',
     );
 
     foreach ($node->choice as $key => $choice) {
-      // Don't show blank choices
-      if ($choice['label']) {
+      // Don't show blank choices or write-in votes if the setting is disabled.
+      if ($choice['label'] && ($node->show_writeins || !$choice['writein'])) {
         $form['choice'][$key] = array(
           '#type' => 'select',
-          '#title' => _advpoll_choice_markup($choice['label'], $node->format),
+          '#title' => _advpoll_choice_markup($choice['label'], $node->format) . ($choice['writein'] ? ' '. t('(write-in)') : ''),
           '#options' => $choices,
         );
       }
     }
+
+    // Add write-in select box if write-ins are enabled and user has permission.
+    if ($node->writeins && user_access('add write-ins')) {
+      $form['choice'][$key + 1] = array (
+        '#type' => 'select',
+        '#title' => t('(write-in)'),
+        '#options' => $choices,
+      );
+      // Key index of the write-in option
+      $form['writein_key'] = array(
+        '#type' => 'value',
+        '#value' => $key + 1,
+      );
+    }
+  }
+
+  // Add write-in text field if write-ins are enabled and user has permission.
+  if ($node->writeins && user_access('add write-ins')) {
+    $form['writein_choice'] = array (
+      '#prefix' => '<div class="writein-choice">',
+      '#suffix' => '</div>',
+      '#type' => 'textfield',
+      '#title' => t('Write-in vote'),
+      '#size' => 25,
+    );
   }
 
   $form['nid'] = array(
@@ -140,6 +167,9 @@ function advpoll_view_results_ranking($node, $teaser, $page) {
         $rounds[$round][$result->function] = $result->value;
       }
       else if (isset($node->choice[$tag])) {
+        // Note: choices that have been removed will not pass the previous
+        // line's test even though their values are still in the vote table.
+
         // Choice-specific cached value
         if ($result->function == 'ranking') {
           $ranking_list[$result->value][] = $tag;
@@ -164,18 +194,19 @@ function advpoll_view_results_ranking($node, $teaser, $page) {
     }
 
     if ($node->algorithm == 'borda_count') {
-      for ($i = 0; $i < count($ranking); $i++) {
+      foreach ($ranking as $i => $ranking) {
         $first_one = true;
         $this_rank = '';
 
         // Loop through all choices with this ranking
-        foreach ($ranking[$i]->choices as $choice) {
-          $this_rank .= ($first_one? '' : ', ') . _advpoll_choice_markup($node->choice[$choice]['label'], $node->format, false);
+        foreach ($ranking->choices as $choice) {
+          $label = isset($node->choice[$choice])? _advpoll_choice_markup($node->choice[$choice]['label'], $node->format, FALSE) . ($node->choice[$choice]['writein']? ' '. t('(write-in)') : '') : t('(deleted)');
+          $this_rank .= ($first_one ? '' : ', ') . $label;
           $first_one = false;
         }
 
-        $percentage = round(100 * $ranking[$i]->percentage, 0);
-        $output .= theme('advpoll_bar', $this_rank, $percentage, $ranking[$i]->viewscore);
+        $percentage = round(100 * $ranking->percentage, 0);
+        $output .= theme('advpoll_bar', $this_rank, $percentage, $ranking->viewscore);
 
       }
     }
@@ -190,7 +221,8 @@ function advpoll_view_results_ranking($node, $teaser, $page) {
 
         // Loop through all choices with this ranking
         foreach ($ranking[$i]->choices as $choice) {
-          $output .= ($first_one? '' : ', ') . _advpoll_choice_markup($node->choice[$choice]['label'], $node->format, $check);
+          $label = isset($node->choice[$choice])? _advpoll_choice_markup($node->choice[$choice]['label'], $node->format, FALSE) . ($node->choice[$choice]['writein']? ' '. t('(write-in)') : '') : t('(deleted)');
+          $output .= ($first_one? '' : ', ') . $label;
           $first_one = false;
         }
 
@@ -604,19 +636,26 @@ function _advpoll_calculate_instantrunoff($node) {
  */
 function advpoll_voting_ranking_form_submit($form_id, $form_values) {
   $vote = array();
+  $node = node_load($form_values['nid']);
+
+  // Do submission specific to writeins.
+  _advpoll_writeins_voting_form_submit($node, $form_values, $vote, $form_values['choice'][$form_values['writein_key']]);
+
   foreach ($form_values['choice'] as $choice => $rank) {
-    unset($temp);
-    $temp->value = $rank;
-    // A zero value indicates they didn't rank that choice
-    if ($temp->value != 0) {
-      $temp->value_type = 'option';
-      $temp->tag = $choice;
-      $vote[] = $temp;
+    // Ignore write-in choice that has already been taken care of.
+    if ($choice != $form_values['writein_key']) {
+      unset($temp);
+      $temp->value = $rank;
+      // A zero value indicates they didn't rank that choice.
+      if ($temp->value != 0) {
+        $temp->value_type = 'option';
+        $temp->tag = $choice;
+        $vote[] = $temp;
+      }
     }
   }
 
   votingapi_set_vote('advpoll', $form_values['nid'], $vote);
-  $node = node_load($form_values['nid']);
   _advpoll_vote_response($node, $form_values);
 }
 
@@ -642,6 +681,10 @@ function advpoll_voting_ranking_form_validate($form_id, $form_values) {
     _advpoll_form_set_error('choice[', t('This poll is closed.'), $ajax);
   }
 
+  // Whether the write-in option is selected.
+  $writein_option = FALSE;
+  $writein_text = $form_values['writein_key'] ? $form_values['writein_choice'] : '';
+
   // Check if user has already voted
   list($voted, $cancel_vote) = _advpoll_user_voted($node->nid);
   if ($voted) {
@@ -652,9 +695,17 @@ function advpoll_voting_ranking_form_validate($form_id, $form_values) {
   $setvalues = array();
   
   $numchoices = 0;
+
+  // Write-ins are enabled, user has permission, and the write-in box is checked.
+  if ($node->writeins && user_access('add write-ins') && $form_values['choice'][$form_values['writein_key']]) {
+    $numchoices++;
+    // Set a flag for additional checks.
+    $writein_option = TRUE;
+  }
+
   foreach ($node->choice as $key => $choice) {
     
-    // Count the number of choices that are ranked
+    // Count the number of choices that are ranked.
     if ($form_values['choice'][$key]) {
       $numchoices++;
     }
@@ -668,7 +719,24 @@ function advpoll_voting_ranking_form_validate($form_id, $form_values) {
       _advpoll_form_set_error('choice]['. $key, $message, $ajax);
     }
   }
-  
+
+  // Write-ins are enabled, user has permission, and the write-in box is checked.
+  if ($writein_option) {
+    $intvalue = intval($form_values['choice'][$form_values['writein_key']]);
+    // Mark this value as seen
+    $setvalues[$intvalue]++;
+    // Check range
+    if ($intvalue > count($node->choice) || $intvalue < 0) {
+      // TODO: clean up this error message
+      $message = "Illegal rank for the write-in choice: $intvalue (min: 1, max: ". count($node->choice) .')';
+      _advpoll_form_set_error('choice]['. $form_values['writein_key'], $message, $ajax);
+      $ok = FALSE;
+    }
+  }
+
+  // Do validation specific to writeins.
+  _advpoll_writeins_voting_form_validate($node, $writein_option, $writein_text, $ajax);
+
   // Too many choices ranked
   if ($node->maxchoices != 0 && $numchoices > $node->maxchoices) {
     $message = t('%num choices were selected but only %max are allowed.', array('%num' => $numchoices, '%max' => $node->maxchoices));
@@ -681,7 +749,7 @@ function advpoll_voting_ranking_form_validate($form_id, $form_values) {
     _advpoll_form_set_error('choice', t('At least one choice must be selected.'), $ajax);
   }
 
-  // Check that multiple choices are not set to the same value
+  // Check that multiple choices are not set to the same value.
   foreach ($setvalues as $val => $count) {
     if ($val != 0 && $count > 1) {
       $message = t('Multiple choices given the rank of %value.', array('%value' => $val));
@@ -705,3 +773,27 @@ function theme_advpoll_voting_ranking_form($form) {
   return $output;
 }
 
+/**
+ * Hook to handle a cancelled vote for a ranking poll.
+ */
+function advpoll_cancel_ranking($node, $user_vote) {
+  // Remove choice if this was the last vote for a write-in.
+  if ($node->writeins) {
+    $recalculate = FALSE;
+    foreach ($user_vote as $vote) {
+      if ($node->choice[$vote->tag]['writein']) {
+        // Check if there are any other votes for this write-in.
+        $count = db_result(db_query('SELECT COUNT(1) FROM {votingapi_vote} WHERE content_id = %d AND tag = %d', $node->nid, $vote->tag));
+        if ($count == 0) {
+          // Delete the write-in because no one else voted for it.
+          db_query('DELETE FROM {advpoll_choices} WHERE vote_offset = %d AND nid = %d', $vote->tag, $node->nid);
+          $recalculate = TRUE;
+          watchdog('content', t('Removed write-in choice %choice after the last vote was cancelled.', array('%choice' => $node->choice[$vote->tag]['label'])));
+        }
+      }
+    }
+    if ($recalculate) {
+      votingapi_recalculate_results('advpoll', $node->nid);
+    }
+  }
+}

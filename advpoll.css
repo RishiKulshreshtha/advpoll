@@ -10,3 +10,11 @@ a.remove-choice {
   font-size: 0.85em;
   cursor:pointer;
 }
+
+html.js .writein-choice, html.js .edit-settings-show-writeins {
+  display: none;
+}
+
+html.js input.writein-choice {
+  margin-left: 0.6em;
+}

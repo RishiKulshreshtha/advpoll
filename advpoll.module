@@ -10,6 +10,8 @@ define('ADVPOLL_MAXCHOICES', 0);
 define('ADVPOLL_RUNTIME', 0);
 define('ADVPOLL_ELECTORAL_LIST', 0);
 define('ADVPOLL_SHOWVOTES', 1);
+define('ADVPOLL_WRITEINS', 0);
+define('ADVPOLL_SHOW_WRITEINS', 0);
 // Options: always, aftervote, or afterclose.
 define('ADVPOLL_VIEW_RESULTS', 'aftervote');
 
@@ -176,6 +178,10 @@ function advpoll_form($node, $form_values = NULL) {
     '#tree' => TRUE,
     '#weight' => 1,
   );
+
+  $form['choice']['choice_note'] = array(
+    '#value' => '<div id="edit-settings-choice-note" class="description">'. t('Note: adding or removing choices after voting has begun is not recommended.') .'</div>',
+  );
   
   $form['choice']['morechoices'] = array(
     '#type' => 'checkbox',
@@ -188,13 +194,33 @@ function advpoll_form($node, $form_values = NULL) {
     '#weight' => 1
   );
 
-  for ($a = 1; $a <= $choices; $a++) {
-    $form['choice'][$a]['label'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Choice %n', array('%n' => $a)),
-      '#default_value' => $node->choice[$a]['label'],
-      '#attributes' => array('class' => 'choices'),
-    );
+  // First, loop through any currently existing choices.
+  $current_choices = 0;
+  if (isset($node->choice)) {
+    foreach ($node->choice as $index => $choice) {
+       $form['choice'][$index]['label'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Choice %n', array('%n' => $current_choices + 1)) . ($choice['writein'] ? ' '. t('(write-in)') : ''),
+        '#default_value' => $choice['label'],
+        '#attributes' => array('class' => 'choices'),
+      );
+      $current_choices++;
+      $next_index = $index + 1;
+    }
+  }
+  else {
+    $next_index = 1;
+  }
+
+  // Now add on extra choices if we need to.
+  if ($current_choices < $choices) {
+    for ($index = $next_index; $current_choices < $choices; $index++, $current_choices++) {
+      $form['choice'][$index]['label'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Choice %n', array('%n' => $current_choices + 1)),
+        '#attributes' => array('class' => 'choices'),
+      );
+    }
   }
 
   $form['settings'] = array(
@@ -269,10 +295,30 @@ function advpoll_form($node, $form_values = NULL) {
   // Settings available for users with 'administer polls' permission.
   $default_uselist = isset($node->uselist) ? $node->uselist : variable_get('advpoll_electoral_list_'. $type->type, ADVPOLL_ELECTORAL_LIST);
   $default_showvotes = isset($node->showvotes) ? $node->showvotes : variable_get('advpoll_showvotes_'. $type->type, ADVPOLL_SHOWVOTES);
+  $default_writeins = isset($node->writeins)? $node->writeins : variable_get('advpoll_writeins_'. $type->type, ADVPOLL_WRITEINS);
+  $default_show_writeins = isset($node->show_writeins)? $node->show_writeins : variable_get('advpoll_show_writeins_'. $type->type, ADVPOLL_SHOW_WRITEINS);
   if (user_access('administer polls')) {
     $form['settings']['admin_note'] = array(
       '#value' => '<div id="edit-settings-admin-note" class="description">'. t('The settings below are only available for users with the <em>administer polls</em> permission.') .'</div>',
     );
+
+    $form['settings']['writeins'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Allow users to cast a write-in vote'),
+      '#default_value' => $default_writeins,
+      '#description' => t('Allow voters with the "add write-ins" permission to write-in up to one choice each.'),
+      '#attributes' => array('class' => 'settings-writeins'),
+    );
+
+    $form['settings']['show_writeins'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Display write-in votes as choices for future voters'),
+      '#default_value' => $default_show_writeins,
+      '#description' => t('Allow voters to see and choose from previously submitted write-in votes.'),
+      '#prefix' => '<div class="edit-settings-show-writeins">',
+      '#suffix' => '</div>',
+    );
+
     $form['settings']['uselist'] = array(
       '#type' => 'checkbox',
       '#title' => t('Restrict voting to electoral list'),
@@ -297,15 +343,13 @@ function advpoll_form($node, $form_values = NULL) {
   }
   else {
     // Just pass the values for users without the 'administer polls' permission.
-    $form['settings']['uselist'] = array(
-      '#type' => 'value',
-      '#default_value' => $default_uselist,
-    );
-  
-    $form['settings']['showvotes'] = array(
-      '#type' => 'value',
-      '#default_value' => $default_showvotes,
-    );
+    $defaults = array('uselist' => $default_uselist, 'showvotes' => $default_showvotes, 'writeins' => $default_writeins, 'show_writeins' => $default_show_writeins);
+    foreach ($defaults as $name => $value) {
+      $form['settings'][$name] = array(
+        '#type' => 'value',
+        '#value' => $value,
+      );
+    }
   }
   
   $form['#multistep'] = TRUE;
@@ -321,6 +365,9 @@ function advpoll_form_alter($form_id, &$form) {
     $node_type = $form['old_type']['#value'];
     // Display poll settings if this is an advpoll content type.
     if ($form['module']['#value'] == 'advpoll') {
+      // We need to include the JS and CSS for the show_writeins setting toggle.
+      drupal_add_js(drupal_get_path('module', 'advpoll') .'/advpoll-form.js', 'module');
+      drupal_add_css(drupal_get_path('module', 'advpoll') .'/advpoll.css', 'module');
       $form['advpoll'] = array(
         '#type' => 'fieldset',
         '#title' => t('Poll settings'),
@@ -354,6 +401,23 @@ function advpoll_form_alter($form_id, &$form) {
         '#default_value' => variable_get('advpoll_runtime_'. $node_type, ADVPOLL_RUNTIME),
         '#options' => array(0 => t('Unlimited')) + drupal_map_assoc(array(86400, 172800, 345600, 604800, 1209600, 1814400, 2419200, 4838400, 9676800, 31536000), 'format_interval'),
         '#description' => t('The date the poll was created is used as start date for the default duration. This setting can be overridden on the poll edit page.'),
+      );
+
+      $form['advpoll']['writeins'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Allow users to cast a write-in vote by default'),
+        '#default_value' => variable_get('advpoll_writeins_'. $node_type, ADVPOLL_WRITEINS),
+        '#description' => t("Allow voters with the 'add write-ins' permission to write-in up to one choice each. Users with the <em>administer polls</em> permission will be able to override this setting."),
+        '#attributes' => array('class' => 'settings-writeins'),
+      );
+
+      $form['advpoll']['show_writeins'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Display write-in votes as choices for future voters by default'),
+        '#default_value' => variable_get('advpoll_show_writeins_'. $node_type, ADVPOLL_SHOW_WRITEINS),
+        '#description' => t("Allow voters to see and choose from previous voters' write-in votes. Users with the <em>administer polls</em> permission will be able to override this setting."),
+        '#prefix' => '<div class="edit-settings-show-writeins">',
+        '#suffix' => '</div>',
       );
 
       $form['advpoll']['advpoll_electoral_list'] = array(
@@ -406,7 +470,7 @@ function advpoll_help($section) {
 function advpoll_load($node) {
   global $user;
   $poll = db_fetch_object(db_query("SELECT * FROM {advpoll} WHERE nid = %d", $node->nid));
-  $result = db_query("SELECT vote_offset, label FROM {advpoll_choices} WHERE nid = %d ORDER BY vote_offset", $node->nid);
+  $result = db_query("SELECT vote_offset, label, writein FROM {advpoll_choices} WHERE nid = %d ORDER BY vote_offset", $node->nid);
   while ($choice = db_fetch_array($result)) {
     $poll->choice[$choice['vote_offset']] = $choice;
   }
@@ -552,6 +616,27 @@ function advpoll_menu($may_cache) {
           'weight' => 3,
           'type' => MENU_CALLBACK,
         );
+
+        // Show the write-ins tab if there is at least one.
+        if ($node->writeins) {
+          $has_writeins = FALSE;
+          foreach ($node->choice as $choice) {
+            if ($choice['writein']) {
+              $has_writeins = TRUE;
+              break;
+            }
+          }
+          if ($has_writeins) {
+            $items[] = array(
+              'path' => 'node/'. $nid .'/writeins',
+              'title' => t('Write-ins'),
+              'callback' => 'advpoll_tab_writeins',
+              'access' => user_access('administer polls'),
+              'weight' => 3,
+              'type' => MENU_LOCAL_TASK,
+            );
+          }
+        }
       }
     }
   }
@@ -825,7 +910,7 @@ function advpoll_node_info() {
  * Implementation of hook_perm().
  */
 function advpoll_perm() {
-  return array('create polls', 'edit polls', 'edit own polls', 'vote on polls', 'cancel own vote', 'administer polls', 'inspect all votes', 'access electoral list');
+  return array('create polls', 'edit polls', 'edit own polls', 'vote on polls', 'cancel own vote', 'administer polls', 'inspect all votes', 'access electoral list', 'add write-ins'); 
 }
 
 /**
@@ -844,7 +929,7 @@ function advpoll_cancel_form($nid) {
  */
 function advpoll_update($node) {
 
-  db_query("UPDATE {advpoll} SET active = %d, maxchoices = %d, algorithm = '%s', uselist = %d, showvotes = %d, startdate = '%s', enddate = '%s' WHERE nid = %d", !$node->settings['close'], $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['uselist'], $node->settings['showvotes'], $node->settings['startdate'] ? strtotime($node->settings['startdate']) : 0, $node->settings['enddate'] ? strtotime($node->settings['enddate']) : 0, $node->nid);
+  db_query("UPDATE {advpoll} SET active = %d, maxchoices = %d, algorithm = '%s', uselist = %d, showvotes = %d, startdate = '%s', enddate = '%s', writeins = %d, show_writeins = %d WHERE nid = %d", !$node->settings['close'], $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['uselist'], $node->settings['showvotes'], $node->settings['startdate'] ? strtotime($node->settings['startdate']) : 0, $node->settings['enddate'] ? strtotime($node->settings['enddate']) : 0, $node->settings['writeins'], $node->settings['show_writeins'], $node->nid);
 
   _advpoll_insert_choices($node->nid);
   votingapi_recalculate_results('advpoll', $node->nid);
@@ -889,12 +974,11 @@ function _advpoll_is_active($node, $return_status = FALSE) {
 }
 
 function _advpoll_insert_choices($nid) {
+  $node = node_load($nid);
   db_query('DELETE FROM {advpoll_choices} WHERE nid = %d', $nid);
-  // Start at one rather than 0 due to Drupal FormAPI
-  $i = 1;
-  foreach ($_POST['choice'] as $choice) {
+  foreach ($_POST['choice'] as $index => $choice) {
     if ($choice['label'] != '') {
-      db_query("INSERT INTO {advpoll_choices} (nid, label, vote_offset) VALUES (%d, '%s', %d)", $nid, $choice['label'], $i++);
+      db_query("INSERT INTO {advpoll_choices} (nid, label, vote_offset, writein) VALUES (%d, '%s', %d, %d)", $nid, $choice['label'], $index, isset($node->choice[$index]) ? $node->choice[$index]['writein'] : 0);
     }
   }
 }
@@ -905,7 +989,7 @@ function _advpoll_get_mode($node_type) {
     return $mode[1];
   }
   else {
-    drupal_set_message(t('No mode specified for this content type'), 'error');
+    drupal_set_message(t('No mode specified for content type %type.', array('%type' => $node_type)), 'error');
     return '';
   }
 }
@@ -917,7 +1001,7 @@ function _advpoll_get_mode($node_type) {
  */
 function advpoll_insert($node) {
   $mode = _advpoll_get_mode($node->type);
-  db_query("INSERT INTO {advpoll} (nid, mode, uselist, active, maxchoices, algorithm, showvotes, startdate, enddate) VALUES (%d, '%s', %d, %d, %d, '%s', %d, '%s', '%s')", $node->nid, $mode, $node->settings['uselist'], !$node->settings['close'], $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['showvotes'], $node->settings['startdate'] ? strtotime($node->settings['startdate']) : 0, $node->settings['enddate'] ? strtotime($node->settings['enddate']) : 0);
+  db_query("INSERT INTO {advpoll} (nid, mode, uselist, active, maxchoices, algorithm, showvotes, startdate, enddate, writeins, show_writeins) VALUES (%d, '%s', %d, %d, %d, '%s', %d, '%s', '%s', %d, %d)", $node->nid, $mode, $node->settings['uselist'], !$node->settings['close'], $node->settings['maxchoices'], $node->settings['algorithm'], $node->settings['showvotes'], $node->settings['startdate'] ? strtotime($node->settings['startdate']) : 0, $node->settings['enddate'] ? strtotime($node->settings['enddate']) : 0, $node->settings['writeins'], $node->settings['show_writeins']);
 
   // Insert the choices
   _advpoll_insert_choices($node->nid);
@@ -1011,17 +1095,11 @@ function advpoll_validate(&$node) {
   }
 }
 
-function advpoll_submit(&$node) {
-  $node->choice = array_values($node->choice);
-  // Start keys at 1 rather than 0
-  array_unshift($node->choice, '');
-  unset($node->choice[0]);
-}
-
 /**
  * Implementation of hook_view().
  */
 function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
+  drupal_add_css(drupal_get_path('module', 'advpoll') .'/advpoll.css', 'module');
   $status = _advpoll_is_active($node, TRUE);
   
   if ($node->in_preview) {
@@ -1069,7 +1147,7 @@ function theme_advpoll_results($title, $results, $votes, $links, $nid, $voted, $
   $output = '<div class="poll">';
   if ($results) {
     $output .= $results;
-    $output .= '<div class="total">'. t('Total votes: %votes', array('%votes' => $votes)) .'</div>';
+    $output .= '<div class="total">'. t('Total voters: %votes', array('%votes' => $votes)) .'</div>';
   }
   else {
     $output .= '<p class="message">'. t('No votes have been recorded for this poll.') .'</p>';
@@ -1086,8 +1164,8 @@ function _advpoll_show_cancel_form($node) {
   return $output;
 }
 
-function theme_advpoll_bar($title, $percentage, $votes) {
-  $output  = '<div class="text">'. $title .'</div>';
+function theme_advpoll_bar($title, $percentage, $votes, $choice = NULL) {
+  $output  = '<div class="text">'. $title . ($choice && $choice['writein'] ? ' '. t('(write-in)') : '') .'</div>';
   $output .= '<div class="bar"><div style="width: '. $percentage .'%;" class="foreground"></div></div>';
   $output .= '<div class="percent">'. $percentage .'% <span class="votes">('. $votes .')</span></div>';
   return $output;
@@ -1111,6 +1189,26 @@ function _advpoll_vote_response($node, $form_values) {
   $msg = t('Your vote was registered.');
   // Ajax response
   if ($form_values['ajax']) {
+    // Unset the array of choices so duplicates aren't shown.
+    unset($node->choice);
+    // Get all choices from database. This is necessary to get information about
+    // newly submitted write-in choices.
+    $result = db_query("SELECT vote_offset, label, writein FROM {advpoll_choices} WHERE nid = %d ORDER BY vote_offset", $node->nid);
+    while ($choice = db_fetch_array($result)) {
+      $node->choice[$choice['vote_offset']] = $choice;
+    }
+    // Update the number of choices.
+    $node->choices = count($poll->choice);
+    // Get updated total number of votes from database.
+    $result = db_query("SELECT value FROM {votingapi_cache} WHERE content_type = 'advpoll' AND content_id = %d AND tag = '_advpoll' AND function = 'total_votes'", $node->nid);
+    if (db_num_rows($result) > 0) {
+      $cache = db_fetch_object($result);
+      $node->votes = $cache->value;
+    }
+    else {
+      $node->votes = 0;
+    }
+
     list($node->voted, $node->cancel_vote) = _advpoll_user_voted($node->nid);
     $ajax_output .= advpoll_view_results($node, NULL, NULL);
     // Remove linebreaks as they will break jQuery's insert-HTML methods
@@ -1151,9 +1249,9 @@ function advpoll_view_results(&$node, $teaser, $page) {
 function advpoll_cancel($nid) {
   global $user;
   $nid = arg(2);
-  if ($node = node_load(array('nid' => $nid))) {
-    if ($node->voted && _advpoll_is_active($node)) {
-      if ($user->uid && count(votingapi_get_user_votes('advpoll', $node->nid)) > 0) {
+  if ($nid && $node = node_load(array('nid' => $nid))) {
+    if (isset($node->type) && $node->voted && _advpoll_is_active($node)) {
+      if ($user->uid && count($user_vote = votingapi_get_user_votes('advpoll', $node->nid)) > 0) {
         votingapi_unset_vote('advpoll', $node->nid, $user->uid);
       }
       else {
@@ -1161,13 +1259,19 @@ function advpoll_cancel($nid) {
         db_query("DELETE FROM {votingapi_vote} WHERE content_id=%d and hostname = '%s' AND uid=0", $node->nid, $host);
         votingapi_recalculate_results('advpoll', $nid);
       }
+
+      $mode = _advpoll_get_mode($node->type);
+      $function = 'advpoll_cancel_'. $mode;
+      if (function_exists($function)) {
+        $function($node, $user_vote);
+      }
       drupal_set_message(t('Your vote was canceled.'));
     }
     else {
       drupal_set_message(t("You are not allowed to cancel an invalid choice."), 'error');
     }
     drupal_goto('node/'. $nid);
-   }  
+  }  
   else {
     drupal_not_found();
   }
@@ -1244,4 +1348,227 @@ function _advpoll_form_set_error($name = NULL, $message = '', $ajax = false) {
   else {
     return form_set_error('choice[', $message);
   }
+}
+
+/**
+ * Voting form validation logic specific to writeins. This has been abstracted 
+ * away from includes in the modes directory.
+ */
+function _advpoll_writeins_voting_form_validate($node, $writein_option, $writein_text, $ajax) {
+  // Do write-in specific checks if write-ins are enabled and user has permission.
+  if ($node->writeins && user_access('add write-ins')) {
+    // Something is in the write-in textbox.
+    if ($writein_text) {
+      $writein_choice_lower = strtolower($writein_text);
+      foreach ($node->choice as $i => $value) {
+        // Check that user isn't writing in an existing visible choice. (User is
+        // writing in an existing choice and either write-ins are all being 
+        // displayed or the existing choice is not a write-in).
+        if ((strtolower($val['label']) == $writein_choice_lower) && ($node->show_writeins || !$value['writein'])) {
+          _advpoll_form_set_error('writein_choice', t("A write-in vote can not be for an existing choice. Select the choice's option instead."), $ajax);
+        }
+      }
+    }
+
+    // The write-in option is selected and there is nothing in the write-in textbox.
+    if ($writein_option && !$writein_text) {
+      _advpoll_form_set_error('writein_choice', t('If the "write-in" option is selected, a choice must be written in.'), $ajax);
+    }
+
+    // The write-in option is not selected, but there is something in the write-in textbox.
+    if (!$writein_option && $writein_text) {
+      _advpoll_form_set_error('writein_choice', t('If a choice is written in, the "write-in" option must be selected.'), $ajax);
+    }
+  }
+}
+
+/**
+ * Voting form submission logic specific to writeins. This has been abstracted 
+ * away from includes in the modes directory.
+ */
+function _advpoll_writeins_voting_form_submit($node, $form_values, &$vote, $vote_value) {
+  // A write-in vote is being made.
+  if ($form_values['writein_choice']) {
+    // Check if someone has previously voted for this choice.
+    $result = db_query("SELECT vote_offset FROM {advpoll_choices} WHERE nid = %d AND LOWER(label) = LOWER('%s')", $node->nid, $form_values['writein_choice']);
+    // If there's more than one match, redo the query, being more exact.
+    if (db_num_rows($result) > 1) {
+      $result = db_query("SELECT vote_offset FROM {advpoll_choices} WHERE nid = %d AND label = '%s'", $node->nid, $form_values['writein_choice']);      
+    }
+    // If there is at least one match, add a vote for the first one returned. It
+    // should be rare to find more than one choice for any one node with a given
+    // label.
+    if (db_num_rows($result)) {
+      $obj = db_fetch_object($result);
+      $existing_vote_offset = $obj->vote_offset;
+      // Set a vote
+      unset($temp);
+      $temp->value = $vote_value;
+      $temp->tag = $existing_vote_offset;
+      $temp->value_type = 'option';
+      $vote[] = $temp;
+    }
+    // This write-in choice has not been previously voted for.
+    else {
+      // Get last vote offset for this node.
+      $highest_offset = db_result(db_query("SELECT MAX(vote_offset) FROM {advpoll_choices} WHERE nid = %d", $node->nid));
+      $next_offset = $highest_offset ? $highest_offset + 1 : 1;
+
+      // Insert new choice into node.
+      db_query("INSERT INTO {advpoll_choices} (nid, label, vote_offset, writein) VALUES (%d, '%s', %d, 1)", $node->nid, check_plain($form_values['writein_choice']), $next_offset);
+      
+      // Add vote
+      unset($temp);
+      $temp->value = $vote_value;
+      $temp->tag = $next_offset;
+      $temp->value_type = 'option';
+      $vote[] = $temp;
+    }
+  }
+}
+
+function advpoll_tab_writeins() {
+  $node = node_load(arg(1));
+  drupal_set_title(check_plain($node->title));
+  $output .= drupal_get_form('advpoll_writein_promote_form', $node);
+  $output .= drupal_get_form('advpoll_writein_merge_form', $node);
+  echo theme('page', $output);
+}
+
+function advpoll_writein_merge_form($node) {
+  $form = array();
+  $form['fieldset'] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => FALSE,
+    '#title' => t('Merge write-ins'),
+  );
+  $form['fieldset']['note'] = array(
+    '#value' => '<div class="description">'. t('This will delete the write-in and change any votes for it into votes for the selected chocie.') .'</div>',
+  );
+  $form['fieldset']['merge'] = array(
+    '#prefix' => '<div class="container-inline">'. t('Merge') .' ',
+    '#suffix' => '</div>',
+  );
+  $writein_list = array();
+  $choice_list = array();
+  foreach ($node->choice as $index => $choice) {
+    $choice_list[$index] = $choice['label'];
+    if ($choice['writein']) {
+      $writein_list[$index] = $choice['label'];
+    }
+  }
+  $form['fieldset']['merge']['source'] = array(
+    '#type' => 'select',
+    '#options' => $writein_list,
+  );
+  $form['fieldset']['merge']['into'] = array(
+    '#value' => t(' into '),
+  );
+  $form['fieldset']['merge']['destination'] = array(
+    '#type' => 'select',
+    '#options' => $choice_list,
+  );
+  $form['fieldset']['merge']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Merge'),
+  );
+  $form['nid'] = array(
+    '#type' => 'value',
+    '#value' => $node->nid,
+  );
+  return $form;
+}
+
+function advpoll_writein_merge_form_validate($form_id, $form_values) {
+  if ($form_values['source'] == $form_values['destination']) {
+    form_set_error('destination', t('The write-in cannot be merged into itself.'));
+  }
+}
+
+function advpoll_writein_merge_form_submit($form_id, $form_values) {
+  // Get a list of votes in this node.
+  $raw_votes = db_query('SELECT * FROM {votingapi_vote} WHERE content_id = %d', $form_values['nid']);
+  $voters = array();
+  $affected_voters = array();
+  while ($vote = db_fetch_object($raw_votes)) {
+    $key = $vote->uid .'-'. $vote->hostname;
+    if (!isset($voters[$key])) {
+      $voters[$key] = array();
+    }
+    array_push($voters[$key], $vote);
+    if ($vote->tag == $form_values['source']) {
+      // This voter is affected by the merge; save the index of the source vote.
+      $affected_voters[$key] = count($voters[$key]) - 1;
+    }
+  }
+  // Now fix the affected voters.
+  foreach ($affected_voters as $key => $source_index) {
+    // Find out if they voted for the destination or not.
+    $voted_for_destination = FALSE;
+    foreach ($voters[$key] as $index => $vote) {
+      if ($vote->tag == $form_values['destination']) {
+        $voted_for_destination = TRUE;
+        break;
+      }
+    }
+    if ($voted_for_destination) {
+      // Since they already voted for the destination choice,  delete the vote
+      // for the source.
+      db_query('DELETE FROM {votingapi_vote} WHERE vote_id = %d AND tag = %d', $voters[$key][$index]->vote_id, $form_values['source']);
+    }
+    else {
+      // They didn't already vote for the destination, so transfer the vote for
+      // the source to the destination.
+      db_query('UPDATE {votingapi_vote} SET tag = %d WHERE vote_id = %d AND tag = %d', $form_values['destination'], $voters[$key][$index]->vote_id, $form_values['source']);
+    }
+  }
+
+  // Delete the merged choice.
+  db_query('DELETE FROM {advpoll_choices} WHERE vote_offset = %d', $form_values['source']);
+  votingapi_recalculate_results('advpoll', $form_values['nid']);
+  drupal_set_message(t('Write-in merged.'));
+  // Unset destination form element so that drupal_goto() doesn't use it
+  // mistakenly.
+  unset($_REQUEST['destination']);
+  drupal_goto('node/'. $form_values['nid'] .'/writeins');
+}
+
+function advpoll_writein_promote_form($node) {
+  $form = array();
+  $form['fieldset'] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => FALSE,
+    '#title' => t('Promote write-ins'),
+  );
+  $form['fieldset']['note'] = array(
+    '#value' => '<p class="description">'. t('Write-ins can be converted to regular choices. This is useful if users cannot see past write-ins but you want to promote specific write-ins so that they can be seen by users who vote in the future.') .'</p>',
+  );
+  $writein_list = array();
+  foreach ($node->choice as $index => $choice) {
+    if ($choice['writein']) {
+      $writein_list[$index] = $choice['label'];
+    }
+  }
+
+  $form['fieldset']['promote'] = array(
+    '#type' => 'checkboxes',
+    '#options' => $writein_list,
+  );
+  $form['fieldset']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Promote'),
+  );
+  $form['nid'] = array(
+    '#type' => 'value',
+    '#value' => $node->nid,
+  );
+  return $form;
+}
+
+function advpoll_writein_promote_form_submit($form_id, $form_values) {
+  if (count($form_values['promote'])) {
+    db_query('UPDATE {advpoll_choices} SET writein = 0 WHERE nid = %d AND vote_offset IN(%s)', $form_values['nid'], check_plain(implode(', ', $form_values['promote'])));
+    drupal_set_message(format_plural(count($form_values['promote']), 'Write-in promoted.', 'Write-ins promoted.'));
+  }
+  drupal_goto('node/'. $form_values['nid']);
 }

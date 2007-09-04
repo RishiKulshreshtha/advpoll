@@ -33,13 +33,24 @@ function advpoll_voting_binary_form(&$node, $teaser, $page, $status) {
     // If previewing check the format against the current users permissions.
     $check = $node->in_preview;
     foreach ($node->choice as $i => $choice) {
-      // Don't show blank choices
-      if ($choice['label']) {
-         $list[$i] = _advpoll_choice_markup($choice['label'], $node->format, $check);
+      // Don't show blank choices or write-in votes if the setting is disabled.
+      if ($choice['label'] && ($node->show_writeins || !$choice['writein'])) {
+         $list[$i] = _advpoll_choice_markup($choice['label'], $node->format, $check) . ($choice['writein'] ? ' '. t('(write-in)') : '');
       }
     }
+    // Add write-in checkbox/radio if write-ins are enabled and user has permission.
+    if ($node->writeins && user_access('add write-ins')) {
+      $list[$i + 1] = t('(write-in)');
+      $form['writein_key'] = array(
+        '#type' => 'value',
+        '#value' => $i + 1,
+      );
+    }
+
     $form['choice'] = array(
       '#options' => $list,
+      '#prefix' => '<div class="vote-choices">',
+      '#suffix' => '</div>',
     );
 
     if ($node->in_preview) {
@@ -57,6 +68,17 @@ function advpoll_voting_binary_form(&$node, $teaser, $page, $status) {
       // Approval voting
       $form['choice']['#type'] = 'checkboxes';
     }
+  }
+
+  // Add write-in text field if write-ins are enabled and user has permission.
+  if ($node->writeins && user_access('add write-ins')) {
+    $form['writein_choice'] = array (
+      '#prefix' => '<div class="writein-choice">',
+      '#suffix' => '</div>',
+      '#type' => 'textfield',
+      '#title' => t('Write-in vote'),
+      '#size' => 25,
+    );
   }
 
   $form['nid'] = array(
@@ -127,7 +149,7 @@ function advpoll_view_results_binary($node, $teaser, $page) {
     foreach ($votes as $i => $count) {
       $choice = $node->choice[$i];
       $percentage = round(100 * $votes[$i] / $total_votes, 0);
-      $output .= theme('advpoll_bar', _advpoll_choice_markup($choice['label'], $node->format, false), $percentage, format_plural($count, '1 vote', '@count votes'));
+      $output .= theme('advpoll_bar', _advpoll_choice_markup($choice['label'], $node->format, false), $percentage, format_plural($count, '1 vote', '@count votes'), $choice);
     }
   }
 
@@ -154,23 +176,33 @@ function advpoll_calculate_results_binary(&$results, $votes, $node) {
 function advpoll_voting_binary_form_submit($form_id, $form_values) {
   $vote = array();
   $node = node_load($form_values['nid']);
+
+  // Do submission specific to writeins.
+  _advpoll_writeins_voting_form_submit($node, $form_values, $vote, 1);
+
   if ($node->maxchoices == 1) {
     // Plurality voting
-    $temp->value = 1;
-    $temp->tag = $form_values['choice'];
-    $temp->value_type = 'option';
-    $vote[] = $temp;
+    // Ignore write-in choice that has already been taken care of.
+    if (!$form_values['choice'][$form_values['writein_key']]) {
+      $temp->value = 1;
+      $temp->tag = $form_values['choice'];
+      $temp->value_type = 'option';
+      $vote[] = $temp;
+    }
   }
   else {
     // Approval voting
     foreach ($form_values['choice'] as $choice => $selected) {
-      unset($temp);
-      $temp->value = $choice;
-      if ($selected) {
-        $temp->value_type = 'option';
-        $temp->tag = $choice;
-        $temp->value = 1;
-        $vote[] = $temp;
+      // Ignore write-in choice that has already been taken care of.
+      if ($choice != $form_values['writein_key']) {
+        unset($temp);
+        $temp->value = $choice;
+        if ($selected) {
+          $temp->value_type = 'option';
+          $temp->tag = $choice;
+          $temp->value = 1;
+          $vote[] = $temp;
+        }
       }
     }
   }
@@ -198,6 +230,11 @@ function advpoll_voting_binary_form_validate($form_id, $form_values) {
     _advpoll_form_set_error('choice[', t('This poll is closed.'), $ajax);
   }
 
+  // Whether the write-in option is selected. This is calculated differently for
+  // radio buttons and checkboxes.
+  $writein_option = FALSE;
+  $writein_text = $form_values['writein_key'] ? $form_values['writein_choice'] : '';
+
   // Check if user has already voted
   list($voted, $cancel_vote) = _advpoll_user_voted($node->nid);
   if ($voted) {
@@ -206,7 +243,14 @@ function advpoll_voting_binary_form_validate($form_id, $form_values) {
 
   if ($node->maxchoices == 1) {
     // Plurality voting
-    if (!array_key_exists($form_values['choice'], $node->choice)) {
+    // Write-ins are enabled, user has permission, and it's the write-in option.
+    if ($node->writeins && user_access('add write-ins') && ($form_values['choice'] == $form_values['writein_key'])) {
+      // Set the flag to true for additional checks.
+      $writein_option = TRUE;
+    }
+    // The choice is invalid (not between 0 and the write-in key).
+    elseif (!($form_values['choice'] > 0 ) && ($form_values['choice'] < $form_values['writein_key'])) {
+      // Nothing is selected.
       _advpoll_form_set_error('choice[', t('At least one choice must be selected.'), $ajax);
     }
   }
@@ -218,6 +262,14 @@ function advpoll_voting_binary_form_validate($form_id, $form_values) {
       if ($form_values['choice'][$i]) {
         $numchoices++;
       }
+    }
+
+    // Write-ins are enabled, user has permission, and the write-in box is checked.
+    if ($node->writeins && user_access('add write-ins') && $form_values['choice'][$form_values['writein_key']]) {
+      // Add one to number of choices for check on min/max boxes checked.
+      $numchoices++;
+      // Set the flag to true for additional checks.
+      $writein_option = TRUE;
     }
   
     // Too many choices ranked
@@ -233,6 +285,9 @@ function advpoll_voting_binary_form_validate($form_id, $form_values) {
       _advpoll_form_set_error('choice[', t('At least one choice must be selected.'), $ajax);
     }
   }
+
+  // Do validation specific to writeins.
+  _advpoll_writeins_voting_form_validate($node, $writein_option, $writein_text, $ajax);
 }
 
 /**
@@ -248,4 +303,28 @@ function theme_advpoll_voting_binary_form($form) {
   }
   $output .= "</div>\n";
   return $output;
+}
+
+/**
+ * Hook to handle a cancelled vote for a binary poll.
+ */
+function advpoll_cancel_binary($node, $user_vote) {
+  // Remove choice if this was the last vote for a write-in.
+  if ($node->writeins) {
+    $recalculate = FALSE;
+    foreach ($user_vote as $vote) {
+      if ($node->choice[$vote->tag]['writein']) {
+        // Check if there are any other votes for this write-in.
+        $count = db_result(db_query('SELECT COUNT(1) FROM {votingapi_vote} WHERE content_id = %d AND tag = %d', $node->nid, $vote->tag));
+        if ($count == 0) {
+          // Delete the write-in because no one else voted for it.
+          db_query('DELETE FROM {advpoll_choices} WHERE vote_offset = %d AND nid = %d', $vote->tag, $node->nid);
+          $recalculate = TRUE;
+        }
+      }
+    }
+    if ($recalculate) {
+      votingapi_recalculate_results('advpoll', $node->nid);
+    }
+  }
 }
