@@ -643,7 +643,7 @@ function advpoll_voting_ranking_form_submit($form_id, $form_values) {
 
   foreach ($form_values['choice'] as $choice => $rank) {
     // Ignore write-in choice that has already been taken care of.
-    if ($choice != $form_values['writein_key']) {
+    if (!$node->writeins || $choice != $form_values['writein_key']) {
       unset($temp);
       $temp->value = $rank;
       // A zero value indicates they didn't rank that choice.

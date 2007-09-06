@@ -183,7 +183,7 @@ function advpoll_voting_binary_form_submit($form_id, $form_values) {
   if ($node->maxchoices == 1) {
     // Plurality voting
     // Ignore write-in choice that has already been taken care of.
-    if (!$form_values['choice'][$form_values['writein_key']]) {
+    if (!$node->writeins || !$form_values['choice'][$form_values['writein_key']]) {
       $temp->value = 1;
       $temp->tag = $form_values['choice'];
       $temp->value_type = 'option';
@@ -194,7 +194,7 @@ function advpoll_voting_binary_form_submit($form_id, $form_values) {
     // Approval voting
     foreach ($form_values['choice'] as $choice => $selected) {
       // Ignore write-in choice that has already been taken care of.
-      if ($choice != $form_values['writein_key']) {
+      if (!$node->writeins || $choice != $form_values['writein_key']) {
         unset($temp);
         $temp->value = $choice;
         if ($selected) {

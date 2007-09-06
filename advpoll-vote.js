@@ -55,6 +55,10 @@ Drupal.advpoll.nodeVoteAutoAttach = function() {
 Drupal.advpoll.handleWriteins = function() {
   $("div.poll").each(function() {
     var poll = this;
+    if ($(".writein-choice", poll).length == 0) {
+      // No write-ins in this poll.
+      return;
+    }
     var ranOnce = false;
     // Toggle display of the write-in text box for radios/checkboxes.
     $(".vote-choices input[@type=radio], .vote-choices input[@type=checkbox]", poll).click(function() {
