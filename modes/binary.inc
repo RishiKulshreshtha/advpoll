@@ -20,9 +20,10 @@ function advpoll_algorithms_binary() {
  */
 function advpoll_voting_binary_form(&$node, $teaser, $page, $status) {
   static $binary_form_count = 0; 
-  $form['#id'] = 'advpoll_voting_binary_form-'. $binary_form_count++;
-  $form['#attributes'] = array('class' => 'advpoll-vote');
-  
+  $form = array(
+    '#id' => 'advpoll-voting-binary-form-'. $binary_form_count++,
+    '#attributes' => array('class' => 'advpoll-vote'),
+  );
   $form['ajax'] = array(
     '#type' => 'hidden',
     '#attributes' => array('class' => 'ajax'),
@@ -35,7 +36,7 @@ function advpoll_voting_binary_form(&$node, $teaser, $page, $status) {
     foreach ($node->choice as $i => $choice) {
       // Don't show blank choices or write-in votes if the setting is disabled.
       if ($choice['label'] && ($node->show_writeins || !$choice['writein'])) {
-         $list[$i] = _advpoll_choice_markup($choice['label'], $node->format, $check) . ($choice['writein'] ? ' '. t('(write-in)') : '');
+        $list[$i] = _advpoll_choice_markup($choice['label'], $node->format, $check) . ($choice['writein'] ? ' '. t('(write-in)') : '');
       }
     }
     // Add write-in checkbox/radio if write-ins are enabled and user has permission.
@@ -53,13 +54,9 @@ function advpoll_voting_binary_form(&$node, $teaser, $page, $status) {
       '#suffix' => '</div>',
     );
 
-    if ($node->in_preview) {
-      $maxchoices = $node->settings['maxchoices'];
-    }
-    else {
-      $maxchoices = $node->maxchoices; 
-    }
-    if ($maxchoices == 1) {
+    $max_choices = $node->in_preview ? $node->settings['max_choices'] : $node->max_choices; 
+
+    if ($max_choices == 1) {
       // Plurality voting
       $form['choice']['#type'] = 'radios';
       $form['choice']['#default_value'] = -1;
@@ -72,7 +69,7 @@ function advpoll_voting_binary_form(&$node, $teaser, $page, $status) {
 
   // Add write-in text field if write-ins are enabled and user has permission.
   if ($node->writeins && user_access('add write-ins')) {
-    $form['writein_choice'] = array (
+    $form['writein_choice'] = array(
       '#prefix' => '<div class="writein-choice">',
       '#suffix' => '</div>',
       '#type' => 'textfield',
@@ -97,7 +94,7 @@ function advpoll_voting_binary_form(&$node, $teaser, $page, $status) {
     );
   }
   elseif ($node->in_preview) {
-    //Display nothing
+    // Display nothing.
   }
   elseif ($status == 'pending') {
     $form['message']['#value'] = t('This poll opens @time.', array('@time' => format_date($node->startdate)));
@@ -120,23 +117,23 @@ function advpoll_view_results_binary($node, $teaser, $page) {
   $results = votingapi_get_voting_results($content_type, $content_id);
   $votes = array();
   foreach ($results as $result) {
-    $voteval = $result->tag;
-    if ($voteval == '_advpoll') {
+    $vote_value = $result->tag;
+    if ($vote_value == '_advpoll') {
       if ($result->function == 'total_votes') {
         $total_votes = $result->value;
       }
     }
-    else if (isset($node->choice[$voteval])) {
-      if (!$votes[$voteval]) {
-        $votes[$voteval] = 0;
+    else if (isset($node->choice[$vote_value])) {
+      if (!$votes[$vote_value]) {
+        $votes[$vote_value] = 0;
       }
-      $votes[$voteval] = $result->value;
+      $votes[$vote_value] = $result->value;
     }
   }
 
   if ($node->choice && $total_votes > 0) {
     // Add in any choices that received no votes.
-    foreach ($node->choice as $i => $ch) {
+    foreach ($node->choice as $i => $choice) {
       if (!isset($votes[$i])) {
         $votes[$i] = 0;
       }
@@ -149,7 +146,7 @@ function advpoll_view_results_binary($node, $teaser, $page) {
     foreach ($votes as $i => $count) {
       $choice = $node->choice[$i];
       $percentage = round(100 * $votes[$i] / $total_votes, 0);
-      $output .= theme('advpoll_bar', _advpoll_choice_markup($choice['label'], $node->format, false), $percentage, format_plural($count, '1 vote', '@count votes'), $choice);
+      $output .= theme('advpoll_bar', _advpoll_choice_markup($choice['label'], $node->format, FALSE), $percentage, format_plural($count, '1 vote', '@count votes'), $choice);
     }
   }
 
@@ -174,40 +171,40 @@ function advpoll_calculate_results_binary(&$results, $votes, $node) {
  * Registers the vote as a key for this node using votingapi_set_vote().
  */
 function advpoll_voting_binary_form_submit($form_id, $form_values) {
-  $vote = array();
+  $votes = array();
   $node = node_load($form_values['nid']);
 
   // Do submission specific to writeins.
-  _advpoll_writeins_voting_form_submit($node, $form_values, $vote, 1);
+  _advpoll_writeins_voting_form_submit($node, $form_values, $votes, 1);
 
-  if ($node->maxchoices == 1) {
+  if ($node->max_choices == 1) {
     // Plurality voting
     // Ignore write-in choice that has already been taken care of.
     if (!$node->writeins || !$form_values['choice'][$form_values['writein_key']]) {
-      $temp->value = 1;
-      $temp->tag = $form_values['choice'];
-      $temp->value_type = 'option';
-      $vote[] = $temp;
+      $vote->value = 1;
+      $vote->tag = $form_values['choice'];
+      $vote->value_type = 'option';
+      $votes[] = $vote;
     }
   }
   else {
     // Approval voting
     foreach ($form_values['choice'] as $choice => $selected) {
+      $vote = new stdClass();
       // Ignore write-in choice that has already been taken care of.
       if (!$node->writeins || $choice != $form_values['writein_key']) {
-        unset($temp);
-        $temp->value = $choice;
+        $vote->value = $choice;
         if ($selected) {
-          $temp->value_type = 'option';
-          $temp->tag = $choice;
-          $temp->value = 1;
-          $vote[] = $temp;
+          $vote->value_type = 'option';
+          $vote->tag = $choice;
+          $vote->value = 1;
+          $votes[] = $vote;
         }
       }
     }
   }
 
-  votingapi_set_vote('advpoll', $form_values['nid'], $vote);
+  votingapi_set_vote('advpoll', $form_values['nid'], $votes);
   _advpoll_vote_response($node, $form_values);
 }
 
@@ -241,7 +238,7 @@ function advpoll_voting_binary_form_validate($form_id, $form_values) {
     _advpoll_form_set_error('choice[', t('You have already voted in this poll.'), $ajax);
   }
 
-  if ($node->maxchoices == 1) {
+  if ($node->max_choices == 1) {
     // Plurality voting
     // Write-ins are enabled, user has permission, and it's the write-in option.
     if ($node->writeins && user_access('add write-ins') && ($form_values['choice'] == $form_values['writein_key'])) {
@@ -249,39 +246,39 @@ function advpoll_voting_binary_form_validate($form_id, $form_values) {
       $writein_option = TRUE;
     }
     // The choice is invalid (not between 0 and the write-in key).
-    elseif (!($form_values['choice'] > 0 ) && ($form_values['choice'] < $form_values['writein_key'])) {
+    elseif (!($form_values['choice'] > 0) && ($form_values['choice'] < $form_values['writein_key'])) {
       // Nothing is selected.
       _advpoll_form_set_error('choice[', t('At least one choice must be selected.'), $ajax);
     }
   }
   else {
-    // Approval voting
-    $numchoices = 0;
+    // Approval voting.
+    $num_choices = 0;
     foreach ($node->choice as $i => $val) {
-      // see if the box is checked
+      // See if the box is checked.
       if ($form_values['choice'][$i]) {
-        $numchoices++;
+        $num_choices++;
       }
     }
 
     // Write-ins are enabled, user has permission, and the write-in box is checked.
     if ($node->writeins && user_access('add write-ins') && $form_values['choice'][$form_values['writein_key']]) {
       // Add one to number of choices for check on min/max boxes checked.
-      $numchoices++;
+      $num_choices++;
       // Set the flag to true for additional checks.
       $writein_option = TRUE;
     }
   
-    // Too many choices ranked
-    if ($node->maxchoices != 0 && $numchoices > $node->maxchoices) {
-      $message = t('%num choices were selected but only %max are allowed.', array('%num' => $numchoices, '%max' => $node->maxchoices));
+    // Too many choices ranked.
+    if ($node->max_choices != 0 && $numchoices > $node->max_choices) {
+      $message = t('%num choices were selected but only %max are allowed.', array('%num' => $num_choices, '%max' => $node->max_choices));
       _advpoll_form_set_error('choice[', $message, $ajax);
 
     }
 
-    // Not enough choices ranked
-    $minchoices = 1;
-    if ($numchoices < $minchoices) {
+    // Not enough choices ranked.
+    $min_choices = 1;
+    if ($num_choices < $min_choices) {
       _advpoll_form_set_error('choice[', t('At least one choice must be selected.'), $ajax);
     }
   }

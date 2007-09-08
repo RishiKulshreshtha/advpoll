@@ -6,10 +6,10 @@ if (!Drupal.advpoll) {
 
 // Update maxchoices, called when adding and removing choices
 Drupal.advpoll.maxChoices = function(numChoices) {
-  var selected = $("#edit-settings-maxchoices").val();
-  var label = $("#edit-settings-maxchoices").prev();
+  var selected = $("#edit-settings-max-choices").val();
+  var label = $("#edit-settings-max-choices").prev();
   // Hard-code the HTML (not clone) as .html() doesn't work for select fields in IE and Opera.
-  var newMaxChoices = '<select id="edit-settings-maxchoices" class="form-select" name="settings[maxchoices]">';
+  var newMaxChoices = '<select id="edit-settings-max-choices" class="form-select" name="settings[max_choices]">';
   // Build the options
   for (var i = 0; i <= numChoices; i++) {
     var name = (i ? i : Drupal.settings.advPoll.noLimit);
@@ -18,21 +18,21 @@ Drupal.advpoll.maxChoices = function(numChoices) {
     if (i == selected) {
       newMaxChoices += 'selected="selected" ';
     }
-    newMaxChoices += 'value="' + i + '">' + name + '</option>';
+    newMaxChoices += 'value="'+ i +'">'+ name +'</option>';
   }
   newMaxChoices += '</select>';
   // Remove old maxchoices
-  $("#edit-settings-maxchoices").remove();
+  $("#edit-settings-max-choices").remove();
   
   label.after(newMaxChoices);
-}
+};
 
 // Click event for Remove link, called on pageload and when Add choice is clicked
-Drupal.advpoll.removeChoiceClick = function()  {
-  $('a.remove-choice').unclick().click(function() {
+Drupal.advpoll.removeChoiceClick = function() {
+  $("a.remove-choice").unclick().click(function() {
     var nextRemoveLink = $(this).parent().next().find(".remove-choice");
-    // Set focus at next or previous Remove link
-    if(nextRemoveLink.html()) {
+    // Set focus at next or previous Remove link.
+    if (nextRemoveLink.html()) {
       nextRemoveLink[0].focus();
     }
     else {
@@ -42,13 +42,13 @@ Drupal.advpoll.removeChoiceClick = function()  {
     $(this).parent().remove();
     var i = 1;
     $("input.choices").prev().each(function() {
-      // Give each label it's correct number
+      // Give each label its correct number
       $(this).html($(this).html().replace(/\d+(?=<)/g, i++));
     });
     
-    Drupal.advpoll.maxChoices(i-1);
+    Drupal.advpoll.maxChoices(i - 1);
   });
-}
+};
 
 // Show/hide "display write-ins" option when user checks unchecks the write-ins
 // box.
@@ -61,7 +61,7 @@ Drupal.advpoll.updateWriteins = function() {
     $(".edit-settings-show-writeins").hide();
     $("#edit-settings-show-writeins").attr("disabled", "disabled");
   }
-}
+};
 
 Drupal.advpoll.nodeFormAutoAttach = function() {
   // This code is used on the node edit page and the content-type settings page.
@@ -76,16 +76,16 @@ Drupal.advpoll.nodeFormAutoAttach = function() {
   }
 
   // Hide "need more choices" checkbox
-  $("#morechoices").hide();
+  $("#more-choices").hide();
   
   // Insert Remove links
-  $('<a class="remove-choice">' + Drupal.settings.advPoll.remove + '</a>').insertAfter("input.choices");
+  $('<a class="remove-choice">'+ Drupal.settings.advPoll.remove +'</a>').insertAfter("input.choices");
   Drupal.advpoll.removeChoiceClick();
   
   // "Backup" of the first choice
   var newChoice = $("input.choices:first").parent().clone();
   
-  $('<a class="add-choice" href="#">' + Drupal.settings.advPoll.addChoice + '</a>').insertAfter("#morechoices").click(function() {
+  $('<a class="add-choice" href="#">'+ Drupal.settings.advPoll.addChoice +'</a>').insertAfter("#more-choices").click(function() {
     var numChoices = $("input.choices").length + 1;
     // Extract the last choice's offset from its id.
     var newChoiceN = parseInt($("input.choices:last").id().match(/\d+/)) + 1;
@@ -96,18 +96,17 @@ Drupal.advpoll.nodeFormAutoAttach = function() {
     // Replace the label to use a more accurate count of choices.
     $("label", newChoice).html($("label", newChoice).html().replace(/\d+(?=<)|\d+(?=-)|\d+(?=\])/g, numChoices));
     // Clear the value, insert and fade in.
-    newChoice.find("input").val("").end().insertBefore("#morechoices").fadeIn();
+    newChoice.find("input").val("").end().insertBefore("#more-choices").fadeIn();
     // Update hidden form values
     $("#edit-choices").val(newChoiceN);
     $("#edit-changed").val($("#edit-changed").val() + 1);
     
     Drupal.advpoll.removeChoiceClick();
-    
     Drupal.advpoll.maxChoices(numChoices);
     
     return false;
   });
-}
+};
 
 // Global Killswitch
 if (Drupal.jsEnabled) {

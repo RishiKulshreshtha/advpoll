@@ -8,11 +8,11 @@ if (typeof(Drupal) == "undefined" || !Drupal.advpoll) {
 * Submit advpoll forms with ajax
 */
 Drupal.advpoll.attachVoteAjax = function() {
-  var submitSelect = "input[@value=" + Drupal.settings.advPoll.vote +"]";
+  var submitSelect = "input[@value="+ Drupal.settings.advPoll.vote +"]";
   $("form.advpoll-vote").each(function() {
     var thisForm = this;
     var options = {
-      dataType: 'json',
+      dataType: "json",
       after: function(data) {
         // Remove previous messages
         $("div.messages").remove(); 
@@ -31,7 +31,6 @@ Drupal.advpoll.attachVoteAjax = function() {
         $(submitSelect, thisForm).removeAttr("disabled");
 
       },
-
       before: function() {
         // Disable all voting forms for this poll
         var nid = $("input.edit-nid", thisForm).val();
@@ -46,11 +45,11 @@ Drupal.advpoll.attachVoteAjax = function() {
     $("input.ajax", thisForm).val(true);
     $(this).ajaxForm(options);
   });
-}
+};
 
 Drupal.advpoll.nodeVoteAutoAttach = function() {
   Drupal.advpoll.attachVoteAjax();
-}
+};
 
 Drupal.advpoll.handleWriteins = function() {
   $("div.poll").each(function() {

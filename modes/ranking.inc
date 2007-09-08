@@ -17,21 +17,18 @@ function advpoll_algorithms_ranking() {
 }
 
 function advpoll_voting_ranking_form(&$node, $teaser, $page, $status) {
-  $form = array();
-
   static $ranking_form_count = 0; 
-  $form['#id'] = 'advpoll_voting_ranking_form-'. $ranking_form_count++;
-  $form['#attributes'] = array('class' => 'advpoll-vote');
-
+  $form = array(
+    '#id' => 'advpoll_voting_ranking_form-'. $ranking_form_count++,
+    '#attributes' => array('class' => 'advpoll-vote'),
+  );
   $form['ajax'] = array(
     '#type' => 'hidden',
     '#attributes' => array('class' => 'ajax'),
   );
 
-
   if ($node->choice) {
     $list = array();
-
     $num_choices = count($node->choice);
 
     // Generate the list of possible rankings
@@ -48,21 +45,20 @@ function advpoll_voting_ranking_form(&$node, $teaser, $page, $status) {
       }
       else {
         $val = t($i .'th');
-        // Fix to work around limitations in the current translation system. By 
-        // listing the strings here they are made immediately available for 
-        // translating. Listing up to 15 here, as it should be enough for most 
-        // users. If more are needed they are made available for translating in 
-        // Drupal when a poll with more than 15 choices has been created.
-        // TODO: Find a better solution for this.
-        $_make_translatable = array(t('4th'), t('5th'), t('6th'), t('7th'), t('8th'), t('9th'), t('10th'), t('11th'), t('12th'), t('13th'), t('14th'), t('15th'));
-
       }
       $choices[$i] = $val;
     }
+    // Fix to work around limitations in the current translation system. By 
+    // listing the strings here they are made immediately available for 
+    // translating. Listing up to 15 here, as it should be enough for most 
+    // users. If more are needed they are made available for translating in 
+    // Drupal when a poll with more than 15 choices has been created.
+    // TODO: Find a better solution for this.
+    array(t('4th'), t('5th'), t('6th'), t('7th'), t('8th'), t('9th'), t('10th'), t('11th'), t('12th'), t('13th'), t('14th'), t('15th'));
 
     $form['choice'] = array(
       '#tree' => TRUE,
-      // XXX: Workaround for FormAPI bug in PHP 4, see http://drupal.org/node/86657
+      // XXX: Workaround for FormAPI bug in PHP 4, see http://drupal.org/node/86657.
       '#type' => 'checkboxes',
       '#prefix' => '<div class="vote-choices">',
       '#suffix' => '</div>',
@@ -81,12 +77,12 @@ function advpoll_voting_ranking_form(&$node, $teaser, $page, $status) {
 
     // Add write-in select box if write-ins are enabled and user has permission.
     if ($node->writeins && user_access('add write-ins')) {
-      $form['choice'][$key + 1] = array (
+      $form['choice'][$key + 1] = array(
         '#type' => 'select',
         '#title' => t('(write-in)'),
         '#options' => $choices,
       );
-      // Key index of the write-in option
+      // Key index of the write-in option.
       $form['writein_key'] = array(
         '#type' => 'value',
         '#value' => $key + 1,
@@ -96,7 +92,7 @@ function advpoll_voting_ranking_form(&$node, $teaser, $page, $status) {
 
   // Add write-in text field if write-ins are enabled and user has permission.
   if ($node->writeins && user_access('add write-ins')) {
-    $form['writein_choice'] = array (
+    $form['writein_choice'] = array(
       '#prefix' => '<div class="writein-choice">',
       '#suffix' => '</div>',
       '#type' => 'textfield',
@@ -121,7 +117,7 @@ function advpoll_voting_ranking_form(&$node, $teaser, $page, $status) {
     );
   }
   elseif ($node->in_preview) {
-    //Display nothing
+    // Display nothing.
   }
   elseif ($status == 'pending') {
     $form['message']['#value'] = t('This poll opens @time.', array('@time' => format_date($node->startdate)));
@@ -143,7 +139,7 @@ function advpoll_view_results_ranking($node, $teaser, $page) {
 
   // If no one has voted, $results = array() and thus is empty.
   if (!empty($results)) {
-    // Temporary list of choices indexes for the ranking
+    // Temporary list of choices indexes for the ranking.
     $ranking_list = array();
     // Result object
     $ranking = array();
@@ -153,12 +149,11 @@ function advpoll_view_results_ranking($node, $teaser, $page) {
     foreach ($results as $result) {
       $tag = $result->tag;
       if ($tag == '_advpoll') {
-        // Poll-wide cached value
+        // Poll-wide cached value.
         $poll[$result->function] = $result->value;
       }
       else if (strstr($tag, '_rounds_')) {
-        // Reconstruct round data.
-        // Extract the round from the tag.
+        // Re-construct round data and extract the round from the tag.
         $round = str_replace('_rounds_', '', $tag);
         if (!isset($rounds[$round])) {
           $rounds[$round] = array();
@@ -170,7 +165,7 @@ function advpoll_view_results_ranking($node, $teaser, $page) {
         // Note: choices that have been removed will not pass the previous
         // line's test even though their values are still in the vote table.
 
-        // Choice-specific cached value
+        // Choice-specific cached value.
         if ($result->function == 'ranking') {
           $ranking_list[$result->value][] = $tag;
         }
@@ -180,13 +175,13 @@ function advpoll_view_results_ranking($node, $teaser, $page) {
       }
     }
 
-    // Re-construct the rankings object
+    // Re-construct the rankings object.
     foreach ($ranking_list as $i => $choice_list) {
       $ranking[$i]->choices = array();
       foreach ($choice_list as $choice_i) {
         $ranking[$i]->choices[] = $choice_i;
-        $ranking[$i]->viewscore = $choices[$choice_i]['viewscore'];
-        $ranking[$i]->rawscore = $choices[$choice_i]['rawscore'];
+        $ranking[$i]->view_score = $choices[$choice_i]['view_score'];
+        $ranking[$i]->raw_score = $choices[$choice_i]['raw_score'];
         if ($choices[$choice_i]['percentage']) {
           $ranking[$i]->percentage = $choices[$choice_i]['percentage'];
         }    
@@ -195,40 +190,38 @@ function advpoll_view_results_ranking($node, $teaser, $page) {
 
     if ($node->algorithm == 'borda_count') {
       foreach ($ranking as $i => $ranking) {
-        $first_one = true;
+        $first_one = TRUE;
         $this_rank = '';
 
-        // Loop through all choices with this ranking
+        // Loop through all choices with this ranking.
         foreach ($ranking->choices as $choice) {
-          $label = isset($node->choice[$choice])? _advpoll_choice_markup($node->choice[$choice]['label'], $node->format, FALSE) . ($node->choice[$choice]['writein']? ' '. t('(write-in)') : '') : t('(deleted)');
+          $label = isset($node->choice[$choice]) ? _advpoll_choice_markup($node->choice[$choice]['label'], $node->format, FALSE) . ($node->choice[$choice]['writein']? ' '. t('(write-in)') : '') : t('(deleted)');
           $this_rank .= ($first_one ? '' : ', ') . $label;
-          $first_one = false;
+          $first_one = FALSE;
         }
 
         $percentage = round(100 * $ranking->percentage, 0);
-        $output .= theme('advpoll_bar', $this_rank, $percentage, $ranking->viewscore);
-
+        $output .= theme('advpoll_bar', $this_rank, $percentage, $ranking->view_score);
       }
     }
     else {
       $output .= '<ol>';
-
       for ($i = 0; $i < count($ranking); $i++) {
         $output .= '<li> ';
-        $first_one = true;
+        $first_one = TRUE;
         // If previewing check the format against the current users permissions.
         $check = $node->in_preview;
 
-        // Loop through all choices with this ranking
+        // Loop through all choices with this ranking.
         foreach ($ranking[$i]->choices as $choice) {
-          $label = isset($node->choice[$choice])? _advpoll_choice_markup($node->choice[$choice]['label'], $node->format, FALSE) . ($node->choice[$choice]['writein']? ' '. t('(write-in)') : '') : t('(deleted)');
-          $output .= ($first_one? '' : ', ') . $label;
-          $first_one = false;
+          $label = isset($node->choice[$choice]) ? _advpoll_choice_markup($node->choice[$choice]['label'], $node->format, FALSE) . ($node->choice[$choice]['writein']? ' '. t('(write-in)') : '') : t('(deleted)');
+          $output .= ($first_one ? '' : ', ') . $label;
+          $first_one = FALSE;
         }
 
-        // Show the ranking's score if it exists (depends on algorithm)
-        if ($ranking[$i]->viewscore) {
-          $output .= ' ('. $ranking[$i]->viewscore .'%)';
+        // Show the ranking's score if it exists (depends on algorithm).
+        if ($ranking[$i]->view_score) {
+          $output .= ' ('. $ranking[$i]->view_score .'%)';
         }
         $output .= '</li>';
       }
@@ -261,6 +254,7 @@ function advpoll_view_results_ranking($node, $teaser, $page) {
     }
   }
   $output .= $round_table;
+  
   return array('results' => $output, 'votes' => $poll['total_votes']);
 }
 
@@ -285,20 +279,20 @@ function advpoll_calculate_results_ranking(&$cache, $votes, $node) {
     $results = _advpoll_calculate_instantrunoff($node);
   }
 
-  // Cache rankings
+  // Cache rankings.
   // API: $cache[$tag][$type][$function] = $value (0 is the default $type)
   for ($i = 0; $i < count($results->ranking); $i++) {
     foreach ($results->ranking[$i]['choices'] as $choice) {
       $cache[$choice][0]['ranking'] = $i;
-      $cache[$choice][0]['rawscore'] = $results->ranking[$i]['rawscore'];
-      $cache[$choice][0]['viewscore'] = $results->ranking[$i]['viewscore'];
+      $cache[$choice][0]['raw_score'] = $results->ranking[$i]['raw_score'];
+      $cache[$choice][0]['view_score'] = $results->ranking[$i]['view_score'];
       if (isset($results->ranking[$i]['percentage'])) {
         $cache[$choice][0]['percentage'] = $results->ranking[$i]['percentage'];
       }
     }
   }
 
-  // Cache round results
+  // Cache round results.
   if (isset($results->matrix)) {
     foreach ($results->matrix as $i => $round) {
       $key = '_rounds_'. $i;
@@ -309,10 +303,10 @@ function advpoll_calculate_results_ranking(&$cache, $votes, $node) {
     }
   }
 
-  // Cache total votes
+  // Cache total votes.
   $cache['_advpoll'][0]['total_votes'] = $results->total_votes;
 
-  // Cache total points (if it exists)
+  // Cache total points (if it exists).
   if (isset($results->total_points)) {
     $cache['_advpoll'][0]['total_points'] = $results->total_points;
   }
@@ -332,15 +326,15 @@ function advpoll_calculate_results_ranking(&$cache, $votes, $node) {
  *   -totalVoters : the total number of voters who participated
  */
 function _advpoll_calculate_bordacount($node) {
-   $votes = array();
-  // ORDER BY value ASC lets us ensure no gaps
-  $result = db_query("SELECT * FROM {votingapi_vote} v WHERE content_type='%s' AND content_id=%d ORDER BY value ASC", 'advpoll', $node->nid);
+  $votes = array();
+  // ORDER BY value ASC lets us ensure no gaps.
+  $result = db_query("SELECT * FROM {votingapi_vote} v WHERE content_type = '%s' AND content_id = %d ORDER BY value ASC", 'advpoll', $node->nid);
   while ($vobj = db_fetch_object($result)) {
     $votes[] = $vobj;
   }
 
   if (count($votes) == 0) {
-    // No votes yet
+    // No votes yet.
     return array();
   }
 
@@ -350,33 +344,30 @@ function _advpoll_calculate_bordacount($node) {
 
   foreach ($votes as $vote) {
     if ($vote->uid == 0) {
-      // Anonymous user
+      // Anonymous user.
       $key = $vote->hostname;
     }
     else {
-      // Logged-in user
+      // Logged-in user.
       $key = $vote->uid;
     }
-
     $user_votes[$key][$vote->value] = $vote->tag;
   }
 
   $choice_votes = array();
-
   $total_choices = count($node->choice);
   $total_points = 0;
-
   // Loop through each user's vote
   foreach ($user_votes as $uid => $user_vote) {
     foreach ($user_vote as $ranking => $choice) {
       // Negative values are possible if choices were removed after vote
       $vote_value = max($total_choices - $ranking, 0);
-      $choice_votes[$choice] +=   $vote_value;
+      $choice_votes[$choice] += $vote_value;
       $total_points += $vote_value;
     }
   }
 
-  // Add any remaining choices that received no votes
+  // Add any remaining choices that received no votes.
   foreach ($node->choice as $i => $choice) {
     if (!isset($choice_votes[$i])) {
       // Didn't receive any votes
@@ -384,24 +375,23 @@ function _advpoll_calculate_bordacount($node) {
     }
   }
 
-  // Sort descending (although there may be ties)
+  // Sort descending (although there may be ties).
   arsort($choice_votes);
 
-  // Figure out the final ranking
+  // Figure out the final ranking.
   $ranking = array();
   $previous_total = -1;
   $cur_result = -1;
 
   foreach ($choice_votes as $choice => $total) {
     if ($total != $previous_total) {
-      // Didn't tie with the previous score
+      // Didn't tie with the previous score.
       $cur_result++;
     }
     $ranking[$cur_result]['choices'][] = $choice;
-    $ranking[$cur_result]['rawscore'] = $total;
-    $ranking[$cur_result]['viewscore'] = format_plural($total, '1 point',
-      '@count points');
-    $ranking[$cur_result]['percentage'] = $total_points? $total / $total_points : 0;
+    $ranking[$cur_result]['raw_score'] = $total;
+    $ranking[$cur_result]['view_score'] = format_plural($total, '1 point', '@count points');
+    $ranking[$cur_result]['percentage'] = $total_points ? $total / $total_points : 0;
     $previous_total = $total;
   }
 
@@ -428,15 +418,15 @@ function _advpoll_calculate_bordacount($node) {
  *   -totalVoters : the total number of voters who participated
  */
 function _advpoll_calculate_instantrunoff($node) {
-   $votes = array();
-  // ORDER BY value ASC lets us ensure no gaps
-  $result = db_query("SELECT * FROM {votingapi_vote} v WHERE content_type='%s' AND content_id=%d ORDER BY value ASC", 'advpoll', $node->nid);
+  $votes = array();
+  // ORDER BY value ASC lets us ensure no gaps.
+  $result = db_query("SELECT * FROM {votingapi_vote} v WHERE content_type = '%s' AND content_id = %d ORDER BY value ASC", 'advpoll', $node->nid);
   while ($vobj = db_fetch_object($result)) {
     $votes[] = $vobj;
   }
 
   if (count($votes) == 0) {
-    // No votes yet
+    // No votes yet.
     return array();
   }
 
@@ -446,11 +436,11 @@ function _advpoll_calculate_instantrunoff($node) {
 
   foreach ($votes as $vote) {
     if ($vote->uid == 0) {
-      // Anonymous user
+      // Anonymous user.
       $key = $vote->hostname;
     }
     else {
-      // Logged-in user
+      // Logged-in user.
       $key = $vote->uid;
     }
 
@@ -461,10 +451,10 @@ function _advpoll_calculate_instantrunoff($node) {
 
   $total_votes = count($user_votes);
 
-  // Log of 1st-place votes per choice in each round
+  // Log of 1st-place votes per choice in each round.
   $round_log = array();
 
-  // Gradually append candidates as they are eliminated; end with the winner
+  // Gradually append candidates as they are eliminated; end with the winner.
   $reverse_ranking = array();
   
   // If we eliminate one choice per round and have n choices, we should
@@ -472,50 +462,48 @@ function _advpoll_calculate_instantrunoff($node) {
   $max_rounds = count($node->choice); 
   for ($round = 0; $round < $max_rounds; $round++) {
 
-    // Initialize cur_round
+    // Initialize cur_round.
     $cur_round = array();
     $total_choices = count($node->choice);
 
-    foreach ($node->choice as $chi => $temp) {
-      $cur_round[$chi] = array();
+    foreach ($node->choice as $key => $data) {
+      $cur_round[$key] = array();
     }
 
-    
-    // Loop through each user
+    // Loop through each user.
     foreach ($user_votes as $key => $user_vote) {
-      // $user_vote[0] contains the user's first remaining preference
+      // $user_vote[0] contains the user's first remaining preference.
       $cur_round[$user_vote[0]][] = $key;
     }
 
     if ($round == 0) {
       // This is the first round.
       // Any choices with no first-place votes are considered eliminated.
-      foreach ($cur_round as $ch => $choice_votes) {
+      foreach ($cur_round as $key => $choice_votes) {
         if (count($choice_votes) == 0) {
-          unset($cur_round[$ch]);
-          $reverse_ranking[0]['choices'][] = $ch;
+          unset($cur_round[$key]);
+          $reverse_ranking[0]['choices'][] = $key;
         }
       }
     }
 
-
-    // Add the current round to the matrix
+    // Add the current round to the matrix.
     $round_log[] = $cur_round;
 
-    // Calculate the min and max number of votes
+    // Calculate the min and max number of votes.
     $min_votes = -1;
     $max_votes = 0;
 
-    // Number of choices that have already been discarded
+    // Number of choices that have already been discarded.
     $num_discarded = 0;
 
-    // Examine the number of votes each choice received this round
+    // Examine the number of votes each choice received this round.
     foreach ($cur_round as $ch => $choice_votes) {
       $num_votes = count($choice_votes);
 
       if ($num_votes > $max_votes) {
         $max_votes = $num_votes;
-        // Store current winner in case it has a majority
+        // Store current winner in case it has a majority.
         $cur_winner = $ch;
       }
 
@@ -534,29 +522,29 @@ function _advpoll_calculate_instantrunoff($node) {
     // ballots and may have already had all of their choices eliminated.
     if ($max_votes > count($user_votes) / 2) {
     
-      // Prune out the winning choice if it's still in there
+      // Prune out the winning choice if it's still in there.
       if (isset($cur_round[$cur_winner])) {
           unset($cur_round[$cur_winner]);
       }
 
-      // Keep computing until we figure out all final rankings
+      // Keep computing until we figure out all final rankings.
       while (count($cur_round)  > 0) {
-        // Loop through non-winning choices
+        // Loop through non-winning choices.
         $current_place = array();
         $min = -1;
         foreach ($cur_round as $ch => $choice_votes) {
-          // Choice has already been eliminated, just unset it
+          // Choice has already been eliminated, just unset it.
           if (count($choice_votes) == 0) {
             unset($cur_round[$ch]);
           }
           else if ($min == -1
               || count($choice_votes) < $min) {
-            // New minimum
+            // New minimum.
             $current_place = array($ch);
             $min = count($choice_votes);
           }
           else if (count($choice_votes) == $min) {
-            // Tied for minimum
+            // Tied for minimum.
             $current_place[] = $ch;
           }
         }
@@ -566,21 +554,21 @@ function _advpoll_calculate_instantrunoff($node) {
         // at the beginning.
         if (count($current_place) > 0) {
           $reverse_ranking[]['choices'] = $current_place;  
-          // Remove all choices that had the minimum
+          // Remove all choices that had the minimum.
           foreach ($current_place as $ch_key) {
             unset($cur_round[$ch_key]);
           }
         }
       }
 
-      // Save a reversed version of the round log to help compute winnerPercent
+      // Save a reversed version of the round log to help compute winnerPercent.
       $revmat = array_reverse($round_log);
 
       // The winner finally gets added
       $reverse_ranking[]['choices'] = array($cur_winner);
       $index = count($reverse_ranking) - 1;
-      $reverse_ranking[$index]['rawscore'] = round(count($revmat[0][$cur_winner]) * 100 / count($user_votes), 1);
-      $reverse_ranking[$index]['viewscore'] = $reverse_ranking[$index]['rawscore'] .'%';
+      $reverse_ranking[$index]['raw_score'] = round(count($revmat[0][$cur_winner]) * 100 / count($user_votes), 1);
+      $reverse_ranking[$index]['view_score'] = $reverse_ranking[$index]['raw_score'] .'%';
 
       $result_obj->matrix = $round_log;
       $result_obj->total_votes = $total_votes;
@@ -597,7 +585,7 @@ function _advpoll_calculate_instantrunoff($node) {
       if (count($choice_votes) == $min_votes) {
         $min_choices[] = $ch;
       }
-     }
+    }
 
     // Randomly select the choice to eliminate out of the available choices.
     // TODO: due to the randomness, this result must be cached after each vote.
@@ -605,9 +593,9 @@ function _advpoll_calculate_instantrunoff($node) {
 
     $reverse_ranking[]['choices'] = array($min_choices[$round_loser]);
     
-    // Loop through the users who voted for the loser and redistribute
+    // Loop through the users who voted for the loser and redistribute.
     foreach ($cur_round[$min_choices[$round_loser]] as $user_key) {
-      // Remove their current first preference
+      // Remove their current first preference.
       array_shift($user_votes[$user_key]);
 
       // Keep eliminating first preference until we run out or find an choice
@@ -623,7 +611,7 @@ function _advpoll_calculate_instantrunoff($node) {
     }
   }
   // Loop detected. Signal user and record.
-  drupal_set_message("Could not find a solution within $max_rounds iterations.");
+  drupal_set_message(t('Could not find a solution within @rounds iterations.', array('@rounds' => $max_rounds)));
   $result_obj->matrix = $round_log;
   $result_obj->total_votes = $total_votes;
   return $result_obj;
@@ -635,27 +623,27 @@ function _advpoll_calculate_instantrunoff($node) {
  * This takes care of registering the vote in runoff nodes.
  */
 function advpoll_voting_ranking_form_submit($form_id, $form_values) {
-  $vote = array();
+  $votes = array();
   $node = node_load($form_values['nid']);
 
   // Do submission specific to writeins.
-  _advpoll_writeins_voting_form_submit($node, $form_values, $vote, $form_values['choice'][$form_values['writein_key']]);
+  _advpoll_writeins_voting_form_submit($node, $form_values, $votes, $form_values['choice'][$form_values['writein_key']]);
 
   foreach ($form_values['choice'] as $choice => $rank) {
+    $vote = new stdClass();
     // Ignore write-in choice that has already been taken care of.
     if (!$node->writeins || $choice != $form_values['writein_key']) {
-      unset($temp);
-      $temp->value = $rank;
+      $vote->value = $rank;
       // A zero value indicates they didn't rank that choice.
-      if ($temp->value != 0) {
-        $temp->value_type = 'option';
-        $temp->tag = $choice;
-        $vote[] = $temp;
+      if ($vote->value != 0) {
+        $vote->value_type = 'option';
+        $vote->tag = $choice;
+        $votes[] = $vote;
       }
     }
   }
 
-  votingapi_set_vote('advpoll', $form_values['nid'], $vote);
+  votingapi_set_vote('advpoll', $form_values['nid'], $votes);
   _advpoll_vote_response($node, $form_values);
 }
 
@@ -671,12 +659,12 @@ function advpoll_voting_ranking_form_validate($form_id, $form_values) {
   $node = node_load($form_values['nid']);
   $ajax = $form_values['ajax'];
   
-  // Check if user is eligible to vote
+  // Check if user is eligible to vote.
   if (!advpoll_eligible($node)) {
     _advpoll_form_set_error('choice[', t('You are not allowed to vote in this poll.'), $ajax);
   }
   
-  // Check if poll is active
+  // Check if poll is active.
   if (!_advpoll_is_active($node)) {
     _advpoll_form_set_error('choice[', t('This poll is closed.'), $ajax);
   }
@@ -685,50 +673,49 @@ function advpoll_voting_ranking_form_validate($form_id, $form_values) {
   $writein_option = FALSE;
   $writein_text = $form_values['writein_key'] ? $form_values['writein_choice'] : '';
 
-  // Check if user has already voted
+  // Check if user has already voted.
   list($voted, $cancel_vote) = _advpoll_user_voted($node->nid);
   if ($voted) {
     _advpoll_form_set_error('choice[', t('You have already voted in this poll.'), $ajax);
   }
 
-  // Array used to check which values are set
-  $setvalues = array();
-  
-  $numchoices = 0;
+  // Array used to check which values are set.
+  $set_values = array();
+
+  $num_choices = 0;
 
   // Write-ins are enabled, user has permission, and the write-in box is checked.
   if ($node->writeins && user_access('add write-ins') && $form_values['choice'][$form_values['writein_key']]) {
-    $numchoices++;
+    $num_choices++;
     // Set a flag for additional checks.
     $writein_option = TRUE;
   }
 
   foreach ($node->choice as $key => $choice) {
-    
     // Count the number of choices that are ranked.
     if ($form_values['choice'][$key]) {
-      $numchoices++;
+      $num_choices++;
     }
-    $intvalue = intval($form_values['choice'][$key]);
+    $int_value = intval($form_values['choice'][$key]);
     // Mark this value as seen
-    $setvalues[$intvalue]++;
+    $set_values[$intvalue]++;
     // Check range
-    if ($intvalue > count($node->choice) || $intvalue < 0) {
+    if ($int_value > count($node->choice) || $int_value < 0) {
       // TODO: clean up this error message
-      $message = "Illegal rank for choice $key: $intvalue (min: 1, max: ". count($node->choice) .')';
+      $message = "Illegal rank for choice $key: $int_value (min: 1, max: ". count($node->choice) .')';
       _advpoll_form_set_error('choice]['. $key, $message, $ajax);
     }
   }
 
   // Write-ins are enabled, user has permission, and the write-in box is checked.
   if ($writein_option) {
-    $intvalue = intval($form_values['choice'][$form_values['writein_key']]);
+    $int_value = intval($form_values['choice'][$form_values['writein_key']]);
     // Mark this value as seen
-    $setvalues[$intvalue]++;
+    $set_values[$int_value]++;
     // Check range
-    if ($intvalue > count($node->choice) || $intvalue < 0) {
+    if ($int_value > count($node->choice) || $int_value < 0) {
       // TODO: clean up this error message
-      $message = "Illegal rank for the write-in choice: $intvalue (min: 1, max: ". count($node->choice) .')';
+      $message = "Illegal rank for the write-in choice: $int_value (min: 1, max: ". count($node->choice) .')';
       _advpoll_form_set_error('choice]['. $form_values['writein_key'], $message, $ajax);
       $ok = FALSE;
     }
@@ -737,20 +724,20 @@ function advpoll_voting_ranking_form_validate($form_id, $form_values) {
   // Do validation specific to writeins.
   _advpoll_writeins_voting_form_validate($node, $writein_option, $writein_text, $ajax);
 
-  // Too many choices ranked
-  if ($node->maxchoices != 0 && $numchoices > $node->maxchoices) {
-    $message = t('%num choices were selected but only %max are allowed.', array('%num' => $numchoices, '%max' => $node->maxchoices));
+  // Too many choices ranked.
+  if ($node->max_choices != 0 && $num_choices > $node->max_choices) {
+    $message = t('%num choices were selected but only %max are allowed.', array('%num' => $num_choices, '%max' => $node->max_choices));
     _advpoll_form_set_error('choice', $message, $ajax);
   }
 
-  // Not enough choices ranked
-  $minchoices = 1;
-  if ($numchoices < $minchoices) {
+  // Not enough choices ranked.
+  $min_choices = 1;
+  if ($num_choices < $min_choices) {
     _advpoll_form_set_error('choice', t('At least one choice must be selected.'), $ajax);
   }
 
   // Check that multiple choices are not set to the same value.
-  foreach ($setvalues as $val => $count) {
+  foreach ($set_values as $val => $count) {
     if ($val != 0 && $count > 1) {
       $message = t('Multiple choices given the rank of %value.', array('%value' => $val));
       _advpoll_form_set_error('choice', $message, $ajax);
@@ -766,7 +753,7 @@ function theme_advpoll_voting_ranking_form($form) {
   
   $output = "<div class=\"poll\">\n";
   $output .= drupal_render($form);
-  if($message) {
+  if ($message) {
     $output .= "<p class=\"message\">$message</p>\n";
   }
   $output .= "</div>\n";

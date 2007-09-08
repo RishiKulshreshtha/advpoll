@@ -1,7 +1,6 @@
 <?php
 // $Id$
 
-
 /**
  * Implementation of hook_install().
  */
@@ -10,16 +9,16 @@ function advpoll_install() {
     case 'mysql':
     case 'mysqli':
       db_query("CREATE TABLE {advpoll} (
-        nid int(10) NOT NULL,
-        quorum int(10) NOT NULL default '0',
+        nid int NOT NULL,
+        quorum int NOT NULL default '0',
         mode varchar(32) NOT NULL,
-        uselist tinyint default '0',
+        use_list tinyint default '0',
         active tinyint default '1',
-        maxchoices int unsigned NOT NULL default '0',
+        max_choices int unsigned NOT NULL default '0',
         algorithm VARCHAR(100),
-        showvotes tinyint,
-        startdate int NOT NULL default '0',
-        enddate int NOT NULL default '0',
+        show_votes tinyint NOT NULL default '1',
+        start_date int NOT NULL default '0',
+        end_date int NOT NULL default '0',
         writeins tinyint NOT NULL default '0',
         show_writeins tinyint NOT NULL default '0',
         PRIMARY KEY (nid)
@@ -44,17 +43,17 @@ function advpoll_install() {
     case 'pgsql':
       db_query("CREATE TABLE {advpoll} (
         nid integer NOT NULL,
-        quorum integer NOT NULL DEFAULT '0',
+        quorum integer NOT NULL default '0',
         mode varchar(32) NOT NULL,
-        uselist smallint DEFAULT '0',
-        active smallint DEFAULT '1',
-        maxchoices integer NOT NULL DEFAULT '0',
+        use_list smallint default '0',
+        active smallint default '1',
+        max_choices integer NOT NULL default '0',
         algorithm varchar(100),
-        showvotes smallint,
-        startdate integer NOT NULL DEFAULT '0',
-        enddate integer NOT NULL DEFAULT '0',
-        writeins smallint NOT NULL DEFAULT '0',
-        show_writeins smallint NOT NULL DEFAULT '0',
+        show_votes smallint NOT NULL default '1',
+        start_date integer NOT NULL default '0',
+        end_date integer NOT NULL default '0',
+        writeins smallint NOT NULL default '0',
+        show_writeins smallint NOT NULL default '0',
         PRIMARY KEY (nid)
       )");
 
@@ -67,8 +66,8 @@ function advpoll_install() {
       db_query("CREATE TABLE {advpoll_choices} (
         nid integer NOT NULL,
         label text NOT NULL,
-        vote_offset smallint DEFAULT NULL,
-        writein smallint NOT NULL DEFAULT '0',
+        vote_offset smallint default NULL,
+        writein smallint NOT NULL default '0',
         PRIMARY KEY (nid, vote_offset)
       )");
       db_query("CREATE INDEX {advpoll_choices}_vote_offset_idx ON {advpoll_choices} (vote_offset)");
@@ -89,10 +88,10 @@ function advpoll_uninstall() {
   }
 
   // Remove all votes.
-  db_query("DELETE FROM {votingapi_vote} WHERE content_type='advpoll'");
+  db_query("DELETE FROM {votingapi_vote} WHERE content_type = 'advpoll'");
 
   // Remove all cache data.
-  db_query("DELETE FROM {votingapi_cache} WHERE content_type='advpoll'");
+  db_query("DELETE FROM {votingapi_cache} WHERE content_type = 'advpoll'");
 
   // Remove all advpoll nodes.
   $result = db_query('SELECT nid FROM {advpoll}');
@@ -160,7 +159,7 @@ function advpoll_update_3() {
     case 'mysql':
     case 'mysqli':
       // New default '0' instead of NULL for startdate
-      $ret[] = update_sql("ALTER TABLE {advpoll} CHANGE startdate startdate int NOT NULL DEFAULT '0'");
+      $ret[] = update_sql("ALTER TABLE {advpoll} CHANGE startdate startdate int NOT NULL default '0'");
       $ret[] = update_sql("UPDATE {advpoll} SET startdate = 0 WHERE startdate IS NULL");
       // Add the new column.
       $ret[] = update_sql("ALTER TABLE {advpoll} ADD COLUMN enddate int NOT NULL default '0' AFTER startdate");
@@ -193,9 +192,9 @@ function advpoll_update_4() {
   switch ($GLOBALS['db_type']) {
     case 'mysql':
     case 'mysqli':
-      $ret[] = update_sql("ALTER TABLE {advpoll} ADD writeins TINYINT NOT NULL DEFAULT '0'");
-      $ret[] = update_sql("ALTER TABLE {advpoll} ADD show_writeins TINYINT NOT NULL DEFAULT '0'");
-      $ret[] = update_sql("ALTER TABLE {advpoll_choices} ADD writein TINYINT NOT NULL DEFAULT '0'");
+      $ret[] = update_sql("ALTER TABLE {advpoll} ADD writeins tinyint NOT NULL default '0'");
+      $ret[] = update_sql("ALTER TABLE {advpoll} ADD show_writeins tinyint NOT NULL default '0'");
+      $ret[] = update_sql("ALTER TABLE {advpoll_choices} ADD writein tinyint NOT NULL default '0'");
       break;
     case 'pgsql':
       db_add_column($ret, 'advpoll', 'writeins', 'smallint', array('default' => 0, 'not null' => TRUE));
@@ -203,5 +202,48 @@ function advpoll_update_4() {
       db_add_column($ret, 'advpoll_choices', 'writein', 'smallint', array('default' => 0, 'not null' => TRUE));
       break;    
   }
+  return $ret;
+}
+
+/**
+ * Conform to Drupal coding standards.
+ */
+function advpoll_update_5() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {advpoll} CHANGE uselist use_list tinyint default '0'");
+      $ret[] = update_sql("ALTER TABLE {advpoll} CHANGE startdate start_date int NOT NULL default '0'");
+      $ret[] = update_sql("ALTER TABLE {advpoll} CHANGE enddate end_date int NOT NULL default '0'");
+      $ret[] = update_sql("ALTER TABLE {advpoll} CHANGE maxchoices max_choices int NOT NULL default '0'");
+      $ret[] = update_sql("ALTER TABLE {advpoll} CHANGE showvotes show_votes tinyint NOT NULL default '1'");
+      break;
+    case 'pgsql':
+      db_change_column($ret, 'advpoll', 'uselist', 'use_list', 'smallint', array('default' => '0'));
+      db_change_column($ret, 'advpoll', 'startdate', 'start_date', 'integer', array('not null' => TRUE, 'default' => '0'));
+      db_change_column($ret, 'advpoll', 'enddate', 'end_date', 'integer', array('not null' => TRUE, 'default' => '0'));
+      db_change_column($ret, 'advpoll', 'maxchoices', 'max_choices', 'integer', array('not null' => TRUE, 'default' => '0'));
+      db_change_column($ret, 'advpoll', 'showvotes', 'show_votes', 'smallint', array('not null' => TRUE, 'default' => '1'));
+      break;
+  }
+  // Migrate per-content type variables that changed names.
+  $content_types = array('advpoll_binary', 'advpoll_ranking');
+  $settings = array('maxchoices' => 'max_choices', 'showvotes' => 'show_votes');
+  foreach ($content_types as $type) {
+    foreach ($settings as $old => $new) {
+      $old_name = 'advpoll_'. $old .'_'. $type;
+      if (!is_null($value = variable_get($old_name, NULL))) {
+        variable_set('advpoll_'. $new .'_'. $type, $value);
+        variable_del($old_name);
+      }
+    }
+  }
+  // Update the block name.
+  $ret[] = update_sql('UPDATE {blocks} SET delta = "latest_poll" WHERE delta = "mostrecent"');
+  // Update Voting API cache.
+  $ret[] = update_sql('UPDATE {votingapi_cache} SET function = "view_score" WHERE function = "viewscore" AND content_type = "advpoll"');
+  $ret[] = update_sql('UPDATE {votingapi_cache} SET function = "raw_score" WHERE function = "rawscore" AND content_type = "advpoll"');
+
   return $ret;
 }
