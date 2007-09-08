@@ -240,10 +240,10 @@ function advpoll_update_5() {
     }
   }
   // Update the block name.
-  $ret[] = update_sql('UPDATE {blocks} SET delta = "latest_poll" WHERE delta = "mostrecent"');
+  $ret[] = update_sql("UPDATE {blocks} SET delta = 'latest_poll' WHERE delta = 'mostrecent'");
   // Update Voting API cache.
-  $ret[] = update_sql('UPDATE {votingapi_cache} SET function = "view_score" WHERE function = "viewscore" AND content_type = "advpoll"');
-  $ret[] = update_sql('UPDATE {votingapi_cache} SET function = "raw_score" WHERE function = "rawscore" AND content_type = "advpoll"');
+  $ret[] = update_sql("UPDATE {votingapi_cache} SET function = 'view_score' WHERE function = 'viewscore' AND content_type = 'advpoll'");
+  $ret[] = update_sql("UPDATE {votingapi_cache} SET function = 'raw_score' WHERE function = 'rawscore' AND content_type = 'advpoll'");
 
   return $ret;
 }
