@@ -663,7 +663,7 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
     $mode = _advpoll_get_mode($node->type);
     $node->content['poll'] = array(
       '#weight' => 1,
-      '#value' => drupal_get_form('advpoll_voting_'. $mode .'_form', $node, $teaser, $page),
+      '#value' => drupal_get_form('advpoll_voting_'. $mode .'_form', $node, $teaser, $page, $status),
     );
   }
   else if (!$node->voted && arg(2) != 'results' && ($status == 'open' || $status == 'pending')) {
