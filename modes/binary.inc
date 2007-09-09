@@ -270,7 +270,7 @@ function advpoll_voting_binary_form_validate($form_id, $form_values) {
     }
   
     // Too many choices ranked.
-    if ($node->max_choices != 0 && $numchoices > $node->max_choices) {
+    if ($node->max_choices != 0 && $num_choices > $node->max_choices) {
       $message = t('%num choices were selected but only %max are allowed.', array('%num' => $num_choices, '%max' => $node->max_choices));
       _advpoll_form_set_error('choice[', $message, $ajax);
 
