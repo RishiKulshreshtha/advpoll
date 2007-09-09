@@ -29,7 +29,7 @@ Drupal.advpoll.maxChoices = function(numChoices) {
 
 // Click event for Remove link, called on pageload and when Add choice is clicked
 Drupal.advpoll.removeChoiceClick = function() {
-  $("a.remove-choice").unclick().click(function() {
+  $("a.remove-choice").unbind().click(function() {
     var nextRemoveLink = $(this).parent().next().find(".remove-choice");
     // Set focus at next or previous Remove link.
     if (nextRemoveLink.html()) {
@@ -88,7 +88,7 @@ Drupal.advpoll.nodeFormAutoAttach = function() {
   $('<a class="add-choice" href="#">'+ Drupal.settings.advPoll.addChoice +'</a>').insertAfter("#more-choices").click(function() {
     var numChoices = $("input.choices").length + 1;
     // Extract the last choice's offset from its id.
-    var newChoiceN = parseInt($("input.choices:last").id().match(/\d+/)) + 1;
+    var newChoiceN = parseInt($("input.choices:last").attr("id").match(/\d+/)) + 1;
     // If all choices are removed, use a "backup" of the first choice, else clone the first.
     newChoice = ($("input.choices:first").parent().html() ? $("input.choices:first").parent().clone() : newChoice);
     // Replace choice numbers in label, name and id with the new choice number
