@@ -698,7 +698,7 @@ function advpoll_voting_ranking_form_validate($form_id, $form_values) {
     }
     $int_value = intval($form_values['choice'][$key]);
     // Mark this value as seen
-    $set_values[$intvalue]++;
+    $set_values[$int_value]++;
     // Check range
     if ($int_value > count($node->choice) || $int_value < 0) {
       // TODO: clean up this error message
@@ -717,7 +717,6 @@ function advpoll_voting_ranking_form_validate($form_id, $form_values) {
       // TODO: clean up this error message
       $message = "Illegal rank for the write-in choice: $int_value (min: 1, max: ". count($node->choice) .')';
       _advpoll_form_set_error('choice]['. $form_values['writein_key'], $message, $ajax);
-      $ok = FALSE;
     }
   }
 

@@ -672,13 +672,13 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
       '#weight' => 1,
       '#value' => drupal_get_form('advpoll_voting_'. $node->mode .'_form', $node, $teaser, $page, $status),
     );
-    static $addjs = TRUE;
-    if ($addjs) {
+    static $add_js = TRUE;
+    if ($add_js) {
       // Add javascript for posting voting forms with Ajax.
       drupal_add_js(array('advPoll' => array('vote' => t('Vote'))), 'setting');
       drupal_add_js(drupal_get_path('module', 'advpoll') .'/advpoll-vote.js', 'module');
       drupal_add_js(drupal_get_path('module', 'advpoll') .'/jquery.form.js', 'module');
-      $addjs = FALSE;
+      $add_js = FALSE;
     }
   }
   else {
