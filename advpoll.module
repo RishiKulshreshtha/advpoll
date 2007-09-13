@@ -196,7 +196,7 @@ function advpoll_block($op = 'list') {
       return $blocks;
     case 'view':
       $block['subject'] = t('Latest poll');
-      $block['content'] = theme('advpoll_block_most_recent');
+      $block['content'] = theme('advpoll_block_latest_poll');
       return $block;
   }
 }
