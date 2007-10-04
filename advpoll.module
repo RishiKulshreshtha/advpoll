@@ -235,6 +235,7 @@ function advpoll_latest_poll() {
 function advpoll_form($node, $form_values = NULL) {
   $mode = _advpoll_get_mode($node->type);
   $type = node_get_types('type', $node);
+  $editing = isset($node->nid);
   $form = array();
 
   // Only add javascript once, even if _form is called multiple times.
@@ -287,9 +288,13 @@ function advpoll_form($node, $form_values = NULL) {
     '#tree' => TRUE,
     '#weight' => 1,
   );
-  $form['choice']['choice_note'] = array(
-    '#value' => '<div id="edit-settings-choice-note" class="description">'. t('Note: adding or removing choices after voting has begun is not recommended.') .'</div>',
-  );
+  
+  if ($editing) {
+    $form['choice']['choice_note'] = array(
+      '#value' => '<div id="edit-settings-choice-note" class="description">'. t('Note: adding or removing choices after voting has begun is not recommended.') .'</div>',
+    );
+  }
+  
   $form['choice']['more_choices'] = array(
     '#type' => 'checkbox',
     '#title' => t('Need more choices'),
@@ -376,7 +381,7 @@ function advpoll_form($node, $form_values = NULL) {
   $default_end_date = '';
   $time = format_date(time(), 'custom', 'Y-m-d H:i:s O');
   // Specify default dates if default duration is set and we are creating a node.
-  if (variable_get('advpoll_runtime_'. $type->type, FALSE) && !isset($node->nid)) {
+  if (variable_get('advpoll_runtime_'. $type->type, FALSE) && !$editing) {
     $default_start_date = $time;
     $default_end_date = format_date(time() + variable_get('advpoll_runtime_'. $type->type, ''), 'custom', 'Y-m-d H:i:s O');
   }
@@ -436,7 +441,7 @@ function advpoll_form($node, $form_values = NULL) {
     );
     
     // Only show when editing a poll, not creating.
-    if ($node->nid) {
+    if ($editing) {
       $form['settings']['reset'] = array(
         '#type' => 'button',
         '#value' => t('Reset votes'),
