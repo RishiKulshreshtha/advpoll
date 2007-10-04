@@ -13,6 +13,7 @@ define('ADVPOLL_SHOW_VOTES', 1);
 define('ADVPOLL_WRITEINS', 0);
 define('ADVPOLL_SHOW_WRITEINS', 0);
 define('ADVPOLL_INITIAL_CHOICES', 5);
+define('ADVPOLL_USE_QUESTION', 0);
 // Options: always, aftervote, or afterclose.
 define('ADVPOLL_VIEW_RESULTS', 'aftervote');
 
@@ -273,6 +274,15 @@ function advpoll_form($node, $form_values = NULL) {
     $choices = max(2, count($node->choice) ? count($node->choice) : ADVPOLL_INITIAL_CHOICES);
   }
 
+  if (variable_get('advpoll_use_question_'. $type->type, ADVPOLL_USE_QUESTION) || $node->question !== '') {
+    $form['question'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Question'),
+      '#default_value' => $node->question,
+      '#maxlength' => 255,
+    );
+  }
+  
   $form['choices'] = array(
     '#type' => 'hidden',
     '#value' => $choices,
@@ -549,6 +559,12 @@ function advpoll_form_alter($form_id, &$form) {
         '#default_value' => variable_get('advpoll_view_results_'. $node_type, ADVPOLL_VIEW_RESULTS),
         '#options' => $view_results,
       );
+      $form['advpoll']['advpoll_use_question'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Use question field'),
+        '#description' => t('Use a dedicated question field instead of a combined question and title field. Rename <em>Title field label</em> above if this is checked.'),
+        '#default_value' => variable_get('advpoll_use_question_'. $node_type, ADVPOLL_USE_QUESTION),
+      );
     }
   }
 }
@@ -637,7 +653,7 @@ function advpoll_validate(&$node) {
  */
 function advpoll_insert($node) {
   $mode = _advpoll_get_mode($node->type);
-  db_query("INSERT INTO {advpoll} (nid, mode, use_list, active, max_choices, algorithm, show_votes, start_date, end_date, writeins, show_writeins) VALUES (%d, '%s', %d, %d, %d, '%s', %d, '%s', '%s', %d, %d)", $node->nid, $mode, $node->settings['use_list'], !$node->settings['close'], $node->settings['max_choices'], $node->settings['algorithm'], $node->settings['show_votes'], $node->settings['start_date'] ? strtotime($node->settings['start_date']) : 0, $node->settings['end_date'] ? strtotime($node->settings['end_date']) : 0, $node->settings['writeins'], $node->settings['show_writeins']);
+  db_query("INSERT INTO {advpoll} (nid, mode, use_list, active, max_choices, algorithm, show_votes, start_date, end_date, writeins, show_writeins, question) VALUES (%d, '%s', %d, %d, %d, '%s', %d, '%s', '%s', %d, %d, '%s')", $node->nid, $mode, $node->settings['use_list'], !$node->settings['close'], $node->settings['max_choices'], $node->settings['algorithm'], $node->settings['show_votes'], $node->settings['start_date'] ? strtotime($node->settings['start_date']) : 0, $node->settings['end_date'] ? strtotime($node->settings['end_date']) : 0, $node->settings['writeins'], $node->settings['show_writeins'], $node->question);
 
   // Insert the choices.
   _advpoll_insert_choices($node->nid);
@@ -650,7 +666,7 @@ function advpoll_insert($node) {
  */
 function advpoll_update($node) {
 
-  db_query("UPDATE {advpoll} SET active = %d, max_choices = %d, algorithm = '%s', use_list = %d, show_votes = %d, start_date = '%s', end_date = '%s', writeins = %d, show_writeins = %d WHERE nid = %d", !$node->settings['close'], $node->settings['max_choices'], $node->settings['algorithm'], $node->settings['use_list'], $node->settings['show_votes'], $node->settings['start_date'] ? strtotime($node->settings['start_date']) : 0, $node->settings['end_date'] ? strtotime($node->settings['end_date']) : 0, $node->settings['writeins'], $node->settings['show_writeins'], $node->nid);
+  db_query("UPDATE {advpoll} SET active = %d, max_choices = %d, algorithm = '%s', use_list = %d, show_votes = %d, start_date = '%s', end_date = '%s', writeins = %d, show_writeins = %d, question = '%s' WHERE nid = %d", !$node->settings['close'], $node->settings['max_choices'], $node->settings['algorithm'], $node->settings['use_list'], $node->settings['show_votes'], $node->settings['start_date'] ? strtotime($node->settings['start_date']) : 0, $node->settings['end_date'] ? strtotime($node->settings['end_date']) : 0, $node->settings['writeins'], $node->settings['show_writeins'], $node->question, $node->nid);
 
   _advpoll_insert_choices($node->nid);
   votingapi_recalculate_results('advpoll', $node->nid);
@@ -663,18 +679,26 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
   drupal_add_css(drupal_get_path('module', 'advpoll') .'/advpoll.css', 'module');
   $status = _advpoll_is_active($node, TRUE);
   
+   // Add question to content if defined.
+   if ($node->question !== '') {
+     $node->content['question'] = array(
+       '#weight' => 1,
+       '#value' => theme('advpoll_question', check_plain($node->question)), 
+     );
+   }
+  
   if ($node->in_preview) {
     // Previewing a node, so display voting form instead of results.
     $mode = _advpoll_get_mode($node->type);
     $node->content['poll'] = array(
-      '#weight' => 1,
+      '#weight' => 2,
       '#value' => drupal_get_form('advpoll_voting_'. $mode .'_form', $node, $teaser, $page, $status),
     );
   }
   else if (!$node->voted && arg(2) != 'results' && ($status == 'open' || $status == 'pending')) {
     // User hasn't voted, we're not on the results tab and poll is open or opening in the future.
     $node->content['poll'] = array(
-      '#weight' => 1,
+      '#weight' => 2,
       '#value' => drupal_get_form('advpoll_voting_'. $node->mode .'_form', $node, $teaser, $page, $status),
     );
     static $add_js = TRUE;
@@ -689,7 +713,7 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
   else {
     // Show results (the user has voted, poll is closed or poll has passed).
     $node->content['poll'] = array(
-      '#weight' => 1,
+      '#weight' => 2,
       '#value' => advpoll_view_results($node, $teaser, $page),
     );  
   }
@@ -1116,6 +1140,13 @@ function _advpoll_block_resultslink($node) {
     'attributes' => array('title' => t('View the current poll results.')),
   );
 }
+
+/**
+ * Theme an optional question.
+ */
+function theme_advpoll_question($question) {
+  return '<p class="poll-question">'. $question .'</p>';
+} 
 
 function theme_advpoll_results($title, $results, $votes, $links, $nid, $voted, $cancel_vote) {
   $output = '<div class="poll">';

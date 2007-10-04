@@ -18,3 +18,7 @@ html.js .writein-choice, html.js .edit-settings-show-writeins {
 html.js input.writein-choice {
   margin-left: 0.6em;
 }
+
+.poll-question {
+  font-weight: bold;
+}
