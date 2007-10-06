@@ -562,7 +562,7 @@ function advpoll_form_alter($form_id, &$form) {
       $form['advpoll']['advpoll_use_question'] = array(
         '#type' => 'checkbox',
         '#title' => t('Use question field'),
-        '#description' => t('Use a dedicated question field instead of a combined question and title field. It is recommended to rename <em>Title field label</em> above to "Title" this is checked.'),
+        '#description' => t('Use a dedicated question field instead of a combined question and title field. It is recommended to rename <em>Title field label</em> above to "Title" if this is checked.'),
         '#default_value' => variable_get('advpoll_use_question_'. $node_type, ADVPOLL_USE_QUESTION),
       );
     }
