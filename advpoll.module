@@ -689,18 +689,12 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
   
   if ($node->in_preview) {
     // Previewing a node, so display voting form instead of results.
-    $mode = _advpoll_get_mode($node->type);
-    $node->content['poll'] = array(
-      '#weight' => 2,
-      '#value' => drupal_get_form('advpoll_voting_'. $mode .'_form', $node, $teaser, $page, $status),
-    );
+    $poll = drupal_get_form('advpoll_voting_'. _advpoll_get_mode($node->type) .'_form', $node, $teaser, $page, $status);
   }
   else if (!$node->voted && arg(2) != 'results' && ($status == 'open' || $status == 'pending')) {
     // User hasn't voted, we're not on the results tab and poll is open or opening in the future.
-    $node->content['poll'] = array(
-      '#weight' => 2,
-      '#value' => drupal_get_form('advpoll_voting_'. $node->mode .'_form', $node, $teaser, $page, $status),
-    );
+    $poll = drupal_get_form('advpoll_voting_'. $node->mode .'_form', $node, $teaser, $page, $status);
+
     static $add_js = TRUE;
     if ($add_js) {
       // Add javascript for posting voting forms with Ajax.
@@ -712,11 +706,13 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
   }
   else {
     // Show results (the user has voted, poll is closed or poll has passed).
-    $node->content['poll'] = array(
-      '#weight' => 2,
-      '#value' => advpoll_view_results($node, $teaser, $page),
-    );  
+    $poll = advpoll_view_results($node, $teaser, $page);
   }
+
+  $node->content['poll'] = array(
+    '#weight' => 2,
+    '#value' => $poll,
+  );
   return node_prepare($node, $teaser);
 }
 
