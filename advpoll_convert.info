@@ -1,0 +1,5 @@
+; $Id$
+name = Advanced Poll Converter
+description = Converts a site's standard Drupal polls into Advanced Poll polls.
+dependencies = votingapi advpoll
+package = "Voting"
