@@ -64,12 +64,14 @@ function advpoll_voting_ranking_form(&$node, $teaser, $page, $status) {
       '#suffix' => '</div>',
     );
 
+    // If previewing check the format against the current users permissions.
+    $check = $node->in_preview;
     foreach ($node->choice as $key => $choice) {
       // Don't show blank choices or write-in votes if the setting is disabled.
       if ($choice['label'] && ($node->show_writeins || !$choice['writein'])) {
         $form['choice'][$key] = array(
           '#type' => 'select',
-          '#title' => _advpoll_choice_markup($choice['label'], $node->format) . ($choice['writein'] ? ' '. t('(write-in)') : ''),
+          '#title' => _advpoll_choice_markup($choice['label'], $node->format, $check) . ($choice['writein'] ? ' '. t('(write-in)') : ''),
           '#options' => $choices,
         );
       }
