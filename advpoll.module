@@ -1121,6 +1121,8 @@ function advpoll_reset_confirm_submit($form_id, $form_values) {
     if ($node = node_load($nid)) {
       // Delete any votes for the poll.
       db_query("DELETE FROM {votingapi_vote} WHERE content_type = 'advpoll' AND content_id = %d", $node->nid);
+      // Delete any write-in choices.
+      db_query('DELETE FROM {advpoll_choices} WHERE writein = 1 AND nid = %d', $node->nid);
       votingapi_recalculate_results('advpoll', $node->nid);
       drupal_set_message(t('Votes have been reset.'));
       drupal_goto('node/'. $node->nid);
