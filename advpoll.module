@@ -958,8 +958,7 @@ function advpoll_electoral_list_form_submit($form_id, $form_values) {
       // Insert new users into the electoral_list based on the role chosen.
       $result = db_query("INSERT INTO {advpoll_electoral_list} (nid, uid) SELECT '%d', u.uid FROM {users} u LEFT JOIN {users_roles} ur ON u.uid = ur.uid WHERE ur.rid = %d AND u.uid NOT IN('%s')", $form_values['nid'], $add_role, $user_in_string);
     }
-    $count = db_affected_rows($result);
-    drupal_set_message(format_plural($count, 'Added <em>1</em> user to the electoral list.', 'Added @count users to the electoral list.', array('@count' => $count)));
+    drupal_set_message(format_plural(db_affected_rows($result), 'Added 1 user to the electoral list.', 'Added @count users to the electoral list.'));
   }
 }
 
