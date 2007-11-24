@@ -97,7 +97,7 @@ function advpoll_voting_binary_form(&$node, $teaser, $page, $status) {
     // Display nothing.
   }
   elseif ($status == 'pending') {
-    $form['message']['#value'] = t('This poll opens @time.', array('@time' => format_date($node->startdate)));
+    $form['message']['#value'] = t('This poll opens @time.', array('@time' => format_date($node->start_date)));
   }
   else {
     global $user;
