@@ -245,8 +245,8 @@ function advpoll_voting_binary_form_validate($form_id, $form_values) {
       // Set the flag to true for additional checks.
       $writein_option = TRUE;
     }
-    // The choice is invalid (not between 0 and the write-in key).
-    elseif (!($form_values['choice'] > 0) && ($form_values['choice'] < $form_values['writein_key'])) {
+    // The choice is invalid 
+    elseif (!isset($node->choice[$form_values['choice']])) {
       // Nothing is selected.
       _advpoll_form_set_error('choice[', t('At least one choice must be selected.'), $ajax);
     }
