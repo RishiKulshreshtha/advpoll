@@ -84,9 +84,13 @@ function advpoll_uninstall() {
   // Needs to be included due to _advpoll_list_modes().
   include_once './'. drupal_get_path('module', 'advpoll') .'/advpoll.module';
 
-  // Remove all advpoll content types.
+  // Remove all advpoll content types and their variables.
+  $variables = array('choices', 'max_choices', 'algorithm', 'runtime', 'writeins', 'show_writeins', 'electoral_list', 'show_votes', 'view_results', 'use_question');
   foreach (_advpoll_list_modes() as $mode) {
     node_type_delete('advpoll_'. $mode['name']);
+    foreach ($variables as $variable) {
+      variable_del('advpoll_'. $variable .'_advpoll_'. $mode['name']);
+    }
   }
 
   // Remove all votes.
@@ -105,10 +109,6 @@ function advpoll_uninstall() {
   db_query('DROP TABLE {advpoll}');
   db_query('DROP TABLE {advpoll_electoral_list}');
   db_query('DROP TABLE {advpoll_choices}');
-
-  // Remove all variables.
-  variable_del('advpoll_default_mode');
-  variable_del('advpoll_default_electoral_list');
 }
 
 /**
