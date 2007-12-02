@@ -87,12 +87,18 @@ function _advpoll_convert_node($poll) {
   // Convert the choices.
   $result = db_query('SELECT chtext, chorder, chvotes FROM {poll_choices} WHERE nid = %d', $poll->nid);
   while ($choice = db_fetch_object($result)) {
-    db_query("INSERT INTO {advpoll_choices} (nid, label, vote_offset) VALUES (%d, '%s', %d)", $poll->nid, $choice->chtext, $choice->chorder);
+    db_query("INSERT INTO {advpoll_choices} (nid, label, weight) VALUES (%d, '%s', %d)", $poll->nid, $choice->chtext, $choice->chorder);
+
+    // Get newest choice id.
+    $cid = db_result(db_query("SELECT cid FROM {advpoll_choices} WHERE nid = %d AND label = '%s'", $poll->nid, $choice->chtext));
+
+    // Switch the vote tag from weight to cid.
+    db_query('UPDATE {votingapi_vote} SET tag = %d WHERE content_id = %d AND tag = %d', $cid, $poll->nid, $choice->chorder);
 
     // Create place-holder votes for any poll.module manual vote counts.
     while ($choice->chvotes - $votes[$choice->chorder] > 0) {
-      $ip = 'X-'. $poll->nid .'-'. $choice->chorder .'-'. $choice->chvotes;
-      db_query("INSERT INTO {votingapi_vote} (vote_id, content_type, content_id, value, value_type, tag, uid, timestamp, hostname) VALUES (%d, '%s', %d, 1, 'option', '%s', %d, %d, '%s')", db_next_id('{votingapi_vote}'), 'advpoll', $poll->nid, $choice->chorder, 0, $time, $ip);
+      $ip = 'X-'. $poll->nid .'-'. $cid .'-'. $choice->chvotes;
+      db_query("INSERT INTO {votingapi_vote} (vote_id, content_type, content_id, value, value_type, tag, uid, timestamp, hostname) VALUES (%d, '%s', %d, 1, 'option', '%s', %d, %d, '%s')", db_next_id('{votingapi_vote}'), 'advpoll', $poll->nid, $cid, 0, $time, $ip);
       $choice->chvotes--;
     }
   }
