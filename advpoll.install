@@ -266,3 +266,15 @@ function advpoll_update_6() {
   }
   return $ret;
 }
+
+/**
+ * Missing conversion code for Drupal 4.7 -> 5 upgrade.
+ *
+ * This will have no effect on an existing Drupal 5 installation.
+ */
+function advpoll_update_7() {
+  $ret = array();
+  $ret[] = update_sql('UPDATE {node} SET type = "advpoll_binary" WHERE type = "advpoll-binary"');
+  $ret[] = update_sql('UPDATE {node} SET type = "advpoll_ranking" WHERE type = "advpoll-ranking"');
+  return $ret;
+}
