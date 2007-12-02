@@ -1448,7 +1448,9 @@ function _advpoll_writeins_voting_form_submit($node, $form_values, &$votes, $vot
       $highest_weight = db_result(db_query("SELECT MAX(weight) FROM {advpoll_choices} WHERE nid = %d", $node->nid));
       $next_weight = $highest_weight ? $highest_weight + 1 : 1;
 
-      // Insert new choice.
+      // Insert new choice. We do a check_plain() on the label to ensure that
+      // there is no possibility of insecure data getting into the database;
+      // if HTML is needed the admin can edit the writein choice manually.
       db_query("INSERT INTO {advpoll_choices} (nid, label, weight, writein) VALUES (%d, '%s', %d, 1)", $node->nid, check_plain($form_values['writein_choice']), $next_weight);
 
       // Get newest choice id.
