@@ -606,9 +606,9 @@ function advpoll_form_alter($form_id, &$form) {
 function advpoll_load($node) {
   global $user;
   $poll = db_fetch_object(db_query('SELECT * FROM {advpoll} WHERE nid = %d', $node->nid));
-  $result = db_query('SELECT vote_offset, label, writein FROM {advpoll_choices} WHERE nid = %d ORDER BY vote_offset', $node->nid);
+  $result = db_query('SELECT cid, weight, label, writein FROM {advpoll_choices} WHERE nid = %d ORDER BY weight', $node->nid);
   while ($choice = db_fetch_array($result)) {
-    $poll->choice[$choice['vote_offset']] = $choice;
+    $poll->choice[$choice['cid']] = $choice;
   }
   $poll->choices = count($poll->choice);
 
@@ -1107,10 +1107,16 @@ function _advpoll_is_active($node, $return_status = FALSE) {
 
 function _advpoll_insert_choices($nid) {
   $node = node_load($nid);
-  db_query('DELETE FROM {advpoll_choices} WHERE nid = %d', $nid);
+  $weight = 0;
   foreach ($_POST['choice'] as $index => $choice) {
     if ($choice['label'] != '') {
-      db_query("INSERT INTO {advpoll_choices} (nid, label, vote_offset, writein) VALUES (%d, '%s', %d, %d)", $nid, $choice['label'], $index, isset($node->choice[$index]) ? $node->choice[$index]['writein'] : 0);
+      if (!isset($node->choice[$index])) {
+        db_query("INSERT INTO {advpoll_choices} (nid, label, weight) VALUES (%d, '%s', %d)", $nid, $choice['label'], $weight);
+      }
+      else {
+        db_query("UPDATE {advpoll_choices} SET label = '%s', weight = %d WHERE cid = %d", $choice['label'], $weight, $index);
+      }
+      $weight++;
     }
   }
 }
@@ -1224,9 +1230,9 @@ function _advpoll_vote_response($node, $form_values) {
     unset($node->choice);
     // Get all choices from database. This is necessary to get information about
     // newly submitted write-in choices.
-    $result = db_query('SELECT vote_offset, label, writein FROM {advpoll_choices} WHERE nid = %d ORDER BY vote_offset', $node->nid);
+    $result = db_query('SELECT cid, weight, label, writein FROM {advpoll_choices} WHERE nid = %d ORDER BY weight', $node->nid);
     while ($choice = db_fetch_array($result)) {
-      $node->choice[$choice['vote_offset']] = $choice;
+      $node->choice[$choice['cid']] = $choice;
     }
     // Update the number of choices.
     $node->choices = count($poll->choice);
@@ -1418,37 +1424,40 @@ function _advpoll_writeins_voting_form_submit($node, $form_values, &$votes, $vot
   // A write-in vote is being made.
   if ($form_values['writein_choice']) {
     // Check if someone has previously voted for this choice.
-    $result = db_query("SELECT vote_offset FROM {advpoll_choices} WHERE nid = %d AND LOWER(label) = LOWER('%s')", $node->nid, $form_values['writein_choice']);
+    $result = db_query("SELECT cid FROM {advpoll_choices} WHERE nid = %d AND LOWER(label) = LOWER('%s')", $node->nid, $form_values['writein_choice']);
     // If there's more than one match, redo the query, being more exact.
     if (db_num_rows($result) > 1) {
-      $result = db_query("SELECT vote_offset FROM {advpoll_choices} WHERE nid = %d AND label = '%s'", $node->nid, $form_values['writein_choice']);      
+      $result = db_query("SELECT cid FROM {advpoll_choices} WHERE nid = %d AND label = '%s'", $node->nid, $form_values['writein_choice']);      
     }
     // If there is at least one match, add a vote for the first one returned. It
     // should be rare to find more than one choice for any one node with a given
     // label.
     if (db_num_rows($result)) {
       $obj = db_fetch_object($result);
-      $existing_vote_offset = $obj->vote_offset;
+      $existing_choice = $obj->cid;
       // Set a vote
       $vote = new stdClass();
       $vote->value = $vote_value;
-      $vote->tag = $existing_vote_offset;
+      $vote->tag = $existing_choice;
       $vote->value_type = 'option';
       $votes[] = $vote;
     }
     // This write-in choice has not been previously voted for.
     else {
-      // Get last vote offset for this node.
-      $highest_offset = db_result(db_query("SELECT MAX(vote_offset) FROM {advpoll_choices} WHERE nid = %d", $node->nid));
-      $next_offset = $highest_offset ? $highest_offset + 1 : 1;
+      // Get highest weight for this node.
+      $highest_weight = db_result(db_query("SELECT MAX(weight) FROM {advpoll_choices} WHERE nid = %d", $node->nid));
+      $next_weight = $highest_weight ? $highest_weight + 1 : 1;
 
-      // Insert new choice into node.
-      db_query("INSERT INTO {advpoll_choices} (nid, label, vote_offset, writein) VALUES (%d, '%s', %d, 1)", $node->nid, check_plain($form_values['writein_choice']), $next_offset);
+      // Insert new choice.
+      db_query("INSERT INTO {advpoll_choices} (nid, label, weight, writein) VALUES (%d, '%s', %d, 1)", $node->nid, check_plain($form_values['writein_choice']), $next_weight);
+
+      // Get newest choice id.
+      $next_cid = db_result(db_query("SELECT cid FROM {advpoll_choices} WHERE nid = %d AND label = '%s'", $node->nid, $form_values['writein_choice']));
       
       // Add vote
       $vote = new stdClass();
       $vote->value = $vote_value;
-      $vote->tag = $next_offset;
+      $vote->tag = $next_cid;
       $vote->value_type = 'option';
       $votes[] = $vote;
     }
@@ -1552,7 +1561,7 @@ function advpoll_writein_merge_form_submit($form_id, $form_values) {
   }
 
   // Delete the merged choice.
-  db_query('DELETE FROM {advpoll_choices} WHERE vote_offset = %d', $form_values['source']);
+  db_query('DELETE FROM {advpoll_choices} WHERE cid = %d', $form_values['source']);
   votingapi_recalculate_results('advpoll', $form_values['nid']);
   drupal_set_message(t('Write-in merged.'));
   // Unset destination form element so that drupal_goto() doesn't use it
@@ -1595,7 +1604,7 @@ function advpoll_writein_promote_form($node) {
 
 function advpoll_writein_promote_form_submit($form_id, $form_values) {
   if (count($form_values['promote'])) {
-    db_query('UPDATE {advpoll_choices} SET writein = 0 WHERE nid = %d AND vote_offset IN(%s)', $form_values['nid'], check_plain(implode(', ', $form_values['promote'])));
+    db_query('UPDATE {advpoll_choices} SET writein = 0 WHERE nid = %d AND cid IN(%s)', $form_values['nid'], check_plain(implode(', ', $form_values['promote'])));
     drupal_set_message(format_plural(count($form_values['promote']), 'Write-in promoted.', 'Write-ins promoted.'));
   }
   drupal_goto('node/'. $form_values['nid']);

@@ -774,7 +774,7 @@ function advpoll_cancel_ranking($node, $user_vote) {
         $count = db_result(db_query('SELECT COUNT(1) FROM {votingapi_vote} WHERE content_id = %d AND tag = %d', $node->nid, $vote->tag));
         if ($count == 0) {
           // Delete the write-in because no one else voted for it.
-          db_query('DELETE FROM {advpoll_choices} WHERE vote_offset = %d AND nid = %d', $vote->tag, $node->nid);
+          db_query('DELETE FROM {advpoll_choices} WHERE cid = %d', $vote->tag);
           $recalculate = TRUE;
           watchdog('content', t('Removed write-in choice %choice after the last vote was cancelled.', array('%choice' => $node->choice[$vote->tag]['label'])));
         }
