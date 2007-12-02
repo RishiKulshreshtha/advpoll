@@ -708,13 +708,13 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
   drupal_add_css(drupal_get_path('module', 'advpoll') .'/advpoll.css', 'module');
   $status = _advpoll_is_active($node, TRUE);
   
-   // Add question to content if defined.
-   if ($node->question !== '') {
-     $node->content['question'] = array(
-       '#weight' => 1,
-       '#value' => theme('advpoll_question', check_plain($node->question)), 
-     );
-   }
+  // Add question to content if defined.
+  if ($node->question !== '') {
+    $node->content['question'] = array(
+      '#weight' => 1,
+      '#value' => theme('advpoll_question', check_plain($node->question)), 
+    );
+  }
   
   if ($node->in_preview) {
     // Previewing a node, so display voting form instead of results.
