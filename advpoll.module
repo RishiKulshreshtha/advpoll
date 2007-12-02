@@ -1606,7 +1606,7 @@ function advpoll_writein_promote_form($node) {
 
 function advpoll_writein_promote_form_submit($form_id, $form_values) {
   if (count($form_values['promote'])) {
-    db_query('UPDATE {advpoll_choices} SET writein = 0 WHERE nid = %d AND cid IN(%s)', $form_values['nid'], check_plain(implode(', ', $form_values['promote'])));
+    db_query('UPDATE {advpoll_choices} SET writein = 0 WHERE nid = %d AND cid IN(%s)', $form_values['nid'], implode(', ', $form_values['promote']));
     drupal_set_message(format_plural(count($form_values['promote']), 'Write-in promoted.', 'Write-ins promoted.'));
   }
   drupal_goto('node/'. $form_values['nid']);
