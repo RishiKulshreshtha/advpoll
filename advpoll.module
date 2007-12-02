@@ -376,24 +376,31 @@ function advpoll_form($node, $form_values = NULL) {
   $form['settings']['max_choices'] = array(
     '#type' => 'select',
     '#title' => t('Maximum choices'),
-    '#default_value' => ($node->max_choices ? $node->max_choices : variable_get('advpoll_max_choices_'. $type->type, ADVPOLL_MAX_CHOICES)),
+    '#default_value' => isset($node->max_choices) ? $node->max_choices : variable_get('advpoll_max_choices_'. $type->type, ADVPOLL_MAX_CHOICES),
     '#options' => $max_choice_list,
     '#DANGEROUS_SKIP_CHECK' => TRUE, // Allow jQuery to add new options
     '#description' => t('Limits the total number of choices voters may select.')
   );
 
   $voting_algorithms = advpoll_algorithms($mode);
-  
   if (count($voting_algorithms) > 1) {
+    // Create a select field when the poll supports several algorithms.
     $form['settings']['algorithm'] = array(
       '#type' => 'select',
       '#title' => t('Algorithm'),
       '#options' => $voting_algorithms,
-      '#default_value' => $node->algorithm ? $node->algorithm : variable_get('advpoll_algorithm_'. $type->type, key($voting_algorithms)),
+      '#default_value' => isset($node->algorithm) ? $node->algorithm : variable_get('advpoll_algorithm_'. $type->type, key($voting_algorithms)),
       '#description' => t('Voting algorithm to use to calculate the winner.'),
     );
   }
-  
+  else {
+    // Pass the only algorithm as a value.
+    $form['settings']['algorithm'] = array(
+      '#type' => 'value',
+      '#value' => key($voting_algorithms),
+    );
+  }
+
   $form['settings']['close'] = array(
     '#type' => 'checkbox',
     '#title' => t('Close poll'),
@@ -416,7 +423,8 @@ function advpoll_form($node, $form_values = NULL) {
     '#description' => t('The date that the poll opens. Format: %time. Leave blank if you want the poll to open now.', array('%time' => $time)),
     '#size' => 25,
     '#maxlength' => 25,
-    '#default_value' => $node->start_date ? format_date($node->start_date, 'custom', 'Y-m-d H:i:s O') : $default_start_date,
+    // Use !empty() because 0 signifies that no date should be used.
+    '#default_value' => !empty($node->start_date) ? format_date($node->start_date, 'custom', 'Y-m-d H:i:s O') : $default_start_date,
   );
   $form['settings']['end_date'] = array(
     '#type' => 'textfield',
@@ -424,7 +432,8 @@ function advpoll_form($node, $form_values = NULL) {
     '#description' => t('The date that the poll closes. Format: %time. Leave blank if you do not want the poll to close automatically.', array('%time' => $time)),
     '#size' => 25,
     '#maxlength' => 25,
-    '#default_value' => $node->end_date ? format_date($node->end_date, 'custom', 'Y-m-d H:i:s O') : $default_end_date,
+    // Use !empty() because 0 signifies that no date should be used.
+    '#default_value' => !empty($node->end_date) ? format_date($node->end_date, 'custom', 'Y-m-d H:i:s O') : $default_end_date,
   );
   
   // Settings available for users with 'administer polls' permission.
