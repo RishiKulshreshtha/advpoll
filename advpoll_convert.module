@@ -98,7 +98,7 @@ function _advpoll_convert_node($poll) {
     // Create place-holder votes for any poll.module manual vote counts.
     while ($choice->chvotes - $votes[$choice->chorder] > 0) {
       $ip = 'X-'. $poll->nid .'-'. $cid .'-'. $choice->chvotes;
-      db_query("INSERT INTO {votingapi_vote} (vote_id, content_type, content_id, value, value_type, tag, uid, timestamp, hostname) VALUES (%d, '%s', %d, 1, 'option', '%s', %d, %d, '%s')", db_next_id('{votingapi_vote}'), 'advpoll', $poll->nid, $cid, 0, $time, $ip);
+      db_query("INSERT INTO {votingapi_vote} (vote_id, content_type, content_id, value, value_type, tag, uid, timestamp, hostname) VALUES (%d, '%s', %d, 1, 'option', '%s', 0, %d, '%s')", db_next_id('{votingapi_vote}'), 'advpoll', $poll->nid, $cid, $time, $ip);
       $choice->chvotes--;
     }
   }
