@@ -318,12 +318,26 @@ function advpoll_form($node, $form_values = NULL) {
 
   // First, loop through any currently existing choices.
   $current_choices = 0;
+  $default_choices = variable_get('advpoll_choices_'. $type->type, '');
   if (isset($node->choice)) {
     foreach ($node->choice as $index => $choice) {
       $form['choice'][$index]['label'] = array(
         '#type' => 'textfield',
         '#title' => t('Choice %n', array('%n' => $current_choices + 1)) . ($choice['writein'] ? ' '. t('(write-in)') : ''),
         '#default_value' => $choice['label'],
+        '#attributes' => array('class' => 'choices'),
+      );
+      $current_choices++;
+      $next_index = $index + 1;
+    }
+  }
+  elseif ($default_choices != '') {
+    $default_choices = explode("\n", $default_choices);
+    foreach ($default_choices as $index => $label) {
+      $form['choice'][$index]['label'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Choice %n', array('%n' => $current_choices + 1)),
+        '#default_value' => $label,
         '#attributes' => array('class' => 'choices'),
       );
       $current_choices++;
@@ -489,6 +503,12 @@ function advpoll_form_alter($form_id, &$form) {
         '#type' => 'fieldset',
         '#title' => t('Poll settings'),
         '#collapsible' => TRUE,
+      );
+      $form['advpoll']['advpoll_choices'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Default choices'),
+        '#default_value' => variable_get('advpoll_choices_'. $node_type, ''),
+        '#description' => t('Add one choice per row. This setting can be overridden on the poll edit page.'),
       );
       $form['advpoll']['advpoll_max_choices'] = array(
         '#type' => 'select',
