@@ -32,7 +32,7 @@ function advpoll_install() {
       ) /*!40100 DEFAULT CHARACTER SET utf8 */");
 
       db_query("CREATE TABLE {advpoll_choices} (
-        cid unsigned int NOT NULL auto_increment,
+        cid int unsigned NOT NULL auto_increment,
         nid int(10) NOT NULL,
         label text NOT NULL,
         weight int unsigned NOT NULL,
