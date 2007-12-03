@@ -1105,6 +1105,12 @@ function _advpoll_is_active($node, $return_status = FALSE) {
   return $return_status ? $status : $active; 
 }
 
+/**
+ * Insert/update the choices for a poll.
+ *
+ * Note: we pass choice data via _POST to allow for dynamic addition of choices.
+ * Drupal 6 AHAH support will let us switch to a clean implementation.
+ */
 function _advpoll_insert_choices($nid) {
   $node = node_load($nid);
   $weight = 0;
