@@ -14,6 +14,7 @@ define('ADVPOLL_WRITEINS', 0);
 define('ADVPOLL_SHOW_WRITEINS', 0);
 define('ADVPOLL_INITIAL_CHOICES', 5);
 define('ADVPOLL_USE_QUESTION', 0);
+define('ADVPOLL_CHOICE_MAX_LENGTH', 2048);
 // Options: always, aftervote, or afterclose.
 define('ADVPOLL_VIEW_RESULTS', 'aftervote');
 
@@ -326,6 +327,7 @@ function advpoll_form($node, $form_values = NULL) {
         '#title' => t('Choice %n', array('%n' => $current_choices + 1)) . ($choice['writein'] ? ' '. t('(write-in)') : ''),
         '#default_value' => $choice['label'],
         '#attributes' => array('class' => 'choices'),
+        '#maxlength' => variable_get('advpoll_choice_max_length', ADVPOLL_CHOICE_MAX_LENGTH),
       );
       $current_choices++;
       $next_index = $index + 1;
@@ -355,6 +357,7 @@ function advpoll_form($node, $form_values = NULL) {
         '#type' => 'textfield',
         '#title' => t('Choice %n', array('%n' => $current_choices + 1)),
         '#attributes' => array('class' => 'choices'),
+        '#maxlength' => variable_get('advpoll_choice_max_length', ADVPOLL_CHOICE_MAX_LENGTH),
       );
     }
   }
