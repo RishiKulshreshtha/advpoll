@@ -241,7 +241,7 @@ function advpoll_form($node) {
   $form['settings']['maxchoices'] = array(
 		'#type' => 'select',
 		'#title' => t('Maximum Choices'),
-		'#default_value' => ($node->maxchoices? $node->maxchoices : 0),
+		'#default_value' => (isset($node->maxchoices)? $node->maxchoices : 0),
 		'#options' => $maxChoiceList,
 		'#description' => t('Limits the total number of choices voters may select.')
 	);
@@ -286,7 +286,7 @@ function advpoll_form($node) {
   $form['settings']['runtime'] = array(
 		'#type' => 'select',
 		'#title' => t('Poll duration'),
-		'#default_value' => ($node->runtime? $node->runtime : 0),
+		'#default_value' => (isset($node->runtime)? $node->runtime : 0),
 		'#options' => $_duration,
 		'#description' => t('After this period, the poll will be closed automatically.')
 	);
