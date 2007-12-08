@@ -1136,13 +1136,15 @@ function _advpoll_insert_choices($nid) {
 
   // Delete any choices that were removed (either dynamically or by submitting
   // a blank label).
-  foreach ($node->choice as $id => $choice) {
-    if (!isset($seen_ids[$id])) {
-      db_query('DELETE FROM {advpoll_choices} WHERE cid = %d', $id);
-      drupal_set_message(t('Deleted choice %label', array('%label' => $choice['label'])), 'status');
-      // We could potentially also delete any votes for this choice, but let's
-      // leave them in the database so that one can go back and check if anyone
-      // voted for a deleted choice.
+  if(isset($node->choice)) {
+    foreach ($node->choice as $id => $choice) {
+      if (!isset($seen_ids[$id])) {
+        db_query('DELETE FROM {advpoll_choices} WHERE cid = %d', $id);
+        drupal_set_message(t('Deleted choice %label', array('%label' => $choice['label'])), 'status');
+        // We could potentially also delete any votes for this choice, but let's
+        // leave them in the database so that one can go back and check if anyone
+        // voted for a deleted choice.
+      }
     }
   }
 }
