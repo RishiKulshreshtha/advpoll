@@ -1119,8 +1119,11 @@ function _advpoll_is_active($node, $return_status = FALSE) {
 function _advpoll_insert_choices($nid) {
   $node = node_load($nid);
   $weight = 0;
+  $seen_ids = array();
   foreach ($_POST['choice'] as $index => $choice) {
     if ($choice['label'] != '') {
+      // Mark this choice id as being seen.
+      $seen_ids[$index] = 1;
       if (!isset($node->choice[$index])) {
         db_query("INSERT INTO {advpoll_choices} (nid, label, weight) VALUES (%d, '%s', %d)", $nid, $choice['label'], $weight);
       }
@@ -1128,6 +1131,18 @@ function _advpoll_insert_choices($nid) {
         db_query("UPDATE {advpoll_choices} SET label = '%s', weight = %d WHERE cid = %d", $choice['label'], $weight, $index);
       }
       $weight++;
+    }
+  }
+
+  // Delete any choices that were removed (either dynamically or by submitting
+  // a blank label).
+  foreach ($node->choice as $id => $choice) {
+    if (!isset($seen_ids[$id])) {
+      db_query('DELETE FROM {advpoll_choices} WHERE cid = %d', $id);
+      drupal_set_message(t('Deleted choice %label', array('%label' => $choice['label'])), 'status');
+      // We could potentially also delete any votes for this choice, but let's
+      // leave them in the database so that one can go back and check if anyone
+      // voted for a deleted choice.
     }
   }
 }
