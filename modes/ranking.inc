@@ -679,6 +679,9 @@ function advpoll_voting_ranking_form_validate($form_id, $form_values) {
   list($voted, $cancel_vote) = _advpoll_user_voted($node->nid);
   if ($voted) {
     _advpoll_form_set_error('choice[', t('You have already voted in this poll.'), $ajax);
+    // Redirect to the current poll node to view the poll result instead of the voting form. This is only
+    // initiated for non-Ajax voting.
+    drupal_goto('node/'. $node->nid);
   }
 
   // Array used to check which values are set.

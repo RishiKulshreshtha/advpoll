@@ -723,14 +723,16 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
     // Previewing a node, so display voting form instead of results.
     $poll = drupal_get_form('advpoll_voting_'. _advpoll_get_mode($node->type) .'_form', $node, $teaser, $page, $status);
   }
-  else if (!$node->voted && arg(2) != 'results' && ($status == 'open' || $status == 'pending')) {
-    // User hasn't voted, we're not on the results tab and poll is open or opening in the future.
+  else if ((!$node->voted && arg(2) != 'results' && ($status == 'open' || $status == 'pending')) || $_POST['op'] == 'Vote') {
+    // User hasn't voted, we're not on the results tab and poll is open or
+    // opening in the future. Also, we check the $_POST array if the user tried
+    // to submit a vote, so we can validate and give an error if the user has
+    // already voted on the poll.
     $poll = drupal_get_form('advpoll_voting_'. $node->mode .'_form', $node, $teaser, $page, $status);
 
     static $add_js = TRUE;
     if ($add_js) {
       // Add javascript for posting voting forms with Ajax.
-      drupal_add_js(array('advPoll' => array('vote' => t('Vote'))), 'setting');
       drupal_add_js(drupal_get_path('module', 'advpoll') .'/advpoll-vote.js', 'module');
       drupal_add_js(drupal_get_path('module', 'advpoll') .'/jquery.form.js', 'module');
       $add_js = FALSE;

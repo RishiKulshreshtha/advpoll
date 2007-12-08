@@ -8,7 +8,6 @@ if (typeof(Drupal) == "undefined" || !Drupal.advpoll) {
 * Submit advpoll forms with ajax
 */
 Drupal.advpoll.attachVoteAjax = function() {
-  var submitSelect = "input[@value="+ Drupal.settings.advPoll.vote +"]";
   $("form.advpoll-vote").each(function() {
     var thisForm = this;
     var options = {
@@ -27,18 +26,13 @@ Drupal.advpoll.attachVoteAjax = function() {
           $(data.response).insertBefore(thisForm);
         }
 
-        // Re-enable the Vote button if there was an error message
-        $(submitSelect, thisForm).removeAttr("disabled");
+        // Re-enable the Vote button, in case there was an error message.
+        $(".form-submit", thisForm).removeAttr("disabled");
 
       },
       before: function() {
-        // Disable all voting forms for this poll
-        var nid = $("input.edit-nid", thisForm).val();
-        $("form.advpoll-vote").each(function() {
-          if ($("input.edit-nid", this).val() == nid) {
-            $(submitSelect, this).attr("disabled", "disabled");
-          }
-        });
+        // Disable the Vote button.
+        $(".form-submit", thisForm).attr("disabled", "disabled");
       }
     };
     // Tell the server we are passing the form values with ajax and attach the function
