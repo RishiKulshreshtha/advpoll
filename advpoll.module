@@ -1012,18 +1012,41 @@ function advpoll_votes_page() {
     $header[] = array('data' => t('Visitor'), 'field' => 'u.name');
     $header[] = array('data' => t('Vote'), '');
 
-    $result = pager_query("SELECT v.value, v.uid, v.hostname, v.tag, u.name FROM {votingapi_vote} v LEFT JOIN {users} u ON v.uid = u.uid WHERE v.content_type = 'advpoll' AND v.content_id = %d". tablesort_sql($header), 20, 0, NULL, $node->nid);
-    $rows = array();
+    $result = pager_query("SELECT v.uid, v.hostname, v.timestamp, u.name FROM {votingapi_vote} v LEFT JOIN {users} u ON v.uid = u.uid WHERE v.content_type = 'advpoll' AND v.content_id = %d GROUP BY v.uid, v.hostname, v.timestamp". tablesort_sql($header), 20, 0, NULL, $node->nid);
+    $uids = array();
+    $hostnames = array();
+    $timestamp = array();
     while ($vote = db_fetch_object($result)) {
-      $key = $vote->uid ? $vote->uid : $vote->hostname;
-      $rows[$key]['name'] = $vote->name ? theme('username', $vote) : check_plain($vote->hostname);
-      if ($node->type == 'advpoll_ranking') {
-        // Need two dimensional results (if equal rankings are allowed).
-        $rows[$key]['votes'][$vote->value][] = _advpoll_choice_markup($node->choice[$vote->tag]['label'], $node->format, FALSE);
-      }
-      else {
-        // Just need one dimensional results.
-        $rows[$key]['votes'][] = _advpoll_choice_markup($node->choice[$vote->tag]['label'], $node->format, FALSE);
+      $uids[$vote->uid] = $vote->uid;
+      $hostnames[$vote->hostname] = $vote->hostname;
+      $timestamps[$vote->timestamp] = $vote->timestamp;
+    }
+    
+    $rows = array();
+    if (count($uids) > 0) {
+      // Use db_query()'s placeholder syntax to prevent any potential SQL
+      // injection attacks.
+      $uid_placeholders = array_fill(0, count($uids), '%d');
+      $host_placeholders = array_fill(0, count($hostnames), "'%s'");
+      $time_placeholders = array_fill(0, count($timestamps), '%d');
+
+      // Here we have to select votes based on their uid+hostname+timestamp
+      // combination because there no unique id for the set of rankings that
+      // corresponds to a uesr's full vote on a given poll.
+      $query = "SELECT v.vote_id, v.tag, v.uid, v.hostname, v.timestamp, v.value, u.name FROM {votingapi_vote} v LEFT JOIN {users} u ON v.uid = u.uid WHERE v.content_id = %d AND v.uid IN(". implode(', ', $uid_placeholders) .") AND v.hostname IN(". implode(', ', $host_placeholders) .") AND v.timestamp IN(". implode(', ', $time_placeholders) .")". tablesort_sql($header);
+      $parameters = array_merge(array($query, $node->nid), array_values($uids), array_values($hostnames), array_values($timestamps));
+      $result = call_user_func_array('db_query', $parameters);
+      while ($vote = db_fetch_object($result)) {
+        $key = $vote->uid ? $vote->uid : $vote->hostname .'-'. $vote->timestamp;
+        $rows[$key]['name'] = $vote->name ? theme('username', $vote) : check_plain($vote->hostname);
+        if ($node->type == 'advpoll_ranking') {
+          // Need two dimensional results (if equal rankings are allowed).
+          $rows[$key]['votes'][$vote->value][] = _advpoll_choice_markup($node->choice[$vote->tag]['label'], $node->format, FALSE);
+        }
+        else {
+          // Just need one dimensional results.
+          $rows[$key]['votes'][] = _advpoll_choice_markup($node->choice[$vote->tag]['label'], $node->format, FALSE);
+        }
       }
     }
     
