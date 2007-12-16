@@ -661,7 +661,7 @@ function advpoll_validate(&$node) {
       form_set_error('settings][max_choices]', t('Maximum choices must be a non-negative integer.'));
     }
 
-    if ($node->settings['max_choices'] > count($node->choice)) {
+    if ($node->settings['max_choices'] > $real_choices) {
       form_set_error('settings][max_choices]', t('Maximum choices cannot be larger than the number of choices submitted.'));
     }
     
