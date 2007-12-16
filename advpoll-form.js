@@ -84,21 +84,28 @@ Drupal.advpoll.nodeFormAutoAttach = function() {
   
   // "Backup" of the first choice
   var newChoice = $("input.choices:first").parent().clone();
+
+  // Keep track of the highest choice id to use.
+  var highestId = 0;
+  $("input.choices").each(function() {
+    var id = parseInt($(this).attr("id").match(/\d+/));
+    if (id > highestId) {
+      highestId = id;
+    }
+  });
   
   $('<a class="add-choice" href="#">'+ Drupal.settings.advPoll.addChoice +'</a>').insertAfter("#more-choices").click(function() {
     var numChoices = $("input.choices").length + 1;
-    // Extract the last choice's offset from its id.
-    var newChoiceN = parseInt($("input.choices:last").attr("id").match(/\d+/)) + 1;
+    highestId++;
     // If all choices are removed, use a "backup" of the first choice, else clone the first.
     newChoice = ($("input.choices:first").parent().html() ? $("input.choices:first").parent().clone() : newChoice);
     // Replace choice numbers in label, name and id with the new choice number
-    newChoice.html(newChoice.html().replace(/\d+(?=<)|\d+(?=-)|\d+(?=\])/g, newChoiceN));
+    newChoice.html(newChoice.html().replace(/\d+(?=<)|\d+(?=-)|\d+(?=\])/g, highestId));
     // Replace the label to use a more accurate count of choices.
     $("label", newChoice).html($("label", newChoice).html().replace(/\d+(?=<)|\d+(?=-)|\d+(?=\])/g, numChoices));
     // Clear the value, insert and fade in.
     newChoice.find("input").val("").end().insertBefore("#more-choices").fadeIn();
     // Update hidden form values
-    $("#edit-choices").val(newChoiceN);
     $("#edit-changed").val($("#edit-changed").val() + 1);
     
     Drupal.advpoll.removeChoiceClick();
