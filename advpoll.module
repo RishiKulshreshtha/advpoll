@@ -646,7 +646,7 @@ function advpoll_validate(&$node) {
 
     // Check for at least two choices.
     $real_choices = 0;
-    foreach ($node->choice as $i => $choice) {
+    foreach ($_POST['choice'] as $i => $choice) {
       if ($choice['label'] != '') {
         $real_choices++;
       }
