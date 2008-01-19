@@ -134,11 +134,11 @@ msgstr ""
 
 #: advpoll.module:294;941;969
 msgid "Reset votes"
-msgstr ""
+msgstr "Wyzeruj głosowanie"
 
 #: advpoll.module:332
 msgid "Default maximum choices"
-msgstr ""
+msgstr "Domyślna ilość maksymalnych możliwości wyboru"
 
 #: advpoll.module:335
 msgid "The default number of maximum choices for new polls. This setting can be overridden on the poll edit page."
@@ -182,19 +182,19 @@ msgstr ""
 
 #: advpoll.module:374
 msgid "Always"
-msgstr ""
+msgstr "Zawsze"
 
 #: advpoll.module:375
 msgid "After user has voted"
-msgstr ""
+msgstr "Po tym jak użytkownik zagłosował"
 
 #: advpoll.module:376
 msgid "After voting has closed"
-msgstr ""
+msgstr "Po zamknięciu głosowania"
 
 #: advpoll.module:381
 msgid "Display results"
-msgstr ""
+msgstr "Pokaż wyniki"
 
 #: advpoll.module:382
 msgid "Determines when users may view the results of the poll."
@@ -210,19 +210,19 @@ msgstr ""
 
 #: advpoll.module:484
 msgid "Advanced Polls"
-msgstr ""
+msgstr "Zaawansowane Głosowania"
 
 #: advpoll.module:505;1062
 msgid "Results"
-msgstr ""
+msgstr "Wyniki"
 
 #: advpoll.module:517
 msgid "Votes"
-msgstr ""
+msgstr "Głosy"
 
 #: advpoll.module:529
 msgid "Electoral list"
-msgstr ""
+msgstr "Lista wyborców"
 
 #: advpoll.module:577
 msgid "This table lists all the eligible voters for this poll."
@@ -234,7 +234,7 @@ msgstr ""
 
 #: advpoll.module:589
 msgid "remove"
-msgstr ""
+msgstr "usuń"
 
 #: advpoll.module:607
 msgid "Administer electoral list"
@@ -314,11 +314,11 @@ msgstr ""
 
 #: advpoll.module:818
 msgid "Description"
-msgstr ""
+msgstr "Opis"
 
 #: advpoll.module:836
 msgid "Cancel your vote"
-msgstr ""
+msgstr "Wyzeruj swój głos"
 
 #: advpoll.module:908
 msgid "No mode specified for this content type"
