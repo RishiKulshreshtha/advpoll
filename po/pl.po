@@ -210,7 +210,7 @@ msgstr ""
 
 #: advpoll.module:484
 msgid "Advanced Polls"
-msgstr "Zaawansowane Głosowania"
+msgstr "Głosowania"
 
 #: advpoll.module:505;1062
 msgid "Results"
@@ -330,11 +330,11 @@ msgstr ""
 
 #: advpoll.module:940
 msgid "This action cannot be undone."
-msgstr ""
+msgstr "Ten proces jest nieodwracalny."
 
 #: advpoll.module:989
 msgid "You must fill in at least two choices."
-msgstr ""
+msgstr "Musisz wypełnić co najmniej dwa pola wyboru."
 
 #: advpoll.module:994
 msgid "Maximum choices must be a non-negative integer."
@@ -346,19 +346,19 @@ msgstr ""
 
 #: advpoll.module:1003
 msgid "You have to specify a valid starting date."
-msgstr ""
+msgstr "Musisz podać prawidłową datę rozpoczęcia."
 
 #: advpoll.module:1006
 msgid "You have to specify a valid ending date."
-msgstr ""
+msgstr "Musisz podać prawidłową datę zakończenia."
 
 #: advpoll.module:1009
 msgid "Ending date cannot be before the starting date."
-msgstr ""
+msgstr "Ze względu na szacunek dla Einstaina, głosowanie nie może zakończyć się przed rozpoczęciem."
 
 #: advpoll.module:1064
 msgid "View the current poll results."
-msgstr ""
+msgstr "Zobacz bieżące wyniki głosowania."
 
 #: advpoll.module:1072
 msgid "Total votes: %votes"
@@ -366,19 +366,19 @@ msgstr ""
 
 #: advpoll.module:1075
 msgid "No votes have been recorded for this poll."
-msgstr ""
+msgstr "Nie zarejestrowano żadnych głosów."
 
 #: advpoll.module:1111
 msgid "Your vote was registered."
-msgstr ""
+msgstr "Twój głos został zarejestrowany."
 
 #: advpoll.module:1164
 msgid "Your vote was canceled."
-msgstr ""
+msgstr "Twój głos został anulowany."
 
 #: advpoll.module:1167
 msgid "You are not allowed to cancel an invalid choice."
-msgstr ""
+msgstr "Nie jesteś uprawniony do anulowania niewłaściwie oddanego głosu."
 
 #: advpoll.module:80 modes/binary.inc:130
 msgid "1 vote"
@@ -394,23 +394,23 @@ msgstr[1] ""
 
 #: advpoll.module:828
 msgid "create polls"
-msgstr ""
+msgstr "stwórz głosowanie"
 
 #: advpoll.module:828
 msgid "edit polls"
-msgstr ""
+msgstr "edytuj głosowanie"
 
 #: advpoll.module:828
 msgid "edit own polls"
-msgstr ""
+msgstr "edytuj tylko własne głosowania"
 
 #: advpoll.module:828
 msgid "vote on polls"
-msgstr ""
+msgstr "bierz udział w wyborach"
 
 #: advpoll.module:828
 msgid "cancel own vote"
-msgstr ""
+msgstr "anuluj swój głos"
 
 #: advpoll.module:828
 msgid "administer polls"
@@ -430,7 +430,7 @@ msgstr ""
 
 #: advpoll.info:0
 msgid "Advanced Poll"
-msgstr ""
+msgstr "Głosowanie"
 
 #: advpoll.info:0
 msgid "An advanced polling module for voting, elections, and group decision-making."
@@ -474,7 +474,7 @@ msgstr ""
 
 #: modes/binary.inc:204 modes/ranking.inc:648
 msgid "You have already voted in this poll."
-msgstr ""
+msgstr "Już głosowałeś w tych wyborach."
 
 #: modes/binary.inc:210;233 modes/ranking.inc:681
 msgid "At least one choice must be selected."
