@@ -276,8 +276,8 @@ function advpoll_update_6() {
  */
 function advpoll_update_7() {
   $ret = array();
-  $ret[] = update_sql('UPDATE {node} SET type = "advpoll_binary" WHERE type = "advpoll-binary"');
-  $ret[] = update_sql('UPDATE {node} SET type = "advpoll_ranking" WHERE type = "advpoll-ranking"');
+  $ret[] = update_sql("UPDATE {node} SET type = 'advpoll_binary' WHERE type = 'advpoll-binary'");
+  $ret[] = update_sql("UPDATE {node} SET type = 'advpoll_ranking' WHERE type = 'advpoll-ranking'");
   return $ret;
 }
 
