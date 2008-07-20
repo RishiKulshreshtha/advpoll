@@ -299,8 +299,6 @@ function advpoll_update_8() {
       break;
     case 'pgsql':
       db_change_column($ret, 'advpoll_choices', 'vote_offset', 'weight', 'smallint', array('not null' => TRUE));
-      $ret[] = update_sql('ALTER TABLE {advpoll_choices} DROP CONSTRAINT {advpoll_choices}_vote_offset_idx');
-      $ret[] = update_sql('ALTER TABLE {advpoll_choices} DROP CONSTRAINT {advpoll_choices}_pkey');
       db_add_column($ret, 'advpoll_choices', 'cid', 'serial', array('not null' => TRUE));
       $ret[] = update_sql('ALTER TABLE {advpoll_choices} ADD PRIMARY KEY (cid)');
       break;
