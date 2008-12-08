@@ -699,6 +699,7 @@ function advpoll_form_alter(&$form, $form_state, $form_id) {
 function advpoll_load($node) {
   $poll = db_fetch_object(db_query('SELECT * FROM {advpoll} WHERE nid = %d', $node->nid));
   $result = db_query('SELECT cid, weight, label, writein FROM {advpoll_choices} WHERE nid = %d ORDER BY weight', $node->nid);
+  $poll->choice = array();
   while ($choice = db_fetch_array($result)) {
     $poll->choice[$choice['cid']] = $choice;
   }
@@ -779,7 +780,7 @@ function advpoll_validate($node, &$form) {
  */
 function advpoll_insert($node) {
   $mode = _advpoll_get_mode($node->type);
-  db_query("INSERT INTO {advpoll} (nid, mode, use_list, active, max_choices, algorithm, show_votes, start_date, end_date, writeins, show_writeins, question) VALUES (%d, '%s', %d, %d, %d, '%s', %d, '%s', '%s', %d, %d, '%s')", $node->nid, $mode, $node->settings['use_list'], !$node->settings['close'], $node->settings['max_choices'], $node->settings['algorithm'], $node->settings['show_votes'], $node->settings['start_date'] ? strtotime($node->settings['start_date']) : 0, $node->settings['end_date'] ? strtotime($node->settings['end_date']) : 0, $node->settings['writeins'], $node->settings['show_writeins'], $node->question);
+  db_query("INSERT INTO {advpoll} (nid, mode, use_list, active, max_choices, algorithm, show_votes, start_date, end_date, writeins, show_writeins, question) VALUES (%d, '%s', %d, %d, %d, '%s', %d, '%s', '%s', %d, %d, '%s')", $node->nid, $mode, $node->settings['use_list'], !$node->settings['close'], $node->settings['max_choices'], $node->settings['algorithm'], $node->settings['show_votes'], $node->settings['start_date'] ? strtotime($node->settings['start_date']) : 0, $node->settings['end_date'] ? strtotime($node->settings['end_date']) : 0, $node->settings['writeins'], $node->settings['show_writeins'], isset($node->question) ? $node->question : '');
 
   // Insert the choices.
   _advpoll_insert_choices($node->nid);
@@ -792,7 +793,7 @@ function advpoll_insert($node) {
  */
 function advpoll_update($node) {
 
-  db_query("UPDATE {advpoll} SET active = %d, max_choices = %d, algorithm = '%s', use_list = %d, show_votes = %d, start_date = '%s', end_date = '%s', writeins = %d, show_writeins = %d, question = '%s' WHERE nid = %d", !$node->settings['close'], $node->settings['max_choices'], $node->settings['algorithm'], $node->settings['use_list'], $node->settings['show_votes'], $node->settings['start_date'] ? strtotime($node->settings['start_date']) : 0, $node->settings['end_date'] ? strtotime($node->settings['end_date']) : 0, $node->settings['writeins'], $node->settings['show_writeins'], $node->question, $node->nid);
+  db_query("UPDATE {advpoll} SET active = %d, max_choices = %d, algorithm = '%s', use_list = %d, show_votes = %d, start_date = '%s', end_date = '%s', writeins = %d, show_writeins = %d, question = '%s' WHERE nid = %d", !$node->settings['close'], $node->settings['max_choices'], $node->settings['algorithm'], $node->settings['use_list'], $node->settings['show_votes'], $node->settings['start_date'] ? strtotime($node->settings['start_date']) : 0, $node->settings['end_date'] ? strtotime($node->settings['end_date']) : 0, $node->settings['writeins'], $node->settings['show_writeins'], isset($node->question) ? $node->question : '', $node->nid);
 
   _advpoll_insert_choices($node->nid);
   votingapi_recalculate_results('advpoll', $node->nid);
