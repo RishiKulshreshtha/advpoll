@@ -124,7 +124,7 @@ function advpoll_voting_ranking_form(&$form_state, &$node, $teaser, $page, $stat
       '#attributes' => array('id' => 'edit-vote-rank-'. $ranking_vote_count++),
     );
   }
-  elseif ($node->in_preview) {
+  elseif ($node->build_mode == NODE_BUILD_PREVIEW) {
     // Display nothing.
   }
   elseif ($status == 'pending') {
@@ -132,7 +132,7 @@ function advpoll_voting_ranking_form(&$form_state, &$node, $teaser, $page, $stat
   }
   else {
     global $user;
-    $login_message = t('<a href="@login">Login</a> to vote in this poll.', array('@login' => url('user/login', drupal_get_destination())));
+    $login_message = t('<a href="@login">Login</a> to vote in this poll.', array('@login' => url('user/login', array('query' => drupal_get_destination()))));
     $form['message']['#value'] = $user->uid ? t('You are not eligible to vote in this poll.') : $login_message;
   }
 

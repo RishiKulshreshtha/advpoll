@@ -116,8 +116,8 @@ function advpoll_voting_binary_form(&$form_state, $node, $teaser, $page, $status
   }
   else {
     global $user;
-    $login_message = t('<a href="@login">Login</a> to vote in this poll.', array('@login' => url('user/login', drupal_get_destination())));
-    $form['message']['#value'] = $user->uid ? t('You are not eligible to vote in this poll.') : $login_message;
+    $login_message = t('<a href="@login">Login</a> to vote in this poll.', array('@login' => url('user/login', array('query' => drupal_get_destination()))));
+    $form['message']['#value'] = isset($user->uid) ? t('You are not eligible to vote in this poll.') : $login_message;
   }
 
   $form['#action'] = url('node/'. $node->nid);
