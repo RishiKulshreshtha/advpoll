@@ -1052,7 +1052,7 @@ function advpoll_electoral_list_form_validate($form, &$form_state) {
 function advpoll_electoral_list_form_submit($form, &$form_state) {
   $add_user = $form_state['values']['electoral_list']['add_user'];
   if ($add_user) {
-    db_query("REPLACE INTO {advpoll_electoral_list} (nid, uid) SELECT '%d', u.uid FROM users u WHERE u.name = '%s'", $form_state['values']['nid'], $add_user);
+    db_query("REPLACE INTO {advpoll_electoral_list} (nid, uid) SELECT '%d', u.uid FROM {users} u WHERE u.name = '%s'", $form_state['values']['nid'], $add_user);
     drupal_set_message(t('%user added to electoral list.', array('%user' => $add_user)));
   }
 
