@@ -74,7 +74,7 @@ function advpoll_install() {
         writein smallint NOT NULL default '0',
         PRIMARY KEY (cid)
       )");
-      db_query('CREATE INDEX {advpoll_choices} {advpoll_choices}_nid_weight_idx ON {advpoll_choices} (nid, weight)');
+      db_query('CREATE INDEX {advpoll_choices}_nid_weight_idx ON {advpoll_choices} (nid, weight)');
       break;
   }
 }
