@@ -1012,7 +1012,7 @@ function advpoll_votes_page() {
     $header[] = array('data' => t('Visitor'), 'field' => 'u.name');
     $header[] = array('data' => t('Vote'), '');
 
-    $result = pager_query("SELECT v.uid, v.hostname, v.timestamp, u.name FROM {votingapi_vote} v LEFT JOIN {users} u ON v.uid = u.uid WHERE v.content_type = 'advpoll' AND v.content_id = %d GROUP BY v.uid, v.hostname, v.timestamp". tablesort_sql($header), 20, 0, NULL, $node->nid);
+    $result = pager_query("SELECT v.uid, v.hostname, v.timestamp, u.name FROM {votingapi_vote} v LEFT JOIN {users} u ON v.uid = u.uid WHERE v.content_type = 'advpoll' AND v.content_id = %d GROUP BY v.uid, v.hostname, v.timestamp, u.name". tablesort_sql($header), 20, 0, NULL, $node->nid);
     $uids = array();
     $hostnames = array();
     $timestamp = array();
