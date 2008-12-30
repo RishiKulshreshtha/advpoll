@@ -1553,7 +1553,7 @@ function advpoll_js_vote() {
  */
 function _advpoll_writeins_voting_form_submit($node, $form_state, &$votes, $vote_value = 1) {
   // A write-in vote is being made.
-  if (isset($form_state['values']['writein_choice'])) {
+  if (isset($form_state['values']['writein_choice']) && $form_state['values']['writein_choice']) {
     // Check if someone has previously voted for this choice.
     $result = db_query("SELECT cid FROM {advpoll_choices} WHERE nid = %d AND LOWER(label) = LOWER('%s')", $node->nid, $form_state['values']['writein_choice']);
     $db_vote = db_fetch_object($result);
