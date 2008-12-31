@@ -259,18 +259,21 @@ function advpoll_init() {
 }
 
 function _advpoll_results_access($node) {
-  return _advpoll_is_active($node) && !$node->voted && _advpoll_can_view_results($node);
+  return strstr($node->type, 'advpoll_') && _advpoll_is_active($node) && !$node->voted && _advpoll_can_view_results($node);
 }
 
 function _advpoll_electoral_list_access($node) {
-  return user_access('access electoral_list') && $node->use_list;
+  return user_access('access electoral_list') && strstr($node->type, 'advpoll_') &&  $node->use_list;
 }
 
 function _advpoll_votes_access($node) {
-  return user_access('inspect all votes') && $node->show_votes;
+  return strstr($node->type, 'advpoll_') && user_access('inspect all votes') && $node->show_votes;
 }
 
 function _advpoll_writeins_access($node) {
+  if (!strstr($node->type, 'advpoll_')) {
+    return FALSE;
+  }
   user_access('administer polls');
   foreach ($node->choice as $choice) {
     if ($choice['writein']) {
@@ -387,7 +390,7 @@ function advpoll_form(&$node, $form_state) {
     '#type' => 'fieldset',
     '#title' => t('Poll choices'),
     '#collapsible' => TRUE,
-    '#prefix' => '<div class="poll-form">',
+    '#prefix' => '<div class="poll-form" id="poll-choices">',
     '#suffix' => '</div>',
     '#tree' => TRUE,
     '#weight' => 1,
@@ -400,14 +403,18 @@ function advpoll_form(&$node, $form_state) {
   }
 
   $form['choice']['more_choices'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Need more choices'),
-    '#value' => 0,
+    '#type' => 'submit',
+    '#value' => t('Need more choices'),
     '#parents' => array('more_choices'), // Don't pollute $form['choice']
-    '#prefix' => '<div id="more-choices">',
-    '#suffix' => '</div>',
-    '#description' => t("If the number of choices above isn't enough, check this box and click the Preview button below to double the number of choices."),
+    '#description' => t("If the number of choices above isn't enough, click hereto add more choices."),
+    '#submit' => array('advpoll_more_choices_submit'), // If no JavaScript.
     '#weight' => 1,
+    '#ahah' => array(
+      'path' => 'advpoll/js_more_choices',
+      'wrapper' => 'poll-choices',
+      'method' => 'replace',
+      'effect' => 'fade',
+    ),
   );
 
   // First, loop through any currently existing choices.
@@ -588,6 +595,16 @@ function advpoll_form(&$node, $form_state) {
   }
 
   return $form;
+}
+
+function advpoll_more_choices_submit($form, &$form_state) {
+  // Based on poll.module
+  node_form_submit_build_node($form, $form_state);
+
+  if ($form_state['values']['more_choices']) {
+    $n = $_GET['q'] == 'advpoll/js_more_choices' ? 1 : 5;
+    $form_state['choice_count'] = count($form_state['values']['choice']) + $n;
+  }
 }
 
 /**
@@ -1517,7 +1534,7 @@ function _advpoll_writeins_voting_form_validate($node, $writein_option, $writein
         // Check that user isn't writing in an existing visible choice. (User is
         // writing in an existing choice and either write-ins are all being 
         // displayed or the existing choice is not a write-in).
-        if ((strtolower($val['label']) == $writein_choice_lower) && ($node->show_writeins || !$value['writein'])) {
+        if ((strtolower($value['label']) == $writein_choice_lower) && ($node->show_writeins || !$value['writein'])) {
           _advpoll_form_set_error('writein_choice', t("A write-in vote can not be for an existing choice. Select the choice's option instead."), $ajax);
         }
       }
@@ -1760,4 +1777,37 @@ function advpoll_theme() {
     'advpoll_results' => array('arguments' => array('title' => '', 'results' => '', 'votes' => '', 'links' => '', 'nid' => '', 'voted' => '', 'cancel_vote' => '')),
     'advpoll_bar' => array('arguments' => array('title' => '', 'percentage' => '', 'votes' => '', 'choice' => NULL)),
   );
+}
+
+/**
+ * AHAH handling of the more choices button.
+ * 
+ * Based on http://drupal.org/node/331941
+ */
+function advpoll_js_more_choices() {
+  // We're starting in step #3, preparing for #4.
+  $form_state = array('storage' => NULL, 'submitted' => FALSE);
+  $form_build_id = $_POST['form_build_id'];
+  // Step #4.
+  $form = form_get_cache($form_build_id, $form_state);
+
+  // Preparing for #5.
+  $args = $form['#parameters'];
+  $form_id = array_shift($args);
+  $form_state['post'] = $form['#post'] = $_POST;
+  $form['#programmed'] = $form['#redirect'] = FALSE;
+
+  // Step #5.
+  drupal_process_form($form_id, $form, $form_state);
+
+  // Step #6 and #7 and #8.
+  $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
+
+  // Step #9.
+  $choice_form = $form['choice_wrapper']['choice'];
+  unset($choice_form['#prefix'], $choice_form['#suffix']);
+  $output = theme('status_messages') . drupal_render($choice_form);
+
+  // Final rendering callback.
+  drupal_json(array('status' => TRUE, 'data' => $output));
 }
