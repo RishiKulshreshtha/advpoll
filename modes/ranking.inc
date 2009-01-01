@@ -186,9 +186,13 @@ function advpoll_view_results_ranking($node, $teaser, $page) {
       $ranking[$i]->choices = array();
       foreach ($choice_list as $choice_i) {
         $ranking[$i]->choices[] = $choice_i;
-        $ranking[$i]->view_score = $choices[$choice_i]['view_score'];
-        $ranking[$i]->raw_score = $choices[$choice_i]['raw_score'];
-        if ($choices[$choice_i]['percentage']) {
+        if (isset($choices[$choice_i]['view_score'])) {
+          $ranking[$i]->view_score = $choices[$choice_i]['view_score'];
+        }
+        if (isset($choices[$choice_i]['raw_score'])) {
+          $ranking[$i]->raw_score = $choices[$choice_i]['raw_score'];
+        }
+        if (isset($choices[$choice_i]['percentage'])) {
           $ranking[$i]->percentage = $choices[$choice_i]['percentage'];
         }    
       }
@@ -228,7 +232,7 @@ function advpoll_view_results_ranking($node, $teaser, $page) {
         }
 
         // Show the ranking's score if it exists (depends on algorithm).
-        if ($ranking[$i]->view_score) {
+        if (isset($ranking[$i]->view_score)) {
           $output .= ' ('. $ranking[$i]->view_score .'%)';
         }
         $output .= '</li>';
@@ -292,8 +296,12 @@ function advpoll_calculate_results_ranking(&$cache, $node) {
   for ($i = 0; $i < count($results->ranking); $i++) {
     foreach ($results->ranking[$i]['choices'] as $choice) {
       $cache[$choice][0]['ranking'] = $i;
-      $cache[$choice][0]['raw_score'] = $results->ranking[$i]['raw_score'];
-      $cache[$choice][0]['view_score'] = $results->ranking[$i]['view_score'];
+      if (isset($results->ranking[$i]['raw_score'])) {
+        $cache[$choice][0]['raw_score'] = $results->ranking[$i]['raw_score'];
+      }
+      if (isset($results->ranking[$i]['view_score'])) {
+        $cache[$choice][0]['view_score'] = $results->ranking[$i]['view_score'];
+      }
       if (isset($results->ranking[$i]['percentage'])) {
         $cache[$choice][0]['percentage'] = $results->ranking[$i]['percentage'];
       }
