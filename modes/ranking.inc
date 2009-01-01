@@ -64,8 +64,6 @@ function advpoll_voting_ranking_form(&$form_state, &$node, $teaser, $page, $stat
 
     $form['choice'] = array(
       '#tree' => TRUE,
-      // XXX: Workaround for FormAPI bug in PHP 4, see http://drupal.org/node/86657.
-      '#type' => 'checkboxes',
       '#prefix' => '<div class="vote-choices">',
       '#suffix' => '</div>',
     );
