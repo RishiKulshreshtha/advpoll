@@ -191,6 +191,11 @@ function advpoll_view_results_ranking($node, $teaser, $page) {
     }
 
     if ($node->algorithm == 'borda_count') {
+      asort($ranking);
+      // asort puts choices without votes at the very beginning of the array,
+      // so take off the first element and move it to the end.
+      $empty_choices = array_shift($ranking);
+      array_push($ranking, $empty_choices);
       foreach ($ranking as $i => $ranking) {
         $first_one = TRUE;
         $this_rank = '';
