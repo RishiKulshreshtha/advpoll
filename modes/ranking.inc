@@ -201,24 +201,19 @@ function advpoll_view_results_ranking($node, $teaser, $page) {
     $output = '';
 
     if ($node->algorithm == 'borda_count') {
-      asort($ranking);
-      // asort puts choices without votes at the very beginning of the array,
-      // so take off the first element and move it to the end.
-      $empty_choices = array_shift($ranking);
-      array_push($ranking, $empty_choices);
-      foreach ($ranking as $i => $ranking) {
+      for ($i = 0; $i < count($ranking); $i++) {
         $first_one = TRUE;
         $this_rank = '';
 
         // Loop through all choices with this ranking.
-        foreach ($ranking->choices as $choice) {
+        foreach ($ranking[$i]->choices as $choice) {
           $label = isset($node->choice[$choice]) ? _advpoll_choice_markup($node->choice[$choice]['label'], $node->format, FALSE) . ($node->choice[$choice]['writein']? ' '. t('(write-in)') : '') : t('(deleted)');
           $this_rank .= ($first_one ? '' : ', ') . $label;
           $first_one = FALSE;
         }
 
-        $percentage = round(100 * (isset($ranking->percentage) ? $ranking->percentage : 0), 0);
-        $output .= theme('advpoll_bar', $this_rank, $percentage, $ranking->view_score);
+        $percentage = round(100 * (isset($ranking[$i]->percentage) ? $ranking[$i]->percentage : 0), 0);
+        $output .= theme('advpoll_bar', $this_rank, $percentage, $ranking[$i]->view_score);
       }
     }
     else {
