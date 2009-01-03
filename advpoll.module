@@ -403,18 +403,23 @@ function advpoll_form(&$node, $form_state) {
   }
 
   $form['choice']['more_choices'] = array(
-    '#type' => 'submit',
-    '#value' => t('Need more choices'),
+    '#type' => 'checkbox',
+    '#title' => t('Need more choices'),
+    '#value' => 0,
     '#parents' => array('more_choices'), // Don't pollute $form['choice']
+    '#prefix' => '<div id="more-choices">',
+    '#suffix' => '</div>',
     '#description' => t("If the number of choices above isn't enough, click hereto add more choices."),
-    '#submit' => array('advpoll_more_choices_submit'), // If no JavaScript.
     '#weight' => 1,
+    /*
+    '#submit' => array('advpoll_more_choices_submit'), // If no JavaScript.
     '#ahah' => array(
       'path' => 'advpoll/js_more_choices',
       'wrapper' => 'poll-choices',
       'method' => 'replace',
       'effect' => 'fade',
     ),
+    */
   );
 
   // First, loop through any currently existing choices.
