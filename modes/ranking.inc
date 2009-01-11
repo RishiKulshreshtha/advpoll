@@ -361,7 +361,7 @@ function _advpoll_calculate_bordacount($node) {
   foreach ($votes as $vote) {
     if ($vote->uid == 0) {
       // Anonymous user.
-      $key = $vote->hostname;
+      $key = $vote->vote_source;
     }
     else {
       // Logged-in user.
@@ -453,7 +453,7 @@ function _advpoll_calculate_instantrunoff($node) {
   foreach ($votes as $vote) {
     if ($vote->uid == 0) {
       // Anonymous user.
-      $key = $vote->hostname;
+      $key = $vote->vote_source;
     }
     else {
       // Logged-in user.
