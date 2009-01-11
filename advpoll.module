@@ -947,13 +947,8 @@ function _advpoll_user_voted($nid) {
  * Display the electoral list page.
  */
 function advpoll_electoral_list_page($node) {
-  // Bail out if electoral list isn't available for this node.
-  if (!$node->use_list) {
-    drupal_not_found();
-    return;
-  }
-    
   drupal_set_title(check_plain($node->title));
+  $output = '';
     
   if (user_access('administer polls')) {
     $output .= drupal_get_form('advpoll_electoral_list_form', $node->nid);
@@ -981,7 +976,7 @@ function advpoll_electoral_list_page($node) {
   print theme('page', $output);
 }
 
-function advpoll_electoral_list_form($nid) {
+function advpoll_electoral_list_form(&$form_state, $nid) {
   $form['electoral_list'] = array(
     '#type' => 'fieldset',
     '#tree' => TRUE,
