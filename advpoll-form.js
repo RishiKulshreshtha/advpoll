@@ -66,9 +66,12 @@ Drupal.advpoll.updateWriteins = function() {
 Drupal.advpoll.nodeFormAutoAttach = function() {
   // This code is used on the node edit page and the content-type settings page.
 
-  // Add behavior when write-in box is (un)checked.
-  Drupal.advpoll.updateWriteins();
-  $("input.settings-writeins").click(Drupal.advpoll.updateWriteins);
+  // Check if the write-ins settings are available to this user.
+  if ($("input.settings-writeins").size() > 0) {
+    // Add behavior when write-in box is (un)checked.
+    Drupal.advpoll.updateWriteins();
+    $("input.settings-writeins").click(Drupal.advpoll.updateWriteins);
+  }
 
   if ($("div.poll-form").length == 0) {
     // We're just on the settings page.
