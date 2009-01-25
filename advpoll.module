@@ -189,6 +189,15 @@ function advpoll_menu($may_cache) {
 }
 
 /**
+ * Implementation of hook_init().
+ */
+function advpoll_init() {
+  if (module_exists('views')) {
+    require_once(drupal_get_path('module', 'advpoll') .'/advpoll_views.inc');
+  }
+}
+
+/**
  * Implementation of hook_block().
  */
 function advpoll_block($op = 'list') {
