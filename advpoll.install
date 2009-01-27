@@ -54,7 +54,7 @@ function advpoll_schema() {
         'default' => 1,
       ),
       'max_choices' => array(
-        'description' => t('An uppper limit on how many choices can be selected.'),
+        'description' => t('An upper limit on how many choices can be selected.'),
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,

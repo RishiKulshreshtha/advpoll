@@ -57,7 +57,7 @@ function advpoll_convert_form_submit($form_id, $form_values) {
     _advpoll_convert_node($poll);
     $count++;
   }
-  drupal_set_message(format_plural($count, '@count poll successfully converted.', '@count polls successfully converted.'));
+  drupal_set_message(format_plural($count, '1 poll successfully converted.', '@count polls successfully converted.'));
 }
 
 /**
