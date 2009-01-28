@@ -1,14 +1,10 @@
 // $Id$
 
-if (typeof(Drupal) == "undefined" || !Drupal.advpoll) {
-  Drupal.advpoll = {};
-}
-
 /*
 * Submit advpoll forms with ajax
 */
-Drupal.advpoll.attachVoteAjax = function() {
-  $("form.advpoll-vote").each(function() {
+Drupal.behaviors.attachVoteAjax = function(context) {
+  $("form.advpoll-vote", context).each(function() {
     var thisForm = this;
     var options = {
       dataType: "json",
@@ -41,12 +37,8 @@ Drupal.advpoll.attachVoteAjax = function() {
   });
 };
 
-Drupal.advpoll.nodeVoteAutoAttach = function() {
-  Drupal.advpoll.attachVoteAjax();
-};
-
-Drupal.advpoll.handleWriteins = function() {
-  $("div.poll").each(function() {
+Drupal.behaviors.handleWriteins = function(context) {
+  $("form.advpoll-vote:not(.handleWriteins-processed)", context).addClass("handleWriteins-processed").each(function() {
     var poll = this;
     if ($(".writein-choice", poll).length == 0) {
       // No write-ins in this poll.
@@ -95,12 +87,5 @@ Drupal.advpoll.handleWriteins = function() {
         $(".writein-choice", poll)[0].focus();
       }
     });
-  });
-};
-
-if (Drupal.jsEnabled) {
-  $(document).ready(function(){  
-    Drupal.advpoll.nodeVoteAutoAttach();
-    Drupal.advpoll.handleWriteins();
   });
 };
