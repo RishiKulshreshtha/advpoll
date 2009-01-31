@@ -26,7 +26,7 @@ function advpoll_voting_ranking_form(&$form_state, &$node, $teaser, $page, $stat
   
   $form = array(
     '#id' => 'advpoll_voting_ranking_form-'. $ranking_form_count++,
-    '#attributes' => array('class' => 'advpoll-vote drag-and-drop'),
+    '#attributes' => array('class' => 'advpoll-vote'),
     '#node' => $node,
   );
 
@@ -37,6 +37,7 @@ function advpoll_voting_ranking_form(&$form_state, &$node, $teaser, $page, $stat
 
   if (module_exists('jquery_ui')) {
     jquery_ui_add(array('ui.draggable', 'ui.droppable', 'ui.sortable'));
+    $form['#attributes']['class'] .= ' drag-and-drop';
     $form['js_order'] = array(
       '#type' => 'hidden',
       '#value' => '',

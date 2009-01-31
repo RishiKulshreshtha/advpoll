@@ -27,22 +27,22 @@ html.js input.writein-choice {
  * Begin drag-and-drop specific styles for ranking polls.
  */
 
-.vote-choices {
+.drag-and-drop .vote-choices {
   float: left;
   min-width: 200px;
   margin-right: 20px;
 }
 
-.vote-choices ul {
+.drag-and-drop .vote-choices ul {
   cursor: pointer;
 }
 
-.advpoll-x {
+.drag-and-drop .advpoll-x {
   font-size: 80%;
   margin-left: 3px;
 }
 
-.advpoll-drag-box {
+.drag-and-drop .advpoll-drag-box {
   min-width: 150px;
   float: left;
   padding-bottom: 5px;
