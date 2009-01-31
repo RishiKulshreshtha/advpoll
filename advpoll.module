@@ -256,6 +256,10 @@ function advpoll_init() {
   
   // Load the mode include files.
   _advpoll_list_modes();
+
+  if (module_exists('jquery_ui')) {
+    jquery_ui_add(array('ui.draggable', 'ui.droppable', 'ui.sortable'));
+  }
 }
 
 function _advpoll_results_access($node) {

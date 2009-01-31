@@ -1,7 +1,6 @@
 /* $Id$ */
 
 .node-form .choices {
-  width: 87%;
   margin-right: 0.2em;
   display:inline;
 }
@@ -21,4 +20,74 @@ html.js input.writein-choice {
 
 .poll-question {
   font-weight: bold;
+}
+
+
+/***
+ * Begin drag-and-drop specific styles for ranking polls.
+ */
+
+.vote-choices {
+  float: left;
+  min-width: 200px;
+  margin-right: 20px;
+}
+
+.vote-choices ul {
+  cursor: pointer;
+}
+
+.advpoll-x {
+  font-size: 80%;
+  margin-left: 3px;
+}
+
+.advpoll-drag-box {
+  min-width: 150px;
+  float: left;
+  padding-bottom: 5px;
+  text-align: center;
+}
+
+.advpoll-drag-box ol {
+  margin-left: 5px;
+  margin-bottom: 5px;
+  padding-bottom: 0;
+  margin-right: 5px;
+  background-color: #eee;
+  border: 2px solid #ddd;
+  text-align: left;
+}
+
+.advpoll-vote-list ol {
+}
+
+.advpoll-vote-list li {
+  padding: 3px;
+}
+
+.choice-header {
+  font-weight: bold;
+}
+
+.advpoll-vote-header {
+  text-align: center;
+  font-weight: bold;
+  padding: 3px;
+}
+
+.vote-status {
+  font-style: italic;
+  font-size: 90%;
+  margin-left: 5px;
+  margin-right: 5px;
+}
+
+.advpoll-vote-list {
+  min-height: 25px;
+  cursor: pointer;
+}
+
+.advpoll-vote-list label, .vote-list label {
+  cursor: pointer;
 }

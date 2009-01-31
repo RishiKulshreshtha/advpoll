@@ -23,15 +23,39 @@ function advpoll_algorithms_ranking() {
 
 function advpoll_voting_ranking_form(&$form_state, &$node, $teaser, $page, $status) {
   static $ranking_form_count = 0; 
+  
   $form = array(
     '#id' => 'advpoll_voting_ranking_form-'. $ranking_form_count++,
-    '#attributes' => array('class' => 'advpoll-vote'),
+    '#attributes' => array('class' => 'advpoll-vote drag-and-drop'),
     '#node' => $node,
   );
+
   $form['ajax'] = array(
     '#type' => 'hidden',
     '#attributes' => array('class' => 'ajax'),
   );
+
+  if (module_exists('jquery_ui')) {
+    jquery_ui_add(array('ui.draggable', 'ui.droppable', 'ui.sortable'));
+    $form['js_order'] = array(
+      '#type' => 'hidden',
+      '#value' => '',
+    );
+    if ($node->max_choices) {
+      $max_choices = $node->max_choices;
+    }
+    else {
+      $max_choices = count($node->choice);
+      if ($node->writeins) {
+        $max_choices++;
+      }
+    }
+    $form['max_choices'] = array(
+      '#type' => 'hidden',
+      '#value' => $max_choices,
+    );
+  }
+
 
   if (isset($node->choice)) {
     $list = array();
@@ -87,6 +111,7 @@ function advpoll_voting_ranking_form(&$form_state, &$node, $teaser, $page, $stat
         '#type' => 'select',
         '#title' => t('(write-in)'),
         '#options' => $choices,
+        '#attributes' => array('class' => 'advpoll-writeins'),
       );
       // Key index of the write-in option.
       $form['writein_key'] = array(
@@ -643,7 +668,7 @@ function advpoll_voting_ranking_form_submit($form, &$form_state) {
   $node = $form['#node'];
 
   // Do submission specific to writeins.
-  _advpoll_writeins_voting_form_submit($node, $form_state, $votes);
+  _advpoll_writeins_voting_form_submit($node, $form_state, $votes, $form_state['values']['choice'][$form_state['values']['writein_key']]);
 
   foreach ($form_state['values']['choice'] as $choice => $rank) {
     $vote = array();
@@ -788,14 +813,14 @@ function advpoll_cancel_ranking($node, $user_vote) {
   if ($node->writeins) {
     $recalculate = FALSE;
     foreach ($user_vote as $vote) {
-      if ($node->choice[$vote->tag]['writein']) {
+      if ($node->choice[$vote['tag']]['writein']) {
         // Check if there are any other votes for this write-in.
-        $count = db_result(db_query('SELECT COUNT(1) FROM {votingapi_vote} WHERE content_id = %d AND tag = %d', $node->nid, $vote->tag));
+        $count = db_result(db_query('SELECT COUNT(1) FROM {votingapi_vote} WHERE content_id = %d AND tag = %d', $node->nid, $vote['tag']));
         if ($count == 0) {
           // Delete the write-in because no one else voted for it.
-          db_query('DELETE FROM {advpoll_choices} WHERE cid = %d', $vote->tag);
+          db_query('DELETE FROM {advpoll_choices} WHERE cid = %d', $vote['tag']);
           $recalculate = TRUE;
-          watchdog('content', 'Removed write-in choice %choice after the last vote was cancelled.', array('%choice' => $node->choice[$vote->tag]['label']));
+          watchdog('content', 'Removed write-in choice %choice after the last vote was cancelled.', array('%choice' => $node->choice[$vote['tag']]['label']));
         }
       }
     }
