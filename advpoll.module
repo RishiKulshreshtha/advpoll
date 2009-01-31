@@ -844,7 +844,7 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
     // Previewing a node, so display voting form instead of results.
     $poll = drupal_get_form('advpoll_voting_'. _advpoll_get_mode($node->type) .'_form', $node, $teaser, $page, $status);
   }
-  else if (!$node->voted && ($status == 'open' || $status == 'pending')) {
+  else if (!$node->voted && arg(2) != 'results' && ($status == 'open' || $status == 'pending')) {
   // OLD: else if ((!$node->voted && arg(2) != 'results' && ($status == 'open' || $status == 'pending')) || $_POST['op'] == 'Vote') {
 
     // User hasn't voted, we're not on the results tab and poll is open or
