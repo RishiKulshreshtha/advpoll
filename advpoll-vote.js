@@ -123,6 +123,8 @@ Drupal.behaviors.rankingDragAndDrop = function(context) {
           $(".vote-list", mainForm).append($(this).parent().parent().find("span").remove().end().clone().end().parent().remove());
           // Call so that we update the number of remaining choices.
           pseudoDeactivate(mainItem, ev, ui, "remove");
+          // Return false so that browser doesn't evaluate href and visit "#".
+          return false;
         }));
       },
       remove: function(ev, ui) {
