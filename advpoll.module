@@ -195,10 +195,10 @@ function _advpoll_votes_access($node) {
 }
 
 function _advpoll_writeins_access($node) {
-  if (!strstr($node->type, 'advpoll_')) {
+  if (!strstr($node->type, 'advpoll_') || !user_access('administer polls')) {
     return FALSE;
   }
-  user_access('administer polls');
+
   foreach ($node->choice as $choice) {
     if ($choice['writein']) {
       // Has at least one write-in choice.
