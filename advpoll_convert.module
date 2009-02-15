@@ -2,10 +2,15 @@
 // $Id$
 
 /**
+ * @file
+ * Converts a site's standard Drupal polls into Advanced Poll polls.
+ */
+
+/**
  * Implementation of hook_help().
  */
-function advpoll_convert_help($section) {
-  switch ($section) {
+function advpoll_convert_help($path, $arg) {
+  switch ($path) {
     case 'admin/modules#description':
       return t("Converts a site's standard Drupal polls into Advanced Poll polls.");
       break;
@@ -15,20 +20,19 @@ function advpoll_convert_help($section) {
 /**
  * Implementation of hook_menu().
  */
-function advpoll_convert_menu($may_cache) {
+function advpoll_convert_menu() {
   global $user;
 
   $items = array();
 
-  if ($may_cache) {
-    $items[] = array(
-      'path' => 'admin/content/advpoll-convert',
-      'title' => t('Advanced Poll Converter'),
-      'callback' => 'advpoll_convert_view',
-      'access' => user_access('administer nodes'),
-      'description' => t("Convert your site's standard Drupal polls into Advanced Poll polls."),
-    );
-  }
+  $items['admin/content/advpoll-convert'] = array(
+    'title' => 'Advanced Poll Converter',
+    'description' => 'Convert your site\'s standard Drupal polls into Advanced Poll polls.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('advpoll_convert_form'),
+    'access arguments' => array('administer nodes'),
+  );
+
   return $items;
 }
 
@@ -50,7 +54,7 @@ function advpoll_convert_form() {
   return $form;
 }
 
-function advpoll_convert_form_submit($form_id, $form_values) {
+function advpoll_convert_form_submit($form, &$form_state) {
   $count = 0;
   $result = db_query("SELECT n.nid, n.created, p.runtime, p.active FROM {node} n JOIN {poll} p ON n.nid = p.nid WHERE type = 'poll'");
   while ($poll = db_fetch_object($result)) {
@@ -75,7 +79,7 @@ function _advpoll_convert_node($poll) {
   $votes = array();
   $result = db_query('SELECT nid, uid, chorder, hostname FROM {poll_votes} WHERE nid = %d', $poll->nid);
   while ($vote = db_fetch_object($result)) {
-    db_query("INSERT INTO {votingapi_vote} (vote_id, content_type, content_id, value, value_type, tag, uid, timestamp, hostname) VALUES (%d, '%s', %d, 1, 'option', '%s', %d, %d, '%s')", db_next_id('{votingapi_vote}'), 'advpoll', $poll->nid, $vote->chorder, $vote->uid, $time, $vote->hostname ? $vote->hostname : '');
+    db_query("INSERT INTO {votingapi_vote} (content_type, content_id, value, value_type, tag, uid, timestamp, vote_source) VALUES ('%s', %d, 1, 'option', '%s', %d, %d, '%s')", 'advpoll', $poll->nid, $vote->chorder, $vote->uid, $time, $vote->hostname ? $vote->hostname : '');
 
     // Keep track of the number of real votes for this choice.
     if (!isset($votes[$vote->chorder])) {
@@ -98,7 +102,7 @@ function _advpoll_convert_node($poll) {
     // Create place-holder votes for any poll.module manual vote counts.
     while ($choice->chvotes - $votes[$choice->chorder] > 0) {
       $ip = 'X-'. $poll->nid .'-'. $cid .'-'. $choice->chvotes;
-      db_query("INSERT INTO {votingapi_vote} (vote_id, content_type, content_id, value, value_type, tag, uid, timestamp, hostname) VALUES (%d, '%s', %d, 1, 'option', '%s', 0, %d, '%s')", db_next_id('{votingapi_vote}'), 'advpoll', $poll->nid, $cid, $time, $ip);
+      db_query("INSERT INTO {votingapi_vote} (content_type, content_id, value, value_type, tag, uid, timestamp, vote_source) VALUES ('%s', %d, 1, 'option', '%s', 0, %d, '%s')", 'advpoll', $poll->nid, $cid, $time, $ip);
       $choice->chvotes--;
     }
   }
