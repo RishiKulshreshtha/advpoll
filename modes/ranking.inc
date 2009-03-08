@@ -145,7 +145,7 @@ function advpoll_voting_ranking_form(&$form_state, &$node, $teaser, $page, $stat
     $form['vote'] = array(
       '#type' => 'submit',
       '#value' => t('Vote'),
-      '#attributes' => array('id' => 'edit-vote-rank-'. $ranking_vote_count++),
+      '#id' => 'edit-vote-rank-'. $ranking_vote_count++,
     );
   }
   elseif ($node->build_mode == NODE_BUILD_PREVIEW) {

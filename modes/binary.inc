@@ -97,7 +97,7 @@ function advpoll_voting_binary_form(&$form_state, $node, $teaser, $page, $status
     $form['vote'] = array(
       '#type' => 'submit',
       '#value' => t('Vote'),
-      '#attributes' => array('id' => 'edit-vote-binary-'. $binary_vote_count++),
+      '#id' => 'edit-vote-binary-'. $binary_vote_count++,
       /* TODO: re-enable this.
       '#ahah' => array(
         'path' => 'advpoll/js_vote',
