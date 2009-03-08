@@ -1302,7 +1302,7 @@ function _advpoll_vote_response($node, $form_state) {
       $node->choice[$choice['cid']] = $choice;
     }
     // Update the number of choices.
-    $node->choices = count($poll->choice);
+    $node->choices = count($node->choice);
     // Get updated total number of votes from database.
     $result = db_query("SELECT value FROM {votingapi_cache} WHERE content_type = 'advpoll' AND content_id = %d AND tag = '_advpoll' AND function = 'total_votes'", $node->nid);
     if ($cache = db_fetch_object($result)) {
@@ -1313,7 +1313,7 @@ function _advpoll_vote_response($node, $form_state) {
     }
 
     list($node->voted, $node->cancel_vote) = _advpoll_user_voted($node->nid);
-    $ajax_output .= advpoll_view_results($node, NULL, NULL);
+    $ajax_output = advpoll_view_results($node, NULL, NULL);
     // Remove linebreaks as they will break jQuery's insert-HTML methods.
     $ajax_output = str_replace("\n", '', $ajax_output);
     drupal_set_header('Content-Type: text/plain; charset=utf-8');
