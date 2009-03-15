@@ -272,6 +272,7 @@ function advpoll_form(&$node, $form_state) {
 
   $form['title'] = array(
     '#type' => 'textfield',
+    '#maxlength' => 255,
     '#title' => check_plain($type->title_label),
     '#required' => TRUE,
     '#default_value' => $node->title,
