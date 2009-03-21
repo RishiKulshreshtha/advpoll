@@ -396,3 +396,10 @@ function advpoll_update_8() {
   }
   return $ret;
 }
+
+/**
+ * No-op update to clear Voting API cache after fixing http://drupal.org/node/361593
+ */
+function advpoll_update_6000() {
+  return array();
+}
