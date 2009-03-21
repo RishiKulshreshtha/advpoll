@@ -192,11 +192,11 @@ function _advpoll_electoral_list_access($node) {
 }
 
 function _advpoll_votes_access($node) {
-  return strstr($node->type, 'advpoll_') && user_access('inspect all votes') && ($node->show_votes || user_access('administer polls') && $node->votes > 0);
+  return strstr($node->type, 'advpoll_') && $node->votes > 0 && ((user_access('inspect all votes') && $node->show_votes) || user_access('administer polls'));
 }
 
 function _advpoll_clear_votes_access($node) {
-  return strstr($node->type, 'advpoll_') && user_access('administer polls');
+  return strstr($node->type, 'advpoll_') && $node->votes > 0 && user_access('administer polls');
 }
 
 function _advpoll_writeins_access($node) {
@@ -1097,8 +1097,8 @@ function advpoll_votes_page($node) {
     $output = '<div class="advpoll-cant-show-votes">'. t('This poll is configured to not display individual votes.') . '</div>';
   }
 
-  // Only display button if votes exist and user has access.
-  if ($node->votes > 0 && _advpoll_clear_votes_access($node)) {
+  // Only display the button if the user has access.
+  if (_advpoll_clear_votes_access($node)) {
     $output .= drupal_get_form('advpoll_clear_votes_form', $node->nid);
   } 
   print theme('page', $output);
