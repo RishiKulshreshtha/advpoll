@@ -188,7 +188,7 @@ function _advpoll_results_access($node) {
 }
 
 function _advpoll_electoral_list_access($node) {
-  return user_access('access electoral_list') && strstr($node->type, 'advpoll_') &&  $node->use_list;
+  return user_access('access electoral list') && strstr($node->type, 'advpoll_') &&  $node->use_list;
 }
 
 function _advpoll_votes_access($node) {
