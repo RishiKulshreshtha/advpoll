@@ -282,14 +282,14 @@ function advpoll_form(&$node, $form_state) {
     '#required' => TRUE,
     '#default_value' => $node->title,
   );
-  $form['body_filter']['body'] = array(
+  $form['body_field']['body'] = array(
     '#type' => 'textarea',
     '#title' => check_plain($type->body_label),
     '#required' => FALSE,
     '#default_value' => $node->body,
   );
 
-  $form['body_filter']['format'] = filter_form($node->format);
+  $form['body_field']['format'] = filter_form($node->format);
 
   if (isset($form_state['values']['choices'])) {
     $choices = $form_state['values']['choices'];
