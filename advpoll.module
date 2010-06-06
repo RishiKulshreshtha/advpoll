@@ -725,7 +725,7 @@ function advpoll_insert($node) {
   db_query("INSERT INTO {advpoll} (nid, mode, use_list, active, max_choices, algorithm, show_votes, start_date, end_date, writeins, show_writeins, question) VALUES (%d, '%s', %d, %d, %d, '%s', %d, '%s', '%s', %d, %d, '%s')", $node->nid, $mode, $node->settings['use_list'], !$node->settings['close'], $node->settings['max_choices'], $node->settings['algorithm'], $node->settings['show_votes'], $node->settings['start_date'] ? strtotime($node->settings['start_date']) : 0, $node->settings['end_date'] ? strtotime($node->settings['end_date']) : 0, $node->settings['writeins'], $node->settings['show_writeins'], isset($node->question) ? $node->question : '');
 
   // Insert the choices.
-  _advpoll_insert_choices($node->nid);
+  _advpoll_insert_choices($node);
 }
 
 /**
@@ -737,7 +737,7 @@ function advpoll_update($node) {
 
   db_query("UPDATE {advpoll} SET active = %d, max_choices = %d, algorithm = '%s', use_list = %d, show_votes = %d, start_date = '%s', end_date = '%s', writeins = %d, show_writeins = %d, question = '%s' WHERE nid = %d", !$node->settings['close'], $node->settings['max_choices'], $node->settings['algorithm'], $node->settings['use_list'], $node->settings['show_votes'], $node->settings['start_date'] ? strtotime($node->settings['start_date']) : 0, $node->settings['end_date'] ? strtotime($node->settings['end_date']) : 0, $node->settings['writeins'], $node->settings['show_writeins'], isset($node->question) ? $node->question : '', $node->nid);
 
-  _advpoll_insert_choices($node->nid);
+  _advpoll_insert_choices($node);
   votingapi_recalculate_results('advpoll', $node->nid);
 }
 
@@ -1162,21 +1162,34 @@ function _advpoll_is_active($node, $return_status = FALSE) {
 }
 
 /**
+ * Update the choices added or removed when editing a node
+ */
+function advpoll_binary_node_form_submit($form, &$form_state) {
+  // Get the submitted (modified) choices from _POST and replace them in the form values
+  // Note: we pass choice data via _POST to allow for dynamic addition of choices.
+  // TODO: Implement AHAH support for advpoll node form
+  if (isset($_POST['choice'])) {
+    $form_state['values']['choice'] = $_POST['choice'];
+  }
+}
+
+/**
  * Insert/update the choices for a poll.
  *
  * Note: we pass choice data via _POST to allow for dynamic addition of choices.
  * Drupal 6 AHAH support will let us switch to a clean implementation.
  */
-function _advpoll_insert_choices($nid) {
-  $node = node_load($nid);
+function _advpoll_insert_choices($node) {
+  $nid = $node->nid;
   $weight = 0;
   $seen_ids = array();
-  foreach ($_POST['choice'] as $index => $choice) {
+  foreach ($node->choice as $index => $choice) {
     if ($choice['label'] != '') {
       // Mark this choice id as being seen.
       $seen_ids[$index] = 1;
-      if (!isset($node->choice[$index])) {
-        db_query("INSERT INTO {advpoll_choices} (nid, label, weight) VALUES (%d, '%s', %d)", $nid, $choice['label'], $weight);
+      $choice_exist = db_result(db_query("SELECT COUNT(cid) FROM {advpoll_choices} WHERE nid = %d AND cid = %d", $nid, $index));
+      if (!$choice_exist) {
+        db_query("INSERT INTO {advpoll_choices} (cid, nid, label, weight) VALUES (%d, %d, '%s', %d)", $index, $nid, $choice['label'], $weight);
       }
       else {
         db_query("UPDATE {advpoll_choices} SET label = '%s', weight = %d WHERE cid = %d", $choice['label'], $weight, $index);
@@ -1185,10 +1198,16 @@ function _advpoll_insert_choices($nid) {
     }
   }
 
+  $all_ids_query = db_query("SELECT cid FROM {advpoll_choices} WHERE nid = %d", $nid);
+  while ($row = db_fetch_array($all_ids_query)) {
+      $all_ids[$row['cid']] = 1;
+  }
+
+
   // Delete any choices that were removed (either dynamically or by submitting
   // a blank label).
   if (isset($node->choice)) {
-    foreach ($node->choice as $id => $choice) {
+    foreach ($all_ids as $id => $choice) {
       if (!isset($seen_ids[$id])) {
         db_query('DELETE FROM {advpoll_choices} WHERE cid = %d', $id);
         drupal_set_message(t('Deleted choice %label', array('%label' => $choice['label'])), 'status');
