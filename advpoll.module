@@ -33,7 +33,17 @@ function advpoll_help($path, $arg) {
  * Implementation of hook_perm().
  */
 function advpoll_perm() {
-  return array('create polls', 'edit polls', 'edit own polls', 'vote on polls', 'cancel own vote', 'administer polls', 'inspect all votes', 'access electoral list', 'add write-ins');
+  return array(
+    'create polls',
+    'edit polls',
+    'edit own polls',
+    'vote on polls',
+    'cancel own vote',
+    'administer polls',
+    'inspect all votes',
+    'access electoral list',
+    'add write-ins',
+  );
 }
 
 /**
