@@ -181,6 +181,9 @@ function advpoll_menu() {
   return $menu;
 }
 
+/**
+ * Implementation of hook_init().
+ */
 function advpoll_init() {
   // Use poll.module's stylesheet, no need to duplicate at this point.
   drupal_add_css(drupal_get_path('module', 'poll') .'/poll.css');
@@ -193,22 +196,37 @@ function advpoll_init() {
   }
 }
 
+/**
+ * Results access callback.
+ */
 function _advpoll_results_access($node) {
   return strstr($node->type, 'advpoll_') && _advpoll_is_active($node) && $node->votes > 0 && !$node->voted && _advpoll_can_view_results($node);
 }
 
+/**
+ * Electorial list access callback.
+ */
 function _advpoll_electoral_list_access($node) {
   return user_access('access electoral list') && strstr($node->type, 'advpoll_') &&  $node->use_list;
 }
 
+/**
+ * Votes access callback.
+ */
 function _advpoll_votes_access($node) {
   return strstr($node->type, 'advpoll_') && $node->votes > 0 && ((user_access('inspect all votes') && $node->show_votes) || user_access('administer polls'));
 }
 
+/**
+ * Clear votes access callback.
+ */
 function _advpoll_clear_votes_access($node) {
   return strstr($node->type, 'advpoll_') && $node->votes > 0 && user_access('administer polls');
 }
 
+/**
+ * Writeins access callback.
+ */
 function _advpoll_writeins_access($node) {
   if (!strstr($node->type, 'advpoll_') || !user_access('administer polls')) {
     return FALSE;
@@ -254,6 +272,9 @@ function theme_advpoll_block_latest_poll() {
   return $output;
 }
 
+/**
+ * .
+ */
 function advpoll_latest_poll() {
   $result = db_query('SELECT MAX(n.nid) AS nid FROM {node} n INNER JOIN {advpoll} p ON p.nid = n.nid WHERE n.status = 1 AND p.active = 1');
   $poll = db_fetch_object($result);
@@ -534,6 +555,9 @@ function advpoll_form(&$node, $form_state) {
   return $form;
 }
 
+/**
+ * Process advpoll_more_choices form submissions.
+ */
 function advpoll_more_choices_submit($form, &$form_state) {
   // Based on poll.module
   node_form_submit_build_node($form, $form_state);
@@ -812,6 +836,9 @@ function advpoll_delete($node) {
   db_query("DELETE FROM {votingapi_cache} WHERE content_id = %d AND content_type = 'advpoll'", $node->nid);
 }
 
+/**
+ * List all polls as a page.
+ */
 function advpoll_page() {
   // List all polls
   $sql = "SELECT n.nid, n.title, p.active, n.created, c.value AS votes FROM {node} n INNER JOIN {advpoll} p ON n.nid = p.nid INNER JOIN {votingapi_cache} c ON n.nid = c.content_id WHERE n.status = 1 AND c.tag = '_advpoll' AND c.function = 'total_votes' AND c.content_type = 'advpoll' GROUP BY n.nid, n.title, p.active, n.created, c.value ORDER BY n.created DESC";
@@ -906,6 +933,9 @@ function advpoll_electoral_list_page($node) {
   print theme('page', $output);
 }
 
+/**
+ * Build electorial list form.
+ */
 function advpoll_electoral_list_form(&$form_state, $nid) {
   $form['electoral_list'] = array(
     '#type' => 'fieldset',
@@ -995,6 +1025,8 @@ function advpoll_electoral_list_form_validate($form, &$form_state) {
 }
 
 /**
+ * Process advpoll_electorial_list form submissions.
+ *
  * Submit changes to the electoral list.
  */
 function advpoll_electoral_list_form_submit($form, &$form_state) {
@@ -1172,6 +1204,8 @@ function _advpoll_is_active($node, $return_status = FALSE) {
 }
 
 /**
+ * Process advpoll_binary_node form submissions.
+ *
  * Update the choices added or removed when editing a node
  */
 function advpoll_binary_node_form_submit($form, &$form_state) {
@@ -1288,6 +1322,9 @@ function advpoll_clear_votes_confirm_form(&$form_state, $nid) {
 }
 
 /**
+ * Process advpoll_clear_votes_confirm form submissions.
+ *
+ * Update the choices added or removed when editing a node
  * Clear all votes once the confirmation is given.
  */
 function advpoll_clear_votes_confirm_form_submit($form, &$form_state) {
@@ -1673,6 +1710,9 @@ function advpoll_writein_merge_form_validate($form, &$form_state) {
   }
 }
 
+/**
+ * Process advpoll_writein_merge form submissions.
+ */
 function advpoll_writein_merge_form_submit($form, &$form_state) {
   // Get a list of votes in this node.
   $node = $form['#node'];
@@ -1761,6 +1801,9 @@ function advpoll_writein_promote_form(&$form_state, $node) {
   return $form;
 }
 
+/**
+ * Process advpoll_writein_promote form submissions.
+ */
 function advpoll_writein_promote_form_submit($form, &$form_state) {
   if (count($form_state['values']['promote'])) {
     db_query('UPDATE {advpoll_choices} SET writein = 0 WHERE nid = %d AND cid IN(%s)', $form_state['values']['nid'], implode(', ', $form_state['values']['promote']));
