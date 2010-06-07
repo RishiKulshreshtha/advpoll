@@ -1873,3 +1873,13 @@ function advpoll_js_more_choices() {
   // Final rendering callback.
   drupal_json(array('status' => TRUE, 'data' => $output));
 }
+
+/**
+ * Implementation of hook_views_api().
+ */
+function advpoll_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'advpoll') .'/views',
+  );
+}
