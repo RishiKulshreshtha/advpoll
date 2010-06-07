@@ -1206,9 +1206,23 @@ function _advpoll_is_active($node, $return_status = FALSE) {
 /**
  * Process advpoll_binary_node form submissions.
  *
- * Update the choices added or removed when editing a node
+ * Update the choices added or removed when editing a binary poll
  */
 function advpoll_binary_node_form_submit($form, &$form_state) {
+  // Get the submitted (modified) choices from _POST and replace them in the form values
+  // Note: we pass choice data via _POST to allow for dynamic addition of choices.
+  // TODO: Implement AHAH support for advpoll node form
+  if (isset($_POST['choice'])) {
+    $form_state['values']['choice'] = $_POST['choice'];
+  }
+}
+
+/**
+ * Process advpoll_ranking_node form submissions.
+ *
+ * Update the choices added or removed when editing a ranking poll
+ */
+function advpoll_ranking_node_form_submit($form, &$form_state) {
   // Get the submitted (modified) choices from _POST and replace them in the form values
   // Note: we pass choice data via _POST to allow for dynamic addition of choices.
   // TODO: Implement AHAH support for advpoll node form
@@ -1230,23 +1244,25 @@ function _advpoll_insert_choices($node) {
   foreach ($node->choice as $index => $choice) {
     if ($choice['label'] != '') {
       // Mark this choice id as being seen.
-      $seen_ids[$index] = 1;
       $choice_exist = db_result(db_query("SELECT COUNT(cid) FROM {advpoll_choices} WHERE nid = %d AND cid = %d", $nid, $index));
       if (!$choice_exist) {
-        db_query("INSERT INTO {advpoll_choices} (cid, nid, label, weight) VALUES (%d, %d, '%s', %d)", $index, $nid, $choice['label'], $weight);
+        db_query("INSERT INTO {advpoll_choices} (nid, label, weight) VALUES (%d, '%s', %d)", $nid, $choice['label'], $weight);
+        $seen_id = db_last_insert_id('advpoll_choices', 'cid');
       }
       else {
         db_query("UPDATE {advpoll_choices} SET label = '%s', weight = %d WHERE cid = %d", $choice['label'], $weight, $index);
+        $seen_id = $index;
       }
+      $seen_ids[$seen_id] = 1;
       $weight++;
     }
   }
 
-  $all_ids_query = db_query("SELECT cid FROM {advpoll_choices} WHERE nid = %d", $nid);
+  $all_ids_query = db_query("SELECT cid, label FROM {advpoll_choices} WHERE nid = %d", $nid);
+  $all_ids = array();
   while ($row = db_fetch_array($all_ids_query)) {
-      $all_ids[$row['cid']] = 1;
+      $all_ids[$row['cid']] = array('label' => $row['label']);
   }
-
 
   // Delete any choices that were removed (either dynamically or by submitting
   // a blank label).
