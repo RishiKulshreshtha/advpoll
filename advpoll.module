@@ -41,6 +41,7 @@ function advpoll_perm() {
     'cancel own vote',
     'administer polls',
     'inspect all votes',
+    'show vote results',
     'access electoral list',
     'add write-ins',
   );
@@ -813,7 +814,12 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
   }
   else {
     // Show results (the user has voted, poll is closed or poll has passed).
-    $poll = advpoll_view_results($node, $teaser, $page);
+    if (user_access('show vote results')) {
+      $poll = advpoll_view_results($node, $teaser, $page);
+    }
+    elseif (user_access('cancel own vote')) {
+      $poll = _advpoll_show_cancel_form($node);
+    }
   }
 
   $node->content['poll'] = array(
@@ -1434,7 +1440,12 @@ function _advpoll_vote_response($node, $form_state) {
     }
 
     list($node->voted, $node->cancel_vote) = _advpoll_user_voted($node->nid);
-    $ajax_output = advpoll_view_results($node, NULL, NULL);
+    if (!user_access('show vote results')) {
+      $ajax_output = advpoll_view_results($node, NULL, NULL);
+    }
+    elseif (user_access('cancel own vote')) {
+      $ajax_output = _advpoll_show_cancel_form($node);
+    }
     // Remove linebreaks as they will break jQuery's insert-HTML methods.
     $ajax_output = str_replace("\n", '', $ajax_output);
     drupal_set_header('Content-Type: text/plain; charset=utf-8');
