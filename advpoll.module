@@ -1440,11 +1440,12 @@ function _advpoll_vote_response($node, $form_state) {
     }
 
     list($node->voted, $node->cancel_vote) = _advpoll_user_voted($node->nid);
-    if (!user_access('show vote results')) {
-      $ajax_output = advpoll_view_results($node, NULL, NULL);
+    $ajax_output = '';
+    if (user_access('show vote results')) {
+      $ajax_output .= advpoll_view_results($node, NULL, NULL);
     }
     elseif (user_access('cancel own vote')) {
-      $ajax_output = _advpoll_show_cancel_form($node);
+      $ajax_output .= _advpoll_show_cancel_form($node);
     }
     // Remove linebreaks as they will break jQuery's insert-HTML methods.
     $ajax_output = str_replace("\n", '', $ajax_output);
