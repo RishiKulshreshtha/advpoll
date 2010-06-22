@@ -46,8 +46,8 @@ Drupal.behaviors.handleWriteins = function(context) {
     }
     var ranOnce = false;
     // Toggle display of the write-in text box for radios/checkboxes.
-    $(".vote-choices input[@type=radio], .vote-choices input[@type=checkbox]", poll).click(function() {
-      var isLast = $(this).val() == $(".vote-choices input[@type=radio]:last, .vote-choices input[@type=checkbox]:last", poll).val();
+    $(".vote-choices input[type=radio], .vote-choices input[type=checkbox]", poll).click(function() {
+      var isLast = $(this).val() == $(".vote-choices input[type=radio]:last, .vote-choices input[type=checkbox]:last", poll).val();
       var type = $(this).attr("type"); 
       // The logic here is tricky but intentional.
       if (isLast || type == "radio") {
