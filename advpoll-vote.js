@@ -8,7 +8,7 @@ Drupal.behaviors.attachVoteAjax = function(context) {
     var thisForm = this;
     var options = {
       dataType: "json",
-      after: function(data) {
+      success: function(data) {
         // Remove previous messages
         $("div.messages").remove(); 
         
@@ -26,7 +26,7 @@ Drupal.behaviors.attachVoteAjax = function(context) {
         $(".form-submit", thisForm).removeAttr("disabled");
 
       },
-      before: function() {
+      beforeSubmit: function() {
         // Disable the Vote button.
         $(".form-submit", thisForm).attr("disabled", "disabled");
       }
