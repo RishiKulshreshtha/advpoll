@@ -165,7 +165,7 @@ Drupal.behaviors.rankingDragAndDrop = function(context) {
         else {
           // Hack to have tabledrag.js parse the new table rows.
           $existingChoicesTable.removeClass('dragtable-processed');
-          Drupal.attachBehaviors();
+          Drupal.attachBehaviors($existingChoicesTable);
         }
         $(".vote-status", mainForm).show().html(Drupal.t("Choices remaining: %choices", {"%choices" : maxChoices - currentChoices}));
         if (currentChoices > maxChoices) {
