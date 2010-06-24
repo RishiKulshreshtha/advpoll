@@ -27,7 +27,7 @@ function advpoll_remove_voter() {
 
 
 /**
- * Callback for cancelling a vote.
+ * Callback for canceling a vote.
  */
 function advpoll_cancel($node) {
   global $user;
@@ -46,7 +46,7 @@ function advpoll_cancel($node) {
       $function($node, $user_votes);
     }
     votingapi_recalculate_results('advpoll', $node->nid);
-    drupal_set_message(t('Your vote was cancelled.'));
+    drupal_set_message(t('Your vote was canceled.'));
   }
   else {
     drupal_set_message(t('You are not allowed to cancel an invalid choice.'), 'error');
