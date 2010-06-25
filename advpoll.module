@@ -199,9 +199,6 @@ function advpoll_init() {
   // Load the mode include files.
   _advpoll_list_modes();
 
-  if (module_exists('jquery_ui')) {
-    jquery_ui_add(array('ui.draggable', 'ui.droppable', 'ui.sortable'));
-  }
 }
 
 /**
@@ -1657,6 +1654,13 @@ function advpoll_theme() {
     'advpoll_voting_ranking_form' => array(
       'template' => 'advpoll-display-ranking-form',
       'file' => 'modes/ranking.inc',
+      'arguments' => array(
+        'form' => NULL,
+      )
+    ),
+    'advpoll_voting_binary_form' => array(
+      'template' => 'advpoll-display-binary-form',
+      'file' => 'modes/binary.inc',
       'arguments' => array(
         'form' => NULL,
       )
