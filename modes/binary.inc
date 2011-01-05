@@ -348,3 +348,21 @@ function advpoll_cancel_binary($node, $user_vote) {
     }
   }
 }
+
+
+function advpoll_votingapi_views_formatters($field = array()) {
+  if ($field->field == 'value') {
+    return array(
+      'advpoll_binary_views_tags_formatter' => t('Advpoll Binary: choice label'),
+    );
+  }
+}
+
+// Display the name of the candidate, not the value of the vote
+function advpoll_binary_views_tags_formatter($value, $field, $columns) {
+  $node_type = isset($columns->node_type) ? $columns->node_type : db_result(db_query("SELECT type FROM {node} WHERE nid = %d", $columns->nid));
+  $result = "";
+  if ($node_type == 'advpoll_binary')
+    $result = db_result(db_query("SELECT label FROM {advpoll_choices} WHERE nid = %d AND cid = %d", $columns->nid, $columns->votingapi_vote_node_tag));
+  return $result;    
+}

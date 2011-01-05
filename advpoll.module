@@ -1706,3 +1706,17 @@ function advpoll_views_api() {
     'path' => drupal_get_path('module', 'advpoll') .'/views',
   );
 }
+
+
+/**
+ * Implementation of hook_votingapi_relationships().
+ */
+function advpoll_votingapi_relationships() {
+  $relationships[] = array(
+    'description' => t('Advanced Poll'),
+    'content_type' => 'advpoll',
+    'base_table' => 'node',
+    'content_id_column' => 'nid',
+  );
+  return $relationships;
+}
