@@ -1,4 +1,3 @@
-// $Id$
 
 if (!Drupal.advpoll) {
   Drupal.advpoll = {};

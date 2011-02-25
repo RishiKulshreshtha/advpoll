@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 function advpoll_info_binary() {
   return array(

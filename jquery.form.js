@@ -1,4 +1,3 @@
-// $Id$
 
 /*
  * jQuery form plugin, http://jquery.com/dev/svn/trunk/plugins/form/form.js?format=txt

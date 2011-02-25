@@ -1,4 +1,3 @@
-// $Id$
 
 if (typeof(Drupal) == "undefined" || !Drupal.advpoll) {
   Drupal.advpoll = {};
