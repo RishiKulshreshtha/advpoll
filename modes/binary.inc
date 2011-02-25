@@ -1,5 +1,4 @@
 <?php
-// $Id$
 function advpoll_binary_longname() {
   return t("Binary Poll");
 }

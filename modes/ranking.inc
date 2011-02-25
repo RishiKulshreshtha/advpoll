@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 function advpoll_ranking_longname() {
   return t("Ranking");
