@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * @file advpoll-display-binary-form.tpl.php

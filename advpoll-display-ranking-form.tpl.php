@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * @file advpoll-display-ranking-form.tpl.php

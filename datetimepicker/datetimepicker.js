@@ -1,4 +1,3 @@
-// $Id$
 
 /* JavaScript files used by the date and time picker. 
  * 
