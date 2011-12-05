@@ -1,0 +1,8 @@
+Michele Wickham - Smashing Ideas, Inc. 12/2/2011
+1. Added create_view_block field in installation script. 
+2. Added fields to node add/edit form to enable creation of a block for a specific poll
+3. Updated insert/update queries to save new create_view_block field value
+4. Added views generation to advpoll.views.inc
+5. clear/truncate cache_views table whenever a new poll is created or edited to enable view blocks to be updated.
+6. Created update hook to ensure creation of necessary column in advpoll table for existing users of module
+7. Added a node template to eliminate clickable headline within node views of blocks.

@@ -70,6 +70,12 @@ function advpoll_schema() {
         'not null' => TRUE,
         'default' => 1,
       ),
+      'create_view_block' => array(
+        'description' => t('Whether or not to generate a view block for this poll.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
       'start_date' => array(
         'description' => t('The date at which voting begins for the poll.'),
         'type' => 'int',

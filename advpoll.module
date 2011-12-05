@@ -370,7 +370,7 @@ function advpoll_form(&$node, $form_state) {
     '#parents' => array('more_choices'), // Don't pollute $form['choice']
     '#prefix' => '<div id="more-choices">',
     '#suffix' => '</div>',
-    '#description' => t("If the number of choices above isn't enough, click hereto add more choices."),
+    '#description' => t("If the number of choices above isn't enough, click here to add more choices."),
     '#weight' => 1,
     /*
     '#submit' => array('advpoll_more_choices_submit'), // If no JavaScript.
@@ -476,32 +476,25 @@ function advpoll_form(&$node, $form_state) {
     '#default_value' => isset($node->active) ? !$node->active : 0,
   );
 
-  $default_start_date = '';
-  $default_end_date = '';
-  $time = format_date(time(), 'custom', 'Y-m-d H:i:s O');
-  // Specify default dates if default duration is set and we are creating a node.
-  if (variable_get('advpoll_runtime_'. $type->type, FALSE) && !$editing) {
-    $default_start_date = $time;
-    $default_end_date = format_date(time() + variable_get('advpoll_runtime_'. $type->type, ''), 'custom', 'Y-m-d H:i:s O');
-  }
+  // MW modified to allow easier to use date fields and set default dates in a range
+  // of now to +30 days.  Eliminated minutes and seconds for ease of use.
+  $format = 'Y-m-d';
+  $date = date($format, time());
 
   $form['settings']['start_date'] = array(
-    '#type' => 'textfield',
+    '#type' => 'date_select',
+    '#default_value' => isset($node->start_date) ? date($format,$node->start_date):$date,
+    '#date_format' => $format,
     '#title' => t('Starting date'),
-    '#description' => t('The date that the poll opens. Format: %time. Leave blank if you want the poll to open now.', array('%time' => $time)),
-    '#size' => 25,
-    '#maxlength' => 25,
-    // Use !empty() because 0 signifies that no date should be used.
-    '#default_value' => !empty($node->start_date) ? format_date($node->start_date, 'custom', 'Y-m-d H:i:s O') : $default_start_date,
+    '#description' => t('The date that the poll opens.'),
   );
+  
   $form['settings']['end_date'] = array(
-    '#type' => 'textfield',
+    '#type' => 'date_select',
+    '#default_value' => isset($node->end_date) ? date($format,$node->end_date): date($format, time()+ (60 * 60 * 24 * 30)),
+    '#date_format' => $format,
     '#title' => t('Ending date'),
-    '#description' => t('The date that the poll closes. Format: %time. Leave blank if you do not want the poll to close automatically.', array('%time' => $time)),
-    '#size' => 25,
-    '#maxlength' => 25,
-    // Use !empty() because 0 signifies that no date should be used.
-    '#default_value' => !empty($node->end_date) ? format_date($node->end_date, 'custom', 'Y-m-d H:i:s O') : $default_end_date,
+    '#description' => t('Leave blank if you do not want the poll to close automatically.'),
   );
 
   // Settings available for users with 'administer polls' permission.
@@ -539,6 +532,12 @@ function advpoll_form(&$node, $form_state) {
       '#title' => t('Show individual votes'),
       '#description' => t('Users with the appropriate permissions will be able to see how each person voted.'),
       '#default_value' => $default_show_votes,
+    );
+    $form['settings']['create_view_block'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Generate a view block of this poll'),
+      '#description' => t('When checked, a view block for this particular poll will be generated upon submission.'),
+      '#default_value' => isset($node->create_view_block) ? $node->create_view_block : 0,
     );
   }
   else {
@@ -756,10 +755,12 @@ function advpoll_validate($node, &$form) {
  */
 function advpoll_insert($node) {
   $mode = _advpoll_get_mode($node->type);
-  db_query("INSERT INTO {advpoll} (nid, mode, use_list, active, max_choices, algorithm, show_votes, start_date, end_date, writeins, show_writeins, question) VALUES (%d, '%s', %d, %d, %d, '%s', %d, '%s', '%s', %d, %d, '%s')", $node->nid, $mode, $node->settings['use_list'], !$node->settings['close'], $node->settings['max_choices'], $node->settings['algorithm'], $node->settings['show_votes'], $node->settings['start_date'] ? strtotime($node->settings['start_date']) : 0, $node->settings['end_date'] ? strtotime($node->settings['end_date']) : 0, $node->settings['writeins'], $node->settings['show_writeins'], isset($node->question) ? $node->question : '');
+  db_query("INSERT INTO {advpoll} (nid, mode, use_list, active, max_choices, algorithm, show_votes, create_view_block, start_date, end_date, writeins, show_writeins, question) VALUES (%d, '%s', %d, %d, %d, '%s', %d, %d, '%s', '%s', %d, %d, '%s')", $node->nid, $mode, $node->settings['use_list'], !$node->settings['close'], $node->settings['max_choices'], $node->settings['algorithm'], $node->settings['show_votes'], $node->settings['create_view_block'], $node->settings['start_date'] ? strtotime($node->settings['start_date']) : 0, $node->settings['end_date'] ? strtotime($node->settings['end_date']) : 0, $node->settings['writeins'], $node->settings['show_writeins'], isset($node->question) ? $node->question : '');
 
   // Insert the choices.
   _advpoll_insert_choices($node);
+  advpoll_update_views();
+ 
 }
 
 /**
@@ -769,10 +770,19 @@ function advpoll_insert($node) {
  */
 function advpoll_update($node) {
 
-  db_query("UPDATE {advpoll} SET active = %d, max_choices = %d, algorithm = '%s', use_list = %d, show_votes = %d, start_date = '%s', end_date = '%s', writeins = %d, show_writeins = %d, question = '%s' WHERE nid = %d", !$node->settings['close'], $node->settings['max_choices'], $node->settings['algorithm'], $node->settings['use_list'], $node->settings['show_votes'], $node->settings['start_date'] ? strtotime($node->settings['start_date']) : 0, $node->settings['end_date'] ? strtotime($node->settings['end_date']) : 0, $node->settings['writeins'], $node->settings['show_writeins'], isset($node->question) ? $node->question : '', $node->nid);
+  db_query("UPDATE {advpoll} SET active = %d, max_choices = %d, algorithm = '%s', use_list = %d, show_votes = %d, create_view_block = %d,  start_date = '%s', end_date = '%s', writeins = %d, show_writeins = %d, question = '%s' WHERE nid = %d", !$node->settings['close'], $node->settings['max_choices'], $node->settings['algorithm'], $node->settings['use_list'], $node->settings['show_votes'], $node->settings['create_view_block'], $node->settings['start_date'] ? strtotime($node->settings['start_date']) : 0, $node->settings['end_date'] ? strtotime($node->settings['end_date']) : 0, $node->settings['writeins'], $node->settings['show_writeins'], isset($node->question) ? $node->question : '', $node->nid);
 
   _advpoll_insert_choices($node);
   votingapi_recalculate_results('advpoll', $node->nid);
+  advpoll_update_views();
+}
+
+function advpoll_update_views() {
+ // MW truncating the cache_views table causes views to be refreshed.  This is necessary
+ // to allow dynamically created poll view blocks to be made available for display around the site
+ // after the content manager has added/edited a binary poll.  Note that the cache_clear method
+ // would not work on this table.
+  db_query("TRUNCATE TABLE cache_views");
 }
 
 /**
@@ -1204,7 +1214,7 @@ function theme_advpoll_results($title, $results, $votes, $links, $nid, $voted, $
   $output = '<div class="poll">';
   if ($results) {
     $output .= $results;
-    $output .= '<div class="total">'. t('Total voters: %votes', array('%votes' => $votes)) .'</div>';
+    $output .= '<div class="total">'. t('Total votes: %votes', array('%votes' => $votes)) .'<br>'.t('Vote again tomorrow').'</div>';
   }
   else {
     $output .= '<p class="message">'. t('No votes have been recorded for this poll.') .'</p>';
@@ -1617,6 +1627,14 @@ function advpoll_writein_promote_form_submit($form, &$form_state) {
 }
 
 /**
+ * Implementation of hook_theme_registry_alter().
+ */
+function advpoll_theme_registry_alter(&$theme_registry) {
+    // MW - added a node template to prevent clickable  headline on polls being displayed in node view
+    $theme_registry['node']['theme paths'][] = drupal_get_path('module', 'advpoll');
+}
+
+/**
  * Implementation of hook_theme().
  */
 function advpoll_theme() {
@@ -1719,3 +1737,17 @@ function advpoll_votingapi_relationships() {
   );
   return $relationships;
 }
+
+
+function advpoll_update_6100 () {
+  $ret = array();
+  $attributes = array(
+        'description' => t('Whether or not to generate a view block for this poll.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      );
+  db_add_field($ret, 'advpoll', 'create_view_block', $attributes);
+  return $ret;    
+}
+
