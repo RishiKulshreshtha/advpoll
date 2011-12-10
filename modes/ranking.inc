@@ -133,8 +133,22 @@ function advpoll_voting_ranking_form(&$form_state, $node, $teaser, $page, $statu
     '#attributes' => array('class' => 'edit-nid'),
   );
 
+  $advpollSettings = variable_get('advpoll_settings', array());
+  $votingMode = (!empty($advpollSettings['voting_mode'])) ? $advpollSettings['voting_mode'] : '0';
+  $showResults = (!empty($advpollSettings['show_results'])) ? $advpollSettings['show_results'] : 'aftervote';
+
+  $displayButton = true;
+
+  // no need to show vote button if user isn't actually able to vote
+  if ($votingMode == 1 && isset($_COOKIE['advpollvote' . $node->nid])) {
+     $displayButton = false;
+     $duration = (!empty($advpollSettings['cookie_duration'])) ? $advpollSettings['cookie_duration'] : 60;
+  }  
+  
+  $voted = _advpoll_user_voted($node->nid);
+  
   // Hide vote button if user can't vote and instead display appropriate message.
-  if ($node->build_mode != NODE_BUILD_PREVIEW && advpoll_eligible($node) && $status == 'open') {
+  if ($node->build_mode != NODE_BUILD_PREVIEW && advpoll_eligible($node) && $status == 'open' && $displayButton && !$voted[0]) {
     static $ranking_vote_count = 0;
     $form['vote'] = array(
       '#type' => 'submit',
@@ -142,11 +156,17 @@ function advpoll_voting_ranking_form(&$form_state, $node, $teaser, $page, $statu
       '#id' => 'edit-vote-rank-'. $ranking_vote_count++,
     );
   }
-  elseif ($node->build_mode == NODE_BUILD_PREVIEW) {
-    // Display nothing.
-  }
+  elseif (!$displayButton) {
+        $form['message']['#value'] = t('There is a delay of @time minutes between votes. Try again later.', array('@time' => $duration));
+  } 
   elseif ($status == 'pending') {
     $form['message']['#value'] = t('This poll opens @time.', array('@time' => format_date($node->start_date)));
+  }
+  elseif ($node->build_mode == NODE_BUILD_PREVIEW || $voted[0]) {
+     if ($voted[0] && !user_access('cancel own vote')) {
+         $form['message']['#value'] = (!empty($advpollSettings['vote_completed'])) ? $advpollSettings['vote_completed'] : t('Thank you for voting.');
+     }
+    // Display nothing.
   }
   else {
     global $user;
@@ -714,6 +734,7 @@ function advpoll_voting_ranking_form_submit($form, &$form_state) {
         $vote['tag'] = $choice;
         $vote['content_type'] = 'advpoll';
         $vote['content_id'] = $node->nid;
+        $vote = _advpoll_votesettings($vote, $node->nid);
         $votes[] = $vote;
       }
     }

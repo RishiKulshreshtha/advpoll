@@ -86,8 +86,8 @@ function advpoll_results_page($node) {
  */
 function advpoll_votes_page($node) {
 
-  drupal_set_title(check_plain($node->title));
-
+  drupal_set_title(check_plain($node->title));  
+  
   if ($node->show_votes || user_access('administer polls')) {
     $output = t('This table lists all the recorded votes for this poll. If anonymous users are allowed to vote, they will be identified by the IP address of the computer they used when they voted.');
 

@@ -140,9 +140,10 @@ function advpoll_views_default_views() {
         ),
         'type' => array(
             'operator' => 'in',
-            'value' => array(
-                'advpoll_binary' => 'advpoll_binary',
-            ),
+                'value' => array(
+                    'advpoll_binary' => 'advpoll_binary',
+                    'advpoll_ranking' => 'advpoll_ranking',
+                ),
             'group' => '0',
             'exposed' => FALSE,
             'expose' => array(
@@ -152,20 +153,6 @@ function advpoll_views_default_views() {
             'id' => 'type',
             'table' => 'node',
             'field' => 'type',
-            'relationship' => 'none',
-        ),
-        'active' => array(
-            'operator' => '=',
-            'value' => '1',
-            'group' => '0',
-            'exposed' => FALSE,
-            'expose' => array(
-                'operator' => FALSE,
-                'label' => '',
-            ),
-            'id' => 'active',
-            'table' => 'advpoll',
-            'field' => 'active',
             'relationship' => 'none',
         ),
         'end_date' => array(
@@ -234,7 +221,7 @@ function advpoll_views_default_views() {
 function _advpoll_generate_blocks($view) {
     // MW generates custom view blocks based on selection criteria
     $result = db_query('SELECT * FROM {node} n INNER JOIN {advpoll} p ON p.nid = n.nid WHERE n.status = 1 
-                        AND p.active = 1 AND p.create_view_block = 1 AND p.start_date < %d 
+                        AND p.create_view_block = 1 AND p.start_date < %d 
                         AND p.end_date > %d', time(), time());
 
     // MW note that the id of a given block is unique since it's based on the displayed node's
@@ -262,6 +249,7 @@ function _advpoll_generate_blocks($view) {
                 'operator' => 'in',
                 'value' => array(
                     'advpoll_binary' => 'advpoll_binary',
+                    'advpoll_ranking' => 'advpoll_ranking',
                 ),
                 'group' => '0',
                 'exposed' => FALSE,
@@ -272,20 +260,6 @@ function _advpoll_generate_blocks($view) {
                 'id' => 'type',
                 'table' => 'node',
                 'field' => 'type',
-                'relationship' => 'none',
-            ),
-            'active' => array(
-                'operator' => '=',
-                'value' => '1',
-                'group' => '0',
-                'exposed' => FALSE,
-                'expose' => array(
-                    'operator' => FALSE,
-                    'label' => '',
-                ),
-                'id' => 'active',
-                'table' => 'advpoll',
-                'field' => 'active',
                 'relationship' => 'none',
             ),
             'create_view_block' => array(
