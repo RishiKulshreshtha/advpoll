@@ -5,8 +5,7 @@ dependencies[] = date
 core = 6.x
 package = "Voting"
 
-; Information added by drupal.org packaging script on 2011-02-25
-version = "6.x-1.x-dev"
+version = "6.x-3.x-dev"
 core = "6.x"
 project = "advpoll"
 datestamp = "1298618812"
