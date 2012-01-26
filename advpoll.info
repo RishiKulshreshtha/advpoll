@@ -10,3 +10,10 @@ core = "6.x"
 project = "advpoll"
 datestamp = "1298618812"
 
+
+; Information added by drupal.org packaging script on 2011-12-13
+version = "6.x-3.x-dev"
+core = "6.x"
+project = "advpoll"
+datestamp = "1323734635"
+

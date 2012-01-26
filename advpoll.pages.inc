@@ -83,7 +83,7 @@ function advpoll_results_page($node) {
 
 /**
  * Display the votes page.
- */
+ **/
 function advpoll_votes_page($node) {
 
   drupal_set_title(check_plain($node->title));  

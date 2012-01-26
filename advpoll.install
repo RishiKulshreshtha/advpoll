@@ -71,7 +71,7 @@ function advpoll_schema() {
         'default' => 1,
       ),
       'create_view_block' => array(
-        'description' => t('Whether or not to generate a view block for this poll.'),
+        'description' => t('Whether or not to generate a block for this poll.'),
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
@@ -102,6 +102,13 @@ function advpoll_schema() {
       ),
       'question' => array(
         'description' => t('Optional text to display as the subject of the poll.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'footer_message' => array(
+        'description' => t('Optional text to display in the footer of the poll.'),
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
@@ -220,5 +227,18 @@ function advpoll_update_6100 () {
         'default' => 0,
       );
   db_add_field($ret, 'advpoll', 'create_view_block', $attributes);
+  return $ret;    
+}
+
+function advpoll_update_6200 () {
+  $ret = array();
+  $attributes = array(
+        'description' => t('Optional text to display in the footer of the poll.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      );
+  db_add_field($ret, 'advpoll', 'footer_message', $attributes);
   return $ret;    
 }

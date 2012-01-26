@@ -14,7 +14,6 @@ define('ADVPOLL_INITIAL_CHOICES', 5);
 define('ADVPOLL_USE_QUESTION', 0);
 define('ADVPOLL_CHOICE_MAX_LENGTH', 2048);
 
-
 /**
  * Implementation of hook_help().
  */
@@ -80,10 +79,6 @@ function advpoll_node_info() {
  * Implementation of hook_menu().
  */
 function advpoll_menu() {
-    global $user;
-
-    $modes = _advpoll_list_modes();
-    $menu = array();
 
     $menu['advpoll/cancel/%node'] = array(
         'title' => 'Cancel Vote',
@@ -255,16 +250,47 @@ function _advpoll_writeins_access($node) {
 /**
  * Implementation of hook_block().
  */
-function advpoll_block($op = 'list') {
+function advpoll_block($op='list', $delta=0, $edit=array()) {
     switch ($op) {
         case 'list':
-            $blocks['latest_poll']['info'] = t('Latest poll');
+            $blocks['latest_poll']['info'] = t('Advanced Poll: Latest poll');
+            $items = _advpoll_available_blocks();
+
+            if ($items) {
+                foreach ($items as $poll) {
+                    $blocks['adv_poll_' . $poll->nid]['info'] = t('Advanced Poll: @title', array('@title' => $poll->title));
+                }
+            }
+
             return $blocks;
         case 'view':
-            $block['subject'] = t('Latest poll');
-            $block['content'] = theme('advpoll_block_latest_poll');
+            if ($delta == 'latest_poll') {
+                $block['subject'] = t('Latest poll');
+                $block['content'] = theme('advpoll_block_latest_poll');
+            } else {
+                $nid = intval((str_replace('adv_poll_', '', $delta)));
+                $block['subject'] = t('Poll');
+                $block['content'] = theme('advpoll_view_block_poll', $nid);
+            }
             return $block;
     }
+}
+
+/**
+ * Retrieve available blocks for block list
+ */
+function _advpoll_available_blocks() {
+    $timestamp = time();
+    $result = db_query('SELECT n.nid, n.title FROM {node} n INNER JOIN {advpoll} p ON p.nid = n.nid WHERE n.status = 1 
+                        AND p.create_view_block = 1 AND p.start_date < %d 
+                        AND p.end_date > %d', $timestamp, $timestamp);
+    $results = array();
+
+    while ($node = db_fetch_object($result)) {
+        $results[] = $node;
+    }
+
+    return $results;
 }
 
 /**
@@ -284,10 +310,29 @@ function theme_advpoll_block_latest_poll() {
 }
 
 /**
+ * Content of the block when a poll is flagged to display as a block
+ */
+function theme_advpoll_view_block_poll($nid) {
+    $node = advpoll_view(node_load($nid), FALSE, FALSE);
+    $output = '';
+    if ($node && $node->status && $node->active && $node->start_date < time() && $node->end_date > time()) {
+        $output .= '<h3>' . $node->title . '</h3>';
+        $output .= drupal_render($node->content);
+    }
+    return $output;
+}
+
+/**
  * .
  */
 function advpoll_latest_poll() {
-    $result = db_query('SELECT MAX(n.nid) AS nid FROM {node} n INNER JOIN {advpoll} p ON p.nid = n.nid WHERE n.status = 1 AND p.active = 1');
+    $timestamp = time();
+    $result = db_query('SELECT MAX(n.nid) AS nid FROM {node} n INNER JOIN {advpoll} p ON p.nid = n.nid WHERE 
+                        n.status = 1 
+                        AND p.active = 1
+                        AND p.start_date < %d 
+                        AND p.end_date > %d', $timestamp, $timestamp);
+    
     $poll = db_fetch_object($result);
     // The nid will be NULL if there are no active polls.
     if ($poll->nid) {
@@ -494,7 +539,7 @@ function advpoll_form(&$node, $form_state) {
 
     $form['settings']['end_date'] = array(
         '#type' => 'date_select',
-        '#default_value' => isset($node->end_date) ? date($format, $node->end_date) : date($format, time() + (60 * 60 * 24 * 30)),
+        '#default_value' => isset($node->end_date) ? date($format, $node->end_date) : date($format, time() + (60 * 60 * 24 * 365)),
         '#date_format' => $format,
         '#title' => t('Ending date'),
         '#description' => t('Leave blank if you do not want the poll to close automatically.'),
@@ -538,8 +583,8 @@ function advpoll_form(&$node, $form_state) {
         );
         $form['settings']['create_view_block'] = array(
             '#type' => 'checkbox',
-            '#title' => t('Generate a view block of this poll'),
-            '#description' => t('When checked, a view block for this particular poll will be generated upon submission.'),
+            '#title' => t('Generate a block for this poll'),
+            '#description' => t('When checked, a block for this particular poll will be generated upon submission.'),
             '#default_value' => isset($node->create_view_block) ? $node->create_view_block : 0,
         );
     } else {
@@ -573,11 +618,11 @@ function advpoll_more_choices_submit($form, &$form_state) {
  * Implementation of hook_form_alter().
  */
 function advpoll_form_alter(&$form, $form_state, $form_id) {
-    if ($form_id == 'node_type_form' && isset($form['identity']['type'])) {        
+    if ($form_id == 'node_type_form' && isset($form['identity']['type'])) {
         $node_type = $form['old_type']['#value'];
         // Display poll settings if this is an advpoll content type.
         if ($form['module']['#value'] == 'advpoll') {
-            $advpollSettings = variable_get('advpoll_settings', array());            
+            $advpollSettings = variable_get('advpoll_settings', array());
             // Include JS and CSS for the show_writeins setting toggle.
             drupal_add_js(drupal_get_path('module', 'advpoll') . '/advpoll-form.js', 'module');
             drupal_add_css(drupal_get_path('module', 'advpoll') . '/advpoll.css', 'module');
@@ -645,7 +690,7 @@ function advpoll_form_alter(&$form, $form_state, $form_id) {
                 '#type' => 'checkbox',
                 '#title' => t('Show individual votes by default'),
                 '#description' => t('Let users with appropriate permissions see how each person voted by default for new polls. Users with the <em>administer polls</em> permission will be able to override this setting.'),
-                '#default_value' =>  ADVPOLL_SHOW_VOTES,
+                '#default_value' => ADVPOLL_SHOW_VOTES,
             );
 
             $view_results = array(
@@ -761,7 +806,6 @@ function advpoll_insert($node) {
 
     // Insert the choices.
     _advpoll_insert_choices($node);
-    advpoll_update_views();
 }
 
 /**
@@ -775,85 +819,12 @@ function advpoll_update($node) {
 
     _advpoll_insert_choices($node);
     votingapi_recalculate_results('advpoll', $node->nid);
-    advpoll_update_views();
 }
-
-function advpoll_update_views() {
-    // MW truncating the cache_views table causes views to be refreshed.  This is necessary
-    // to allow dynamically created poll view blocks to be made available for display around the site
-    // after the content manager has added/edited a binary poll.  Note that the cache_clear method
-    // would not work on this table.
-    db_query("TRUNCATE TABLE cache_views");
-}
-
 
 /**
  * Implementation of hook_view().
  */
 function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
-  drupal_add_css(drupal_get_path('module', 'advpoll') .'/advpoll.css', 'module');
-  $status = _advpoll_is_active($node, TRUE);
-  
-  // Add question to content if defined.
-  if ($node->question !== '') {
-    $node->content['question'] = array(
-      '#weight' => 1,
-      '#value' => theme('advpoll_question', check_plain($node->question)),
-    );
-  }
-
-  $displayResults = _advpoll_check_settings($node);  
-  
-  //print 'display results '.$displayResults;
-  if ($node->build_mode == NODE_BUILD_PREVIEW || !$displayResults) {
-        static $add_js = TRUE;
-        if ($add_js) {
-            // Add javascript for posting voting forms with Ajax.
-            drupal_add_js(drupal_get_path('module', 'advpoll') . '/advpoll-vote.js', 'module');
-            drupal_add_js('misc/jquery.form.js', 'module');
-            $add_js = FALSE;
-        }      
-    // Previewing a node, so display voting form instead of results.
-    $poll = drupal_get_form('advpoll_voting_'. _advpoll_get_mode($node->type) .'_form', $node, $teaser, $page, $status);
-    
-  }
-  else if (!$node->voted && arg(2) != 'results' && ($status == 'open' || $status == 'pending') && $displayResults) {
-        // OLD: else if ((!$node->voted && arg(2) != 'results' && ($status == 'open' || $status == 'pending')) || $_POST['op'] == 'Vote') {
-        // User hasn't voted, we're not on the results tab and poll is open or
-        // opening in the future. Also, we check the $_POST array if the user tried
-        // to submit a vote, so we can validate and give an error if the user has
-        // already voted on the poll.
-        $poll = drupal_get_form('advpoll_voting_' . $node->mode . '_form', $node, $teaser, $page, $status);
-
-        static $add_js = TRUE;
-        if ($add_js) {
-            // Add javascript for posting voting forms with Ajax.
-            drupal_add_js(drupal_get_path('module', 'advpoll') . '/advpoll-vote.js', 'module');
-            drupal_add_js('misc/jquery.form.js', 'module');
-            $add_js = FALSE;
-        }
-    } else {
-        // Show results (the user has voted, poll is closed or poll has passed).
-        if (user_access('show vote results')) {
-            $poll = advpoll_view_results($node, $teaser, $page);
-        } elseif (user_access('cancel own vote')) {
-            $poll = _advpoll_show_cancel_form($node);
-        }
-    }
-    $node->content['poll'] = array(
-        '#weight' => 2,
-        '#value' => $poll,
-    );
-    return node_prepare($node, $teaser);
-}
-
-
-
-/**
- * Implementation of hook_view().
- 
-function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
-
     drupal_add_css(drupal_get_path('module', 'advpoll') . '/advpoll.css', 'module');
     $status = _advpoll_is_active($node, TRUE);
 
@@ -864,13 +835,21 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
             '#value' => theme('advpoll_question', check_plain($node->question)),
         );
     }
-    
+
     $displayResults = _advpoll_check_settings($node);
 
+    //print 'display results '.$displayResults;
     if ($node->build_mode == NODE_BUILD_PREVIEW || !$displayResults) {
+        static $add_js = TRUE;
+        if ($add_js) {
+            // Add javascript for posting voting forms with Ajax.
+            drupal_add_js(drupal_get_path('module', 'advpoll') . '/advpoll-vote.js', 'module');
+            drupal_add_js('misc/jquery.form.js', 'module');
+            $add_js = FALSE;
+        }
         // Previewing a node, so display voting form instead of results.
         $poll = drupal_get_form('advpoll_voting_' . _advpoll_get_mode($node->type) . '_form', $node, $teaser, $page, $status);
-    } else if (!$displayResults && !$node->voted && arg(2) != 'results' && ($status == 'open' || $status == 'pending')) {
+    } else if (!$node->voted && arg(2) != 'results' && ($status == 'open' || $status == 'pending') && $displayResults) {
         // OLD: else if ((!$node->voted && arg(2) != 'results' && ($status == 'open' || $status == 'pending')) || $_POST['op'] == 'Vote') {
         // User hasn't voted, we're not on the results tab and poll is open or
         // opening in the future. Also, we check the $_POST array if the user tried
@@ -901,6 +880,57 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
 }
 
 /**
+ * Implementation of hook_view().
+
+  function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
+
+  drupal_add_css(drupal_get_path('module', 'advpoll') . '/advpoll.css', 'module');
+  $status = _advpoll_is_active($node, TRUE);
+
+  // Add question to content if defined.
+  if ($node->question !== '') {
+  $node->content['question'] = array(
+  '#weight' => 1,
+  '#value' => theme('advpoll_question', check_plain($node->question)),
+  );
+  }
+
+  $displayResults = _advpoll_check_settings($node);
+
+  if ($node->build_mode == NODE_BUILD_PREVIEW || !$displayResults) {
+  // Previewing a node, so display voting form instead of results.
+  $poll = drupal_get_form('advpoll_voting_' . _advpoll_get_mode($node->type) . '_form', $node, $teaser, $page, $status);
+  } else if (!$displayResults && !$node->voted && arg(2) != 'results' && ($status == 'open' || $status == 'pending')) {
+  // OLD: else if ((!$node->voted && arg(2) != 'results' && ($status == 'open' || $status == 'pending')) || $_POST['op'] == 'Vote') {
+  // User hasn't voted, we're not on the results tab and poll is open or
+  // opening in the future. Also, we check the $_POST array if the user tried
+  // to submit a vote, so we can validate and give an error if the user has
+  // already voted on the poll.
+  $poll = drupal_get_form('advpoll_voting_' . $node->mode . '_form', $node, $teaser, $page, $status);
+
+  static $add_js = TRUE;
+  if ($add_js) {
+  // Add javascript for posting voting forms with Ajax.
+  drupal_add_js(drupal_get_path('module', 'advpoll') . '/advpoll-vote.js', 'module');
+  drupal_add_js('misc/jquery.form.js', 'module');
+  $add_js = FALSE;
+  }
+  } else {
+  // Show results (the user has voted, poll is closed or poll has passed).
+  if (user_access('show vote results')) {
+  $poll = advpoll_view_results($node, $teaser, $page);
+  } elseif (user_access('cancel own vote')) {
+  $poll = _advpoll_show_cancel_form($node);
+  }
+  }
+  $node->content['poll'] = array(
+  '#weight' => 2,
+  '#value' => $poll,
+  );
+  return node_prepare($node, $teaser);
+  }
+
+  /**
  * Implementation of hook_delete().
  */
 function advpoll_delete($node) {
@@ -1304,7 +1334,7 @@ function _advpoll_vote_response($node, $form_state) {
     $msg = (!empty($advpollSettings['vote_registered'])) ? $advpollSettings['vote_registered'] : t('Your vote was registered.');
     $votingMode = $advpollSettings['voting_mode'];
 
-    $displayResults = _advpoll_check_settings($node);    
+    $displayResults = _advpoll_check_settings($node);
     // Ajax response
     if ($form_state['values']['ajax']) {
         // Do not show results (there are cases where people can vote but shouldn't see a result
@@ -1471,8 +1501,7 @@ function _advpoll_writeins_voting_form_validate($node, $writein_option, $writein
  * Handle JavaScript voting.
  */
 function advpoll_js_vote() {
-    /*still trying to figure this out */
-   
+    /* still trying to figure this out */
 }
 
 /**
@@ -1705,6 +1734,11 @@ function advpoll_theme() {
         'advpoll_block_latest_poll' => array(
             'arguments' => array(),
         ),
+        'advpoll_view_block_poll' => array(
+            'arguments' => array(
+                'nid' => NULL,
+            ),
+        ),
         'advpoll_results' => array(
             'arguments' => array(
                 'title' => '',
@@ -1816,7 +1850,7 @@ function _advpoll_votesettings($vote, $nid) {
     return $vote;
 }
 
-function _advpoll_check_settings ($node) {
+function _advpoll_check_settings($node) {
     // function to check against admin settings only.
     $advpollSettings = variable_get('advpoll_settings', array());
     $votingMode = (!empty($advpollSettings['voting_mode'])) ? $advpollSettings['voting_mode'] : '0';
@@ -1834,12 +1868,12 @@ function _advpoll_check_settings ($node) {
     if ($votingMode == 1 && isset($_COOKIE['advpollvote' . $node->nid])) {
         return true;
     }
-    
+
     if (!$votingMode && $node->voted) {
         return true;
     }
 
 
-    
+
     return false;
 }
