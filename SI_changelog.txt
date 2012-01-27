@@ -29,11 +29,8 @@ Michele Wickham - Smashing Ideas, Inc. 12/2/2011
 2. Removed datetimepicker folder as the date fields now use standard Date API display and the
    included files were not being used.
 
-TODO: Need to overhaul poll results functionality.  It makes displaying the state of 'aftervote' 
-difficult/impossible as it stands now.
-
-Will break out the aftervote, always, after close items to be multiple choice so that users have
-more flexibility around how and when a poll displays.
-
-Finish implementing an optional footer field - this is wanted for current client to display a 
-related watch message or link at the bottom of a poll block.
+1/27/2012
+1. Updated write-ins functionality to prevent empty or double results, particularly in 
+   cases where configuration is set to allow unlimited voting.
+2. Implemented optional footer message, updated preprocess and templates to reflect update.
+3. General cleanup - removed some commented out items, variables that weren't being used/set.
