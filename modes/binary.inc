@@ -21,8 +21,6 @@ function advpoll_algorithms_binary() {
  * 
  * This creates a list of choices to allow the user to vote on choices.
  */
-
-
 function advpoll_voting_binary_form(&$form_state, $node, $teaser, $page, $status) {
 
     static $binary_form_count = 0;
@@ -86,7 +84,7 @@ function advpoll_voting_binary_form(&$form_state, $node, $teaser, $page, $status
         '#value' => $node->nid,
         '#attributes' => array('class' => 'edit-nid'),
     );
-    
+
     $advpollSettings = variable_get('advpoll_settings', array());
     $votingMode = (!empty($advpollSettings['voting_mode'])) ? $advpollSettings['voting_mode'] : '0';
     $showResults = (!empty($advpollSettings['show_results'])) ? $advpollSettings['show_results'] : 'aftervote';
@@ -98,7 +96,7 @@ function advpoll_voting_binary_form(&$form_state, $node, $teaser, $page, $status
         $displayButton = false;
         $duration = (!empty($advpollSettings['cookie_duration'])) ? $advpollSettings['cookie_duration'] : 60;
     }
-    
+
     $voted = _advpoll_user_voted($node->nid);
     $format = 'F j, Y';
 
@@ -106,17 +104,17 @@ function advpoll_voting_binary_form(&$form_state, $node, $teaser, $page, $status
     if ($node->build_mode != NODE_BUILD_PREVIEW && advpoll_eligible($node) && $status == 'open' && $node->active && $displayButton && !$voted[0]) {
         static $binary_vote_count = 0;
         $form['vote'] = array(
-          '#type' => 'submit',
-          '#value' => t('Vote'),
-          '#id' => 'edit-vote-binary-'. $binary_vote_count++,
-          /* TODO: re-enable this.
-          '#ahah' => array(
-            'path' => 'advpoll/js_vote',
-            'wrapper' => 'vote-choices',
-            'method' => 'replace',
-            'effect' => 'none',
-          ),
-          */
+            '#type' => 'submit',
+            '#value' => t('Vote'),
+            '#id' => 'edit-vote-binary-' . $binary_vote_count++,
+                /* TODO: re-enable this.
+                  '#ahah' => array(
+                  'path' => 'advpoll/js_vote',
+                  'wrapper' => 'vote-choices',
+                  'method' => 'replace',
+                  'effect' => 'none',
+                  ),
+                 */
         );
     } elseif (!$displayButton) {
         $form['message']['#value'] = t('There is a delay of @time minutes between votes. Try again later.', array('@time' => $duration));
@@ -125,10 +123,10 @@ function advpoll_voting_binary_form(&$form_state, $node, $teaser, $page, $status
     } elseif ($node->active && $showResults === 'afterclose' && $voted[0]) {
         $form['message']['#value'] = t('The results will be revealed on @time.', array('@time' => date($format, $node->end_date)));
     } elseif ($node->build_mode == NODE_BUILD_PREVIEW || $voted[0]) {
-         if ($voted[0] && !user_access('cancel own vote')) {
-             
-             $form['message']['#value'] = (!empty($advpollSettings['vote_completed'])) ? $advpollSettings['vote_completed'] : t('Thank you for voting.');
-         }        
+        if ($voted[0] && !user_access('cancel own vote')) {
+
+            $form['message']['#value'] = (!empty($advpollSettings['vote_completed'])) ? $advpollSettings['vote_completed'] : t('Thank you for voting.');
+        }
         // Display nothing.
     } else {
         $ineligible = (!empty($advpollSettings['ineligible_message'])) ? $advpollSettings['ineligible_message'] : t('You are not eligible to vote in this poll.');
@@ -190,7 +188,7 @@ function advpoll_view_results_binary($node, $teaser, $page) {
             $output .= theme('advpoll_bar', _advpoll_choice_markup($choice['label'], $node->format, FALSE), $percentage, format_plural($count, '1 vote', '@count votes'), $choice);
         }
     }
-    
+
     return array('results' => $output, 'votes' => $total_votes);
 }
 
@@ -211,39 +209,46 @@ function advpoll_voting_binary_form_submit($form, &$form_state) {
     $node = $form['#node'];
 
     // Do submission specific to writeins.
+    // This call generates a $votes object when a new item is added by a write in.
     _advpoll_writeins_voting_form_submit($node, $form_state, $votes, 1);
 
-    if ($node->max_choices == 1) {
-        // Plurality voting
-        // Ignore write-in choice that has already been taken care of.
-        if (!$node->writeins || !isset($form_state['values']['choice'][$form_state['values']['writein_key']])) {
-            $vote['value'] = 1;
-            $vote['tag'] = $form_state['values']['choice'];
-            $vote['value_type'] = 'option';
-            $vote['content_id'] = $node->nid;
-            $vote['content_type'] = 'advpoll';
-            $vote = _advpoll_votesettings($vote, $node->nid);
-            $votes[] = $vote;
-        }
-    } else {
-        // Approval voting
-        foreach ($form_state['values']['choice'] as $choice => $selected) {
-            $vote = array();
+    
+    // if no $votes set, then no write-in, generate the appropriate vote object values.  
+    if (!$votes) {
+
+        if ($node->max_choices == 1) {
+            // Plurality voting
             // Ignore write-in choice that has already been taken care of.
-            if (!$node->writeins || $choice != $form_state['values']['writein_key']) {
-                $vote['value'] = $choice;
-                if ($selected) {
-                    $vote['value_type'] = 'option';
-                    $vote['tag'] = $choice;
-                    $vote['value'] = 1;
-                    $vote['content_id'] = $node->nid;
-                    $vote['content_type'] = 'advpoll';
-                    $vote = _advpoll_votesettings($vote, $node->nid);
-                    $votes[] = $vote;
+            if (!$node->writeins || !isset($form_state['values']['choice'][$form_state['values']['writein_key']])) {
+                $vote['value'] = 1;
+                $vote['tag'] = $form_state['values']['choice'];
+                $vote['value_type'] = 'option';
+                $vote['content_id'] = $node->nid;
+                $vote['content_type'] = 'advpoll';
+                $vote = _advpoll_votesettings($vote, $node->nid);
+                $votes[] = $vote;
+            }
+        } else {
+            // Approval voting
+            foreach ($form_state['values']['choice'] as $choice => $selected) {
+                $vote = array();
+                // Ignore write-in choice that has already been taken care of.
+                if (!$node->writeins || $choice != $form_state['values']['writein_key']) {
+                    $vote['value'] = $choice;
+                    if ($selected) {
+                        $vote['value_type'] = 'option';
+                        $vote['tag'] = $choice;
+                        $vote['value'] = 1;
+                        $vote['content_id'] = $node->nid;
+                        $vote['content_type'] = 'advpoll';
+                        $vote = _advpoll_votesettings($vote, $node->nid);
+                        $votes[] = $vote;
+                    }
                 }
             }
         }
     }
+
     // Need to pass a blank array as the second parameter so that existing votes aren't deleted......
     $results = votingapi_set_votes($votes, array());
     _advpoll_vote_response($node, $form_state);
@@ -338,7 +343,10 @@ function advpoll_voting_binary_form_validate($form, &$form_state) {
  */
 function advpoll_preprocess_advpoll_voting_binary_form(&$variables) {
     $form = &$variables['form'];
+
+    //print_r($form);
     $variables['message'] = drupal_render($form['message']);
+    $variables['footer_message'] = $form['#node']->footer_message;
 
     // If write-ins are used on this form.
     if (isset($form['writein_choice'])) {

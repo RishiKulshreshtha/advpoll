@@ -21,7 +21,10 @@ html.js input.writein-choice {
   font-weight: bold;
 }
 
-
+p.footer-message {
+    clear: both;
+    float: left;
+}
 /***
  * Begin drag-and-drop specific styles for ranking polls.
  */

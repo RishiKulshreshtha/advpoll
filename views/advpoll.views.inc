@@ -57,6 +57,27 @@ function advpoll_views_data() {
         ),
     );    
 
+     //MW added to allow display/sorting in views
+    $data['advpoll']['footer_message'] = array(
+        'title' => t('Poll Footer Message'),
+        'help' => t('Displays optional poll footer message.'),
+        'field' => array(
+            'handler' => 'views_handler_field',
+            'click sortable' => TRUE,
+        ),
+        'sort' => array(
+            'handler' => 'views_handler_sort',
+        ),
+        'filter' => array(
+            'handler' => 'views_handler_filter_string',
+        ),
+        'argument' => array(
+            'handler' => 'views_handler_argument_string',
+        ),
+    );
+   
+    
+    
     $data['advpoll']['start_date'] = array(
         'title' => t('Start date'),
         'help' => t('The date at which voting begins for the poll.'),

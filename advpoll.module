@@ -332,7 +332,7 @@ function advpoll_latest_poll() {
                         AND p.active = 1
                         AND p.start_date < %d 
                         AND p.end_date > %d', $timestamp, $timestamp);
-    
+
     $poll = db_fetch_object($result);
     // The nid will be NULL if there are no active polls.
     if ($poll->nid) {
@@ -382,16 +382,7 @@ function advpoll_form(&$node, $form_state) {
     } else {
         $choices = max(2, isset($node->choice) && count($node->choice) ? count($node->choice) : ADVPOLL_INITIAL_CHOICES);
     }
-
-    if (ADVPOLL_USE_QUESTION || (isset($node->question) && $node->question !== '')) {
-        $form['question'] = array(
-            '#type' => 'textfield',
-            '#title' => t('Question'),
-            '#default_value' => $node->question,
-            '#maxlength' => 255,
-        );
-    }
-
+    
     $form['choices'] = array(
         '#type' => 'hidden',
         '#value' => $choices,
@@ -432,6 +423,14 @@ function advpoll_form(&$node, $form_state) {
               'effect' => 'fade',
               ),
              */
+    );
+
+    $form['footer_message'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Footer Message'),
+        '#description' => t('Optional message that can appear below the poll.'),
+        '#default_value' => $node->footer_message,
+        '#maxlength' => 255,
     );
 
     // First, loop through any currently existing choices.
@@ -802,10 +801,41 @@ function advpoll_validate($node, &$form) {
  */
 function advpoll_insert($node) {
     $mode = _advpoll_get_mode($node->type);
-    db_query("INSERT INTO {advpoll} (nid, mode, use_list, active, max_choices, algorithm, show_votes, create_view_block, start_date, end_date, writeins, show_writeins, question) VALUES (%d, '%s', %d, %d, %d, '%s', %d, %d, '%s', '%s', %d, %d, '%s')", $node->nid, $mode, $node->settings['use_list'], !$node->settings['close'], $node->settings['max_choices'], $node->settings['algorithm'], $node->settings['show_votes'], $node->settings['create_view_block'], $node->settings['start_date'] ? strtotime($node->settings['start_date']) : 0, $node->settings['end_date'] ? strtotime($node->settings['end_date']) : 0, $node->settings['writeins'], $node->settings['show_writeins'], isset($node->question) ? $node->question : '');
+    if ($mode) {
 
-    // Insert the choices.
-    _advpoll_insert_choices($node);
+        db_query("INSERT INTO {advpoll} 
+        (nid, 
+         mode, 
+         use_list, 
+         active, 
+         max_choices, 
+         algorithm, 
+         show_votes, 
+         create_view_block, 
+         start_date, 
+         end_date, 
+         writeins, 
+         show_writeins, 
+         footer_message) 
+         VALUES (%d, '%s', %d, %d, %d, '%s', %d, %d, '%s', '%s', %d, %d, '%s')", 
+         $node->nid, 
+         $mode, 
+         $node->settings['use_list'], 
+         !$node->settings['close'], 
+         $node->settings['max_choices'], 
+         $node->settings['algorithm'], 
+         $node->settings['show_votes'], 
+         $node->settings['create_view_block'], 
+         $node->settings['start_date'] ? strtotime($node->settings['start_date']) : 0, 
+         $node->settings['end_date'] ? strtotime($node->settings['end_date']) : 0, 
+         $node->settings['writeins'], 
+         $node->settings['show_writeins'], 
+         isset($node->footer_message) ? filter_xss($node->footer_message) : ''
+        );
+
+        // Insert the choices.
+        _advpoll_insert_choices($node);
+    }
 }
 
 /**
@@ -815,7 +845,30 @@ function advpoll_insert($node) {
  */
 function advpoll_update($node) {
 
-    db_query("UPDATE {advpoll} SET active = %d, max_choices = %d, algorithm = '%s', use_list = %d, show_votes = %d, create_view_block = %d,  start_date = '%s', end_date = '%s', writeins = %d, show_writeins = %d, question = '%s' WHERE nid = %d", !$node->settings['close'], $node->settings['max_choices'], $node->settings['algorithm'], $node->settings['use_list'], $node->settings['show_votes'], $node->settings['create_view_block'], $node->settings['start_date'] ? strtotime($node->settings['start_date']) : 0, $node->settings['end_date'] ? strtotime($node->settings['end_date']) : 0, $node->settings['writeins'], $node->settings['show_writeins'], isset($node->question) ? $node->question : '', $node->nid);
+    db_query("UPDATE {advpoll} 
+              SET active = %d, 
+              max_choices = %d, 
+              algorithm = '%s', 
+              use_list = %d, 
+              show_votes = %d, 
+              create_view_block = %d,  
+              start_date = '%s', 
+              end_date = '%s', 
+              writeins = %d, 
+              show_writeins = %d, 
+              footer_message = '%s'  
+              WHERE nid = %d", 
+              !$node->settings['close'], 
+              $node->settings['max_choices'], 
+              $node->settings['algorithm'], 
+              $node->settings['use_list'], 
+              $node->settings['show_votes'], 
+              $node->settings['create_view_block'], 
+              $node->settings['start_date'] ? strtotime($node->settings['start_date']) : 0, 
+              $node->settings['end_date'] ? strtotime($node->settings['end_date']) : 0, 
+              $node->settings['writeins'], 
+              $node->settings['show_writeins'], 
+              isset($node->footer_message) ? filter_xss($node->footer_message) : '', $node->nid);
 
     _advpoll_insert_choices($node);
     votingapi_recalculate_results('advpoll', $node->nid);
@@ -827,14 +880,6 @@ function advpoll_update($node) {
 function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
     drupal_add_css(drupal_get_path('module', 'advpoll') . '/advpoll.css', 'module');
     $status = _advpoll_is_active($node, TRUE);
-
-    // Add question to content if defined.
-    if ($node->question !== '') {
-        $node->content['question'] = array(
-            '#weight' => 1,
-            '#value' => theme('advpoll_question', check_plain($node->question)),
-        );
-    }
 
     $displayResults = _advpoll_check_settings($node);
 
@@ -848,7 +893,10 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
             $add_js = FALSE;
         }
         // Previewing a node, so display voting form instead of results.
-        $poll = drupal_get_form('advpoll_voting_' . _advpoll_get_mode($node->type) . '_form', $node, $teaser, $page, $status);
+        $mode = _advpoll_get_mode($node->type);
+        if ($mode) {
+            $poll = drupal_get_form('advpoll_voting_' . $mode . '_form', $node, $teaser, $page, $status);
+        }
     } else if (!$node->voted && arg(2) != 'results' && ($status == 'open' || $status == 'pending') && $displayResults) {
         // OLD: else if ((!$node->voted && arg(2) != 'results' && ($status == 'open' || $status == 'pending')) || $_POST['op'] == 'Vote') {
         // User hasn't voted, we're not on the results tab and poll is open or
@@ -880,57 +928,6 @@ function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
 }
 
 /**
- * Implementation of hook_view().
-
-  function advpoll_view($node, $teaser = FALSE, $page = FALSE) {
-
-  drupal_add_css(drupal_get_path('module', 'advpoll') . '/advpoll.css', 'module');
-  $status = _advpoll_is_active($node, TRUE);
-
-  // Add question to content if defined.
-  if ($node->question !== '') {
-  $node->content['question'] = array(
-  '#weight' => 1,
-  '#value' => theme('advpoll_question', check_plain($node->question)),
-  );
-  }
-
-  $displayResults = _advpoll_check_settings($node);
-
-  if ($node->build_mode == NODE_BUILD_PREVIEW || !$displayResults) {
-  // Previewing a node, so display voting form instead of results.
-  $poll = drupal_get_form('advpoll_voting_' . _advpoll_get_mode($node->type) . '_form', $node, $teaser, $page, $status);
-  } else if (!$displayResults && !$node->voted && arg(2) != 'results' && ($status == 'open' || $status == 'pending')) {
-  // OLD: else if ((!$node->voted && arg(2) != 'results' && ($status == 'open' || $status == 'pending')) || $_POST['op'] == 'Vote') {
-  // User hasn't voted, we're not on the results tab and poll is open or
-  // opening in the future. Also, we check the $_POST array if the user tried
-  // to submit a vote, so we can validate and give an error if the user has
-  // already voted on the poll.
-  $poll = drupal_get_form('advpoll_voting_' . $node->mode . '_form', $node, $teaser, $page, $status);
-
-  static $add_js = TRUE;
-  if ($add_js) {
-  // Add javascript for posting voting forms with Ajax.
-  drupal_add_js(drupal_get_path('module', 'advpoll') . '/advpoll-vote.js', 'module');
-  drupal_add_js('misc/jquery.form.js', 'module');
-  $add_js = FALSE;
-  }
-  } else {
-  // Show results (the user has voted, poll is closed or poll has passed).
-  if (user_access('show vote results')) {
-  $poll = advpoll_view_results($node, $teaser, $page);
-  } elseif (user_access('cancel own vote')) {
-  $poll = _advpoll_show_cancel_form($node);
-  }
-  }
-  $node->content['poll'] = array(
-  '#weight' => 2,
-  '#value' => $poll,
-  );
-  return node_prepare($node, $teaser);
-  }
-
-  /**
  * Implementation of hook_delete().
  */
 function advpoll_delete($node) {
@@ -1226,10 +1223,11 @@ function _advpoll_insert_choices($node) {
 function _advpoll_get_mode($node_type) {
     if ($node_type) {
         $mode = explode('advpoll_', $node_type, 2);
-        return $mode[1];
-    } else {
-        drupal_set_message(t('No mode specified for content type %type.', array('%type' => $node_type)), 'error');
-        return '';
+        if ($mode) {
+            return $mode[1];
+        } else {
+            return '';
+        }
     }
 }
 
@@ -1292,20 +1290,16 @@ function _advpoll_block_resultslink($node) {
     );
 }
 
-/**
- * Theme an optional question.
- */
-function theme_advpoll_question($question) {
-    return '<p class="poll-question">' . $question . '</p>';
-}
-
-function theme_advpoll_results($title, $results, $votes, $links, $nid, $voted, $cancel_vote) {
+function theme_advpoll_results($title, $results, $votes, $links, $nid, $voted, $cancel_vote, $footer_message) {
     $output = '<div class="poll">';
     if ($results) {
         $output .= $results;
         $output .= '<div class="total">' . t('Total votes: %votes', array('%votes' => $votes)) . '</div>';
     } else {
         $output .= '<p class="message">' . t('No votes have been recorded for this poll.') . '</p>';
+    }
+    if ($footer_message) {
+        $output .= '<p class="footer-message">'.$footer_message.'</p>';
     }
     $output .= '</div>';
     return $output;
@@ -1390,7 +1384,7 @@ function advpoll_view_results(&$node, $teaser, $page) {
     //if (_advpoll_can_view_results($node)) {
     if (function_exists('advpoll_view_results_' . $mode)) {
         $results = call_user_func('advpoll_view_results_' . $mode, $node, $teaser, $page);
-        $output .= theme('advpoll_results', check_plain($node->title), $results['results'], $results['votes'], isset($node->links) ? $node->links : array(), $node->nid, $node->voted, $node->cancel_vote);
+        $output .= theme('advpoll_results', check_plain($node->title), $results['results'], $results['votes'], isset($node->links) ? $node->links : array(), $node->nid, $node->voted, $node->cancel_vote, $node->footer_message);
     }
     $output .= _advpoll_show_cancel_form($node);
     return $output;
@@ -1514,6 +1508,7 @@ function _advpoll_writeins_voting_form_submit($node, $form_state, &$votes, $vote
         // Check if someone has previously voted for this choice.
         $result = db_query("SELECT cid FROM {advpoll_choices} WHERE nid = %d AND LOWER(label) = LOWER('%s')", $node->nid, $form_state['values']['writein_choice']);
         $db_vote = db_fetch_object($result);
+
         // If there's more than one match, redo the query, being more exact.
         if ($db_vote && $second_vote = db_fetch_object($result)) {
             $result = db_query("SELECT cid FROM {advpoll_choices} WHERE nid = %d AND label = '%s'", $node->nid, $form_state['values']['writein_choice']);
@@ -1532,7 +1527,7 @@ function _advpoll_writeins_voting_form_submit($node, $form_state, &$votes, $vote
             $vote['value_type'] = 'option';
             $vote['content_type'] = 'advpoll';
             $vote['content_id'] = $node->nid;
-            _advpoll_votesettings($vote, $node->nid);
+            $vote = _advpoll_votesettings($vote, $node->nid);
             $votes[] = $vote;
         }
         // This write-in choice has not been previously voted for.
@@ -1557,7 +1552,7 @@ function _advpoll_writeins_voting_form_submit($node, $form_state, &$votes, $vote
             $vote['value_type'] = 'option';
             $vote['content_type'] = 'advpoll';
             $vote['content_id'] = $node->nid;
-            _advpoll_votesettings($vote, $node->nid);
+            $vote = _advpoll_votesettings($vote, $node->nid);
             $votes[] = $vote;
         }
     }
@@ -1748,6 +1743,7 @@ function advpoll_theme() {
                 'nid' => '',
                 'voted' => '',
                 'cancel_vote' => '',
+                'footer_message',
             )
         ),
         'advpoll_bar' => array(

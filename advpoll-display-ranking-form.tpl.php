@@ -9,6 +9,7 @@
  * $form_submit
  * $choice_list - choices in the poll.
  * $tabledrag_group_class
+ * $footer_message - an optional message that can display below the poll. * 
  */
 ?>
 <div class="poll">
@@ -31,4 +32,9 @@
   <?php print $form_submit; ?>
   <br />
   <?php if ($message): ?><p class="message"><?php print $message; ?></p><?php endif; ?>
+ 
 </div>
+<div class="clear-fix"></div>
+  <?php if ($footer_message): ?>
+  <p class="footer-message"><?php print $footer_message; ?></p>
+  <?php endif; ?>  
