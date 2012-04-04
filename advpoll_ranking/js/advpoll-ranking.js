@@ -14,7 +14,6 @@
         // get unique node identifier - supports multiple polls on a single page.
         
         var formID = '#advpoll-ranking-form-'+$('.advpoll-identity').attr('nid');
-        console.log(formID);
         // only rebuild draggable form if it doesn't yet exist'
         if ($(formID+' ul.selectable-list').length < 1) {
           currentIndex = 0;
