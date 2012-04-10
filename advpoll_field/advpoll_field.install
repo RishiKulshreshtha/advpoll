@@ -1,6 +1,9 @@
 <?php
 
 /*
+ * @file
+ * Advanced Poll Field Install
+ * 
  * Custom field widget used by Advanced poll to link write-in flag to each available choice.
  * 
  * Note: choice_id is necessary as a hidden field to provide a related unique value for each

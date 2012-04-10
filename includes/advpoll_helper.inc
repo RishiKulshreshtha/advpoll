@@ -1,6 +1,9 @@
 <?php
 
 /*
+ * @file
+ * Advanced Poll Helper Include
+ * 
  * Helper functions for converting node and form data into a more readable
  * and compact format that can easily be passed to sub-functions and templates.
  */
@@ -65,11 +68,11 @@ function advpoll_has_data($options, $term) {
 
   foreach ($options as $option) {
     if ($option['value'] == $term) {
-      return true;
+      return TRUE;
     }
   }
 
-  return false;
+  return FALSE;
 }
 
 /**

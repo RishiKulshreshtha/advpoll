@@ -191,7 +191,7 @@ function advpoll_node_view($node, $view_mode) {
         if (($data->state == 'close' && $data->show_results != 'afterclose') || ($data->start_date > time() || $data->end_date < time())) {
           $results = theme('advpoll_closed', array('data' => $data));
         } 
-        else if ($data->electoral && $data->show_results != 'aftervote') {
+        elseif ($data->electoral && $data->show_results != 'aftervote') {
           $results = theme('advpoll_ineligible', array('data' => $data));
         } 
         else {
@@ -253,33 +253,33 @@ function advpoll_theme($existing, $type, $theme, $path) {
       'template' => 'advpoll-bar'
     ),
     'advpoll_closed' => array(
-      'variables' => array('data' => null),
+      'variables' => array('data' => NULL),
       'path' => drupal_get_path('module', 'advpoll') . '/templates',
       'template' => 'advpoll-closed'
     ),
     'advpoll_noresults' => array(
       'variables' => array(
-        'available_date' => null, 
-        'votes' => null, 
-        'nid' => null, 
-        'cancel_form' => null
+        'available_date' => NULL, 
+        'votes' => NULL, 
+        'nid' => NULL, 
+        'cancel_form' => NULL
         ),
       'path' => drupal_get_path('module', 'advpoll') . '/templates',
       'template' => 'advpoll-noresults'
     ),
     'advpoll_results' => array(
       'variables' => array(
-        'bars' => null, 
+        'bars' => NULL, 
         'total' => 0, 
-        'voted' => null, 
-        'nid' => null, 
-        'cancel_form' => null
+        'voted' => NULL, 
+        'nid' => NULL, 
+        'cancel_form' => NULL
         ),
       'path' => drupal_get_path('module', 'advpoll') . '/templates',
       'template' => 'advpoll-results'
     ),
     'advpoll_ineligible' => array(
-      'variables' => array('data' => null),
+      'variables' => array('data' => NULL),
       'path' => drupal_get_path('module', 'advpoll') . '/templates',
       'template' => 'advpoll-ineligible'
     ),
@@ -401,7 +401,7 @@ function advpoll_validate_max_choices($element, &$form_state, $form) {
 function advpoll_display_results($nid, $data) {
 
   $output = '';
-  $form = null;
+  $form = NULL;
   if (user_access('cancel own vote') && advpoll_get_user_votes($nid)) {
     $form = drupal_get_form('advpoll_cancel_vote_form', $nid);
   }
@@ -428,10 +428,10 @@ function advpoll_display_results($nid, $data) {
     $final = advpoll_update_choices($data->choices, $results['choices']);
 
     foreach ($final as $item) {
-      $voted = false;
+      $voted = FALSE;
 
       if (in_array($item['tag'], $votes)) {
-        $voted = true;
+        $voted = TRUE;
       }
 
       $bars .= theme('advpoll_bar', array(
@@ -552,15 +552,15 @@ function advpoll_choice_form($form, &$form_state, $values) {
         }
       }
 
-      $selected = false;
+      $selected = FALSE;
       if ($input_type == 'radios') {
         if ($item === 'write-in') {
-          $selected = true;
+          $selected = TRUE;
         }
       } 
       else {
         if ($item['write-in']) {
-          $selected = true;
+          $selected = TRUE;
         }
       }
 
@@ -799,7 +799,7 @@ function advpoll_cancel_vote_submit($form, &$form_state) {
  *   choice:    The text of the choice
  *   choice_id: The unique ID of the choice
  *   write_in:  Boolean indicating whether or not the chioce was provided
- *              by a write-in vote. In this case it is always true.
+ *              by a write-in vote. In this case it is always TRUE.
  * 
  */
 
@@ -833,11 +833,11 @@ function advpoll_process_writein($nid, $writein, $data) {
 /*
  * Gets content for most recent poll block.
  * @return
- * A rendered node or null.
+ * A rendered node or NULL.
  */
 
 function advpoll_get_recent() {
-  $node = null;
+  $node = NULL;
   $result = db_query("SELECT n.nid FROM {node} n
                       LEFT JOIN {field_data_advpoll_dates} d 
                       ON d.entity_id = n.nid 
@@ -878,12 +878,12 @@ function advpoll_get_recent() {
  */
 
 function advpoll_get_poll_info_blocks($blocks) {
-  $result = db_query("SELECT n.title, n.nid FROM node n
-                      LEFT JOIN field_data_advpoll_dates d 
+  $result = db_query("SELECT n.title, n.nid FROM {node} n
+                      LEFT JOIN {field_data_advpoll_dates} d 
                       ON d.entity_id = n.nid 
-                      LEFT JOIN field_data_advpoll_closed c
+                      LEFT JOIN {field_data_advpoll_closed} c
                       ON c.entity_id = n.nid
-                      LEFT JOIN field_data_advpoll_options o
+                      LEFT JOIN {field_data_advpoll_options} o
                       ON o.entity_id = n.nid
                       WHERE 
                       n.type LIKE '%advpoll%' AND
@@ -924,7 +924,7 @@ function advpoll_generate_block_view($block, $delta) {
   if (@preg_match($pattern, $delta)) {
     $parts = explode('_', $delta);
     $nid = $parts[count($parts) - 1];
-    $isBlock = false;
+    $isBlock = FALSE;
 
     $node = node_load($nid);
 
@@ -937,7 +937,7 @@ function advpoll_generate_block_view($block, $delta) {
     // assigned to a region and will display anyway.
     foreach ($options as $option) {
       if ($option['value'] == 'block') {
-        $isBlock = true;
+        $isBlock = TRUE;
       }
     }
 
@@ -963,7 +963,7 @@ function advpoll_generate_block_view($block, $delta) {
  * @param $node
  * An advanced poll node.
  * @return
- * Returns true or false 
+ * Returns TRUE or FALSE 
  */
 function _advpoll_results_access($node) {
   if ($node->type == 'advpoll') {
@@ -984,7 +984,7 @@ function _advpoll_results_access($node) {
  * @param $node
  * An advanced poll node.
  * @return
- * Returns true or false   
+ * Returns TRUE or FALSE   
  */
 function _advpoll_electoral_list_access($node) {
   if ($node->type == 'advpoll') {
@@ -1002,7 +1002,7 @@ function _advpoll_electoral_list_access($node) {
  * @param $node
  * An advanced poll node. 
  * @return
- * Returns true or false
+ * Returns TRUE or FALSE
  */
 function _advpoll_votes_access($node) {
   if ($node->type == 'advpoll') {
@@ -1018,7 +1018,7 @@ function _advpoll_votes_access($node) {
  * @param $node
  * An advanced poll node.
  * @return
- * Returns true or false
+ * Returns TRUE or FALSE
  */
 function _advpoll_clear_votes_access($node) {
   if ($node->type == 'advpoll') {
@@ -1033,7 +1033,7 @@ function _advpoll_clear_votes_access($node) {
  * @param $node
  * An advanced poll node.
  * @return
- * Returns true or false
+ * Returns TRUE or FALSE
  */
 function _advpoll_writeins_access($node) {
   if ($node->type == 'advpoll') {

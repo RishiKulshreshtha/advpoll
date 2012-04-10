@@ -1,6 +1,8 @@
 <?php
-
 /*
+ * @file
+ * Advanced Poll Vote API Include
+ * 
  * Handles function calls related to voting and selection of votes.
  */
 
@@ -25,9 +27,11 @@ function advpoll_get_votes($nid, $behavior = 'approval') {
 
   if ($behavior === 'approval') {
     $tabulated = advpoll_approval_vote($results);
-  } else if ($behavior === 'pool') {
+  } 
+  elseif ($behavior === 'pool') {
     $tabulated = advpoll_pooled_vote($results);
-  } else {
+  } 
+  else {
     $tabulated = advpoll_default_vote($results);
   }
 
@@ -58,7 +62,8 @@ function advpoll_approval_vote($results) {
   foreach ($results as $result) {
     if (isset($tallied[$result['tag']])) {
       $tallied[$result['tag']]++;
-    } else {
+    } 
+    else {
       $tallied[$result['tag']] = 1;
     }
 
@@ -178,7 +183,7 @@ function advpoll_compare($a, $b) {
   if ($a['percentage'] > $b['percentage']) {
     return 1;
   } 
-  else if ($a['percentage'] < $b['percentage']) {
+  elseif ($a['percentage'] < $b['percentage']) {
     return -1;
   } 
   else {
@@ -194,37 +199,37 @@ function advpoll_compare($a, $b) {
  * @param $node
  * The poll node.
  * @return
- * Returns true or false.
+ * Returns TRUE or FALSE.
  * 
  */
 function advpoll_user_eligibility($node) {
   if (!user_access('vote on polls')) {
-    return false;
+    return FALSE;
   }
 
   global $user;
   $data = advpoll_get_data($node);
 
   if ($data->write_in && !user_access('add write-ins')) {
-    return false;
+    return FALSE;
   }
 
   if ($data->electoral) {
     if (!advpoll_check_electoral_list($user->uid, $node->nid)) {
-      return false;
+      return FALSE;
     }
   }
 
   if ($data->state !== 'open') {
-    return false;
+    return FALSE;
   }
 
   if ($data->start_date > time() || $data->end_date < time()) {
-    return false;
+    return FALSE;
   }
 
   if ($data->mode === 'cookie' && isset($_COOKIE[$node->type . $node->nid])) {
-    return false;
+    return FALSE;
   }
 
   if ($data->mode === 'normal') {
@@ -236,11 +241,11 @@ function advpoll_user_eligibility($node) {
 
     $results = votingapi_select_votes($criteria);
     if ($results) {
-      return false;
+      return FALSE;
     }
   }
 
-  return true;
+  return TRUE;
 }
 
 /*
@@ -251,7 +256,7 @@ function advpoll_user_eligibility($node) {
  * @param $nid
  * Node ID of the poll
  * @return
- * Returns true or false
+ * Returns TRUE or FALSE
  */
 function advpoll_check_electoral_list($uid, $nid) {
   $result = db_query('SELECT uid 
@@ -260,10 +265,10 @@ function advpoll_check_electoral_list($uid, $nid) {
                       array(':uid' => $uid, ':nid' => $nid))->fetchField();
 
   if ($result) {
-    return true;
+    return TRUE;
   }
 
-  return false;
+  return FALSE;
 }
 
 /**
