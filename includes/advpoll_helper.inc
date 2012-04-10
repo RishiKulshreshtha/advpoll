@@ -40,16 +40,17 @@ function advpoll_get_data($node) {
   $lang = $node->language;
 
   if ($node->type == 'advpoll') {
-    $options = $node->advpoll_options[$lang];
-    $data['choices'] = $node->advpoll_choice[$lang];
-    $data['start_date'] = strtotime($node->advpoll_dates[$lang][0]['value']);
-    $data['end_date'] = strtotime($node->advpoll_dates[$lang][0]['value2']);
-    $data['mode'] = $node->advpoll_mode[$lang][0]['value'];
-    $data['cookie_duration'] = $node->advpoll_cookie_duration[$lang][0]['value'];
-    $data['state'] = $node->advpoll_closed[$lang][0]['value'];
-    $data['behavior'] = $node->advpoll_behavior[$lang][0]['value'];
-    $data['max_choices'] = $node->advpoll_max_choices[$lang][0]['value'];
-    $data['show_results'] = $node->advpoll_results[$lang][0]['value'];
+  // testing each field to make sure there is no translated version
+    (isset($node->advpoll_options[$lang])) ? $options = $node->advpoll_options[$lang]:$options = $node->advpoll_options['und'];
+    (isset($node->advpoll_choice[$lang])) ? $data['choices'] = $node->advpoll_choice[$lang] : $data['choices'] = $node->advpoll_choice['und'];
+    (isset($node->advpoll_dates[$lang])) ? $data['start_date'] = strtotime($node->advpoll_dates[$lang][0]['value']) : $data['start_date'] = strtotime($node->advpoll_dates['und'][0]['value']);
+    (isset($node->advpoll_dates[$lang])) ? $data['end_date'] = strtotime($node->advpoll_dates[$lang][0]['value2']) : $data['end_date'] = strtotime($node->advpoll_dates['und'][0]['value2']);
+    (isset($node->advpoll_mode[$lang])) ? $data['mode'] = $node->advpoll_mode[$lang][0]['value'] : $data['mode'] = $node->advpoll_mode['und'][0]['value'];
+    (isset($node->advpoll_cookie_duration[$lang])) ? $data['cookie_duration'] = $node->advpoll_cookie_duration[$lang][0]['value'] : $data['cookie_duration'] = $node->advpoll_cookie_duration['und'][0]['value'];
+    (isset($node->advpoll_closed[$lang])) ? $data['state'] = $node->advpoll_closed[$lang][0]['value'] : $data['state'] = $node->advpoll_closed['und'][0]['value'];
+    (isset($node->advpoll_behavior[$lang])) ? $data['behavior'] = $node->advpoll_behavior[$lang][0]['value'] : $data['behavior'] = $node->advpoll_behavior['und'][0]['value'];
+    (isset($node->advpoll_max_choices[$lang])) ? $data['max_choices'] = $node->advpoll_max_choices[$lang][0]['value'] : $data['max_choices'] = $node->advpoll_max_choices['und'][0]['value'];
+    (isset($node->advpoll_results[$lang])) ? $data['show_results'] = $node->advpoll_results[$lang][0]['value'] : $data['show_results'] = $node->advpoll_results['und'][0]['value'];
     $data['electoral'] = advpoll_has_data($options, 'electoral');
     $data['show_votes'] = advpoll_has_data($options, 'showvotes');
     $data['write_in'] = advpoll_has_data($options, 'writein');
@@ -103,19 +104,20 @@ function advpoll_has_data($options, $term) {
  */
 function advpoll_get_form_data($form_state) {
   $data = array();
-  $lang = $form_state['build_info']['args'][0]->language;
+  $node = $form_state['build_info']['args'][0];
+  $lang = $node->language;
 
-  if ($form_state['build_info']['args'][0]->type == 'advpoll') {
-    $options = $form_state['build_info']['args'][0]->advpoll_options[$lang];
-    $data['choices'] = $form_state['build_info']['args'][0]->advpoll_choice[$lang];
-    $data['start_date'] = strtotime($form_state['build_info']['args'][0]->advpoll_dates[$lang][0]['value']);
-    $data['end_date'] = strtotime($form_state['build_info']['args'][0]->advpoll_dates[$lang][0]['value2']);
-    $data['mode'] = $form_state['build_info']['args'][0]->advpoll_mode[$lang][0]['value'];
-    $data['cookie_duration'] = $form_state['build_info']['args'][0]->advpoll_cookie_duration[$lang][0]['value'];
-    $data['state'] = $form_state['build_info']['args'][0]->advpoll_closed[$lang][0]['value'];
-    $data['behavior'] = $form_state['build_info']['args'][0]->advpoll_behavior[$lang][0]['value'];
-    $data['max_choices'] = $form_state['build_info']['args'][0]->advpoll_max_choices[$lang][0]['value'];
-    $data['show_results'] = $form_state['build_info']['args'][0]->advpoll_results[$lang][0]['value'];
+  if ($node->type == 'advpoll') {
+    (isset($node->advpoll_options[$lang])) ? $options = $node->advpoll_options[$lang]:$options = $node->advpoll_options['und'];
+    (isset($node->advpoll_choice[$lang])) ? $data['choices'] = $node->advpoll_choice[$lang] : $data['choices'] = $node->advpoll_choice['und'];
+    (isset($node->advpoll_dates[$lang])) ? $data['start_date'] = strtotime($node->advpoll_dates[$lang][0]['value']) : $data['start_date'] = strtotime($node->advpoll_dates['und'][0]['value']);
+    (isset($node->advpoll_dates[$lang])) ? $data['end_date'] = strtotime($node->advpoll_dates[$lang][0]['value2']) : $data['end_date'] = strtotime($node->advpoll_dates['und'][0]['value2']);
+    (isset($node->advpoll_mode[$lang])) ? $data['mode'] = $node->advpoll_mode[$lang][0]['value'] : $data['mode'] = $node->advpoll_mode['und'][0]['value'];
+    (isset($node->advpoll_cookie_duration[$lang])) ? $data['cookie_duration'] = $node->advpoll_cookie_duration[$lang][0]['value'] : $data['cookie_duration'] = $node->advpoll_cookie_duration['und'][0]['value'];
+    (isset($node->advpoll_closed[$lang])) ? $data['state'] = $node->advpoll_closed[$lang][0]['value'] : $data['state'] = $node->advpoll_closed['und'][0]['value'];
+    (isset($node->advpoll_behavior[$lang])) ? $data['behavior'] = $node->advpoll_behavior[$lang][0]['value'] : $data['behavior'] = $node->advpoll_behavior['und'][0]['value'];
+    (isset($node->advpoll_max_choices[$lang])) ? $data['max_choices'] = $node->advpoll_max_choices[$lang][0]['value'] : $data['max_choices'] = $node->advpoll_max_choices['und'][0]['value'];
+    (isset($node->advpoll_results[$lang])) ? $data['show_results'] = $node->advpoll_results[$lang][0]['value'] : $data['show_results'] = $node->advpoll_results['und'][0]['value'];
     $data['electoral'] = advpoll_has_data($options, 'electoral');
     $data['show_votes'] = advpoll_has_data($options, 'showvotes');
     $data['write_in'] = advpoll_has_data($options, 'writein');

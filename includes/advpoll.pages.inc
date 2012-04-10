@@ -76,7 +76,8 @@ function advpoll_votes_page($node) {
 
     $output .= theme('pager', array('tags' => array()));
     if (user_access('administer votes')) {
-      $output .= drupal_render(drupal_get_form('advpoll_clear_votes_form'));
+      $rendered_form = drupal_get_form('advpoll_clear_votes_form');
+      $output .= drupal_render($rendered_form);
     }
   } else {
     $output .= '<hr /><p>' . t('No votes are currently recorded for %title', array('%title' => $node->title)) . '</p>';
@@ -109,7 +110,8 @@ function advpoll_electoral_list_page($node) {
   $output = '';
 
   if (user_access('administer polls')) {
-    $output .= drupal_render(drupal_get_form('advpoll_electoral_list_form', $node->nid));
+    $rendered_form = drupal_get_form('advpoll_electoral_list_form', $node->nid);
+    $output .= drupal_render($rendered_form);
   }
 
   $output .= '<p>' . t('This table lists all the eligible voters for this poll.') . '</p>';
@@ -353,8 +355,10 @@ function advpoll_clear_votes_confirm_form_submit($form, &$form_state) {
 function advpoll_writeins_page($node) {
   $output = '';
 
-  $output .= drupal_render(drupal_get_form('advpoll_promote_writein_form', $node));
-  $output .= drupal_render(drupal_get_form('advpoll_merge_writein_form', $node));
+  $rendered_form = drupal_get_form('advpoll_promote_writein_form', $node);
+  $output .= drupal_render($rendered_form);
+  $rendered_form = drupal_get_form('advpoll_merge_writein_form', $node);
+  $output .= drupal_render($rendered_form);
 
   return $output;
 }
@@ -428,7 +432,13 @@ function advpoll_promote_writein_form_submit($form, &$form_state) {
     $node = node_load($nid);
 
     if ($node) {
-      $nodeChoices = $node->advpoll_choice[$node->language];
+      $lang = $node->language;
+      
+      if(!isset($node->advpoll_choice[$lang])) {
+        $lang = 'und';
+      }
+      
+      $nodeChoices = $node->advpoll_choice[$lang];
       $updatedChoices = array();
       foreach ($nodeChoices as $item) {
         $choice = strtolower(strip_tags($item['choice']));
@@ -438,7 +448,7 @@ function advpoll_promote_writein_form_submit($form, &$form_state) {
           $updatedChoices[] = array('choice' => $item['choice'], 'write_in' => $item['write_in'], 'choice_id' => $item['choice_id']);
         }
       }
-      $node->advpoll_choice[$node->language] = $updatedChoices;
+      $node->advpoll_choice[$lang] = $updatedChoices;
       node_save($node);
     }
   }
@@ -450,8 +460,13 @@ function advpoll_promote_writein_form_submit($form, &$form_state) {
  */
 
 function advpoll_merge_writein_form($form, &$form_state, $node) {
-
-  $choices = $node->advpoll_choice[$node->language];
+  $lang = $node->language;
+  
+  if (!isset($node->advpoll_choice[$node->language])) {
+    $lang = 'und';
+  }
+  
+  $choices = $node->advpoll_choice[$lang];
   $count = count($choices);
 
   $options = array();
@@ -506,6 +521,11 @@ function advpoll_merge_writein_form($form, &$form_state, $node) {
 
 function advpoll_merge_writein_form_submit($form, &$form_state) {
   $lang = $form_state['build_info']['args'][0]->language;
+  
+  if (!isset($form_state['build_info']['args'][0]->advpoll_choice[$lang])) {
+    $lang = 'und';
+  }
+  
   $mergeFrom = strtolower($form['merge_writein']['choices']['#value']);
   $mergeTo = strtolower($form['merge_writein']['all_choices']['#value']);
   $nid = $form_state['build_info']['args'][0]->nid;
@@ -552,7 +572,12 @@ function advpoll_merge_writein_form_submit($form, &$form_state) {
   $node = node_load($nid);
 
   if ($node) {
-    $nodeChoices = $node->advpoll_choice[$node->language];
+    $lang = $node->language;
+    
+    if (!isset($node->advpoll_choice[$node->language])) {
+      $lang = 'und';
+    }
+    $nodeChoices = $node->advpoll_choice[$lang];
     $updatedChoices = array();
     foreach ($nodeChoices as $item) {
       $id = $item['choice_id'];
@@ -560,7 +585,7 @@ function advpoll_merge_writein_form_submit($form, &$form_state) {
         $updatedChoices[] = $item;
       }
     }
-    $node->advpoll_choice[$node->language] = $updatedChoices;
+    $node->advpoll_choice[$lang] = $updatedChoices;
     node_save($node);
   }
 }

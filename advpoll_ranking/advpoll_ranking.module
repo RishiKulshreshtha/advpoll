@@ -26,7 +26,8 @@ function advpoll_ranking_node_view($node, $view_mode) {
       // check for eligibility to vote
       if (advpoll_user_eligibility($node)) {
         // print out voting form
-        $voteform = '<div class="advpoll-ranking-wrapper">' . drupal_render(drupal_get_form('advpoll_ranking_choice_form', $node)) . '</div>';
+        $rendered_form = drupal_get_form('advpoll_ranking_choice_form', $node);
+        $voteform = '<div class="advpoll-ranking-wrapper">' . drupal_render($rendered_form) . '</div>';
         $node->content['advpoll_choice'] = array('#markup' => $voteform, '#weight' => 1);
       } else {
         // get user's votes if they're logged in and if voting is normal
@@ -53,6 +54,7 @@ function advpoll_ranking_node_view($node, $view_mode) {
     // JS needs to be present for any ranking poll in case form is re-rendered by vote cancellation.
     drupal_add_js(drupal_get_path('module', 'advpoll_ranking') . '/js/advpoll-ranking.js', 'file');
     drupal_add_js(array('advpoll_ranking' => array('display' => 'true')), 'setting');
+   
     
   }
 }
@@ -87,6 +89,11 @@ function advpoll_ranking_form_alter(&$form, $form_state, $form_id) {
 function advpoll_ranking_validate_choices($form, &$form_state) {
   $input_choices = array();
   $lang = $form_state['build_info']['args'][0]->language;
+  
+  if (!isset($form_state['input']['advpoll_choice'][$lang])) {
+    $lang = 'und';
+  }
+  
   $choices = $form_state['input']['advpoll_choice'][$lang];
 
   foreach ($choices as $choice) {
@@ -205,7 +212,8 @@ function advpoll_ranking_votes_page($node) {
 
     $output .= theme('pager', array('tags' => array()));
     if (user_access('administer votes')) {
-      $output .= drupal_render(drupal_get_form('advpoll_clear_votes_form'));
+      $rendered_form = drupal_get_form('advpoll_clear_votes_form');
+      $output .= drupal_render($rendered_form);
     }
   } else {
     $output .= '<hr /><p>' . t('No votes are currently recorded for %title', array('%title' => $node->title)) . '</p>';
@@ -253,7 +261,7 @@ function advpoll_ranking_choice_form($form, &$form_state, $values) {
   // issues inwhich more than one ranking poll is displaying on a page.
   $form['identity-markup'] = array(
     '#type' => 'item',
-    '#markup' => '<div class="advpoll-identity" nid="' . $values->nid . '"></div>',
+    '#markup' => '<script>Drupal.advpollSetup('.$values->nid.');</script>',
   );
 
   for ($i = 0; $i < $count; $i++) {
@@ -443,7 +451,8 @@ function advpoll_display_runoff_results($nid, $data) {
   $output = '';
   $form = null;
   if (user_access('cancel own vote')) {
-    $form = drupal_render(drupal_get_form('advpoll_ranking_cancel_form', $nid));
+    $rendered_form = drupal_get_form('advpoll_ranking_cancel_form', $nid);
+    $form = drupal_render($rendered_form);
   }
 
 
@@ -549,8 +558,9 @@ function advpoll_display_runoff_results($nid, $data) {
 function advpoll_display_borda_results($nid, $data) {
   $output = '';
   $form = null;
-  if (user_access('cancel own vote')) {
-    $form = drupal_render(drupal_get_form('advpoll_ranking_cancel_form', $nid));
+  if (user_access('cancel own vote') &&  advpoll_get_user_votes($nid)) {
+    $rendered_form = drupal_get_form('advpoll_ranking_cancel_form', $nid);
+    $form = drupal_render($rendered_form);
   }
   // get user's votes if they're logged in and if voting is normal
   $votes = array();
@@ -558,7 +568,7 @@ function advpoll_display_borda_results($nid, $data) {
     $votes = advpoll_get_user_votes($nid);
   }
 
-  if ($data->show_results == 'never' || ($data->show_results == 'afterclose' && $data->end_date > time())) {
+  if (!user_access('administer polls') && ($data->show_results == 'never' || ($data->show_results == 'afterclose' && $data->end_date > time()))) {
     $output .= theme('advpoll_noresults', array(
       'data' => $data,
       'votes' => $votes,
@@ -679,7 +689,8 @@ function advpoll_ranking_cancel_submit($form, &$form_state) {
 
     if (advpoll_user_eligibility($node)) {
       // print out voting form
-      return '<div class="advpoll-ranking-wrapper">' . drupal_render(drupal_get_form('advpoll_ranking_choice_form', $node)) . '</div>';
+      $rendered_form = drupal_get_form('advpoll_ranking_choice_form', $node);
+      return '<div class="advpoll-ranking-wrapper">' . drupal_render($rendered_form) . '</div>';
     }
   }
 }

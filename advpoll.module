@@ -205,7 +205,7 @@ function advpoll_node_view($node, $view_mode) {
 
 /**
  * Implements hook_block_info().
-*/
+ */
 function advpoll_block_info() {
 
   $blocks['advpoll_recent'] = array(
@@ -244,7 +244,11 @@ function advpoll_block_view($delta = '') {
 function advpoll_theme($existing, $type, $theme, $path) {
   return array(
     'advpoll_bar' => array(
-      'variables' => array('percentage' => 0, 'votes' => 0, 'voted' => 0),
+      'variables' => array(
+        'percentage' => 0, 
+        'votes' => 0, 
+        'voted' => 0
+        ),
       'path' => drupal_get_path('module', 'advpoll') . '/templates',
       'template' => 'advpoll-bar'
     ),
@@ -254,12 +258,23 @@ function advpoll_theme($existing, $type, $theme, $path) {
       'template' => 'advpoll-closed'
     ),
     'advpoll_noresults' => array(
-      'variables' => array('available_date' => null, 'votes' => null, 'nid' => null, 'cancel_form' => null),
+      'variables' => array(
+        'available_date' => null, 
+        'votes' => null, 
+        'nid' => null, 
+        'cancel_form' => null
+        ),
       'path' => drupal_get_path('module', 'advpoll') . '/templates',
       'template' => 'advpoll-noresults'
     ),
     'advpoll_results' => array(
-      'variables' => array('bars' => null, 'total' => 0, 'voted' => null, 'nid' => null, 'cancel_form' => null),
+      'variables' => array(
+        'bars' => null, 
+        'total' => 0, 
+        'voted' => null, 
+        'nid' => null, 
+        'cancel_form' => null
+        ),
       'path' => drupal_get_path('module', 'advpoll') . '/templates',
       'template' => 'advpoll-results'
     ),
@@ -274,6 +289,7 @@ function advpoll_theme($existing, $type, $theme, $path) {
 /*
  * Implements hook_node_presave().
  */
+
 function advpoll_node_presave($node) {
   // Scrub any votes that are orphaned when a choice is removed via the edit page.
   if ($node->type === 'advpoll') {
@@ -283,10 +299,16 @@ function advpoll_node_presave($node) {
       $criteria['entity_id'] = $node->nid;
       $criteria['entity_type'] = 'advpoll';
       $results = votingapi_select_votes($criteria);
+      $lang = $node->language;
 
       if ($results) {
         // get all existing choices in the node
-        $choices = $node->advpoll_choice[$node->language];
+        
+        if (!isset($node->advpoll_choice[$lang])) {
+          $lang = 'und';
+        }
+        
+        $choices = $node->advpoll_choice[$lang];
 
         foreach ($choices as $choice) {
           $ids[] = $choice['choice_id'];
@@ -308,6 +330,7 @@ function advpoll_node_presave($node) {
 /*
  * Implements hook_node_delete().
  */
+
 function advpoll_node_delete($node) {
   // Clear node's votes from the voting api
   db_delete('votingapi_vote')->condition('entity_id', $node->nid)->execute();
@@ -316,10 +339,16 @@ function advpoll_node_delete($node) {
 /*
  * Implements hook_form_alter().
  */
+
 function advpoll_form_alter(&$form, $form_state, $form_id) {
   // Add validation to max_choices field.
   if ($form_id == 'advpoll_node_form') {
     $lang = $form['language']['#value'];
+    
+    if (!isset($form['advpoll_max_choices'][$lang])) {
+      $lang = 'und';
+    }
+    
     $form['advpoll_max_choices'][$lang][0]['value']['#element_validate'][] = 'advpoll_validate_max_choices';
   }
 }
@@ -336,6 +365,11 @@ function advpoll_form_alter(&$form, $form_state, $form_id) {
 function advpoll_validate_max_choices($element, &$form_state, $form) {
   $input_choices = array();
   $lang = $form_state['build_info']['args'][0]->language;
+   
+  if (!isset($form_state['input']['advpoll_choice'][$lang])) {
+    $lang = 'und';
+  }
+  
   $choices = $form_state['input']['advpoll_choice'][$lang];
 
   foreach ($choices as $choice) {
@@ -363,13 +397,15 @@ function advpoll_validate_max_choices($element, &$form_state, $form) {
  * Data from the node formatted by one of the helper functions in the 
  * advpoll_helper.inc document.
  */
+
 function advpoll_display_results($nid, $data) {
 
   $output = '';
   $form = null;
-  if (user_access('cancel own vote')) {
-    $form = drupal_render(drupal_get_form('advpoll_cancel_vote_form', $nid));
+  if (user_access('cancel own vote') && advpoll_get_user_votes($nid)) {
+    $form = drupal_get_form('advpoll_cancel_vote_form', $nid);
   }
+  $rendered_form = drupal_render($form);
 
   // get user's votes if they're logged in and if voting is normal
   $votes = array();
@@ -377,12 +413,12 @@ function advpoll_display_results($nid, $data) {
     $votes = advpoll_get_user_votes($nid);
   }
 
-  if ($data->show_results == 'never' || ($data->show_results == 'afterclose' && $data->end_date > time())) {
+  if (!user_access('administer polls') && ($data->show_results == 'never' || ($data->show_results == 'afterclose' && $data->end_date > time()))) {
     $output .= theme('advpoll_noresults', array(
       'data' => $data,
       'votes' => $votes,
       'nid' => $nid,
-      'cancel_form' => $form,
+      'cancel_form' => $rendered_form,
       )
     );
   } 
@@ -390,7 +426,7 @@ function advpoll_display_results($nid, $data) {
     $results = advpoll_get_votes($nid, $data->behavior);
     $bars = '';
     $final = advpoll_update_choices($data->choices, $results['choices']);
-    
+
     foreach ($final as $item) {
       $voted = false;
 
@@ -407,7 +443,14 @@ function advpoll_display_results($nid, $data) {
       );
     }
 
-    $output .= theme('advpoll_results', array('bars' => $bars, 'total' => $results['total'], 'voted' => $votes, 'nid' => $nid, 'cancel_form' => $form,));
+    $output .= theme('advpoll_results', array(
+      'bars' => $bars, 
+      'total' => $results['total'], 
+      'voted' => $votes, 
+      'nid' => $nid, 
+      'cancel_form' => $rendered_form,
+      )
+    );
   }
 
   return $output;
@@ -427,6 +470,7 @@ function advpoll_display_results($nid, $data) {
  * A keyed array of voting totals for each choice.
  * 
  */
+
 function advpoll_update_choices($choices, $results) {
   $choiceSet = array();
   foreach ($choices as $choice) {
@@ -469,6 +513,7 @@ function advpoll_update_choices($choices, $results) {
  * Native ajax functionality is being used to generate write-in field as poll
  * settings and form state dictate.
  */
+
 function advpoll_choice_form($form, &$form_state, $values) {
   $data = advpoll_get_data($values);
   $count = count($data->choices);
@@ -480,7 +525,7 @@ function advpoll_choice_form($form, &$form_state, $values) {
       $options[] = strip_tags($data->choices[$i]['choice']);
     }
   }
-  
+
   $options = drupal_map_assoc($options);
   $input_type = 'radios';
   if ($data->max_choices > 1) {
@@ -554,6 +599,7 @@ function advpoll_choice_form($form, &$form_state, $values) {
 /*
  * Validate contents of write-in field.
  */
+
 function advpoll_writein_validate($element, &$form_state, $form) {
   if (empty($element['#value'])) {
     form_error($element, t('Please type in your write-in choice or select a different option.'));
@@ -563,6 +609,7 @@ function advpoll_writein_validate($element, &$form_state, $form) {
 /*
  * Used by Ajax form to allow smoother validation of write-in.
  */
+
 function advpoll_writein_callback($form, $form_state) {
   return $form;
 }
@@ -602,7 +649,8 @@ function advpoll_form_submit($form, &$form_state) {
 
       if ($writein) {
         $data->choices[] = advpoll_process_writein($nid, $writein, $data);
-      } else {
+      } 
+      else {
         $form['message'] = array(
           '#type' => 'markup',
           '#prefix' => '<div id="message">',
@@ -650,7 +698,12 @@ function advpoll_form_submit($form, &$form_state) {
       '#type' => 'markup',
       '#prefix' => '<div id="message">',
       '#suffix' => '</div>',
-      '#markup' => t('Select up to @quantity @votes.', array('@quantity' => $data->max_choices, '@votes' => format_plural($data->max_choices, 'vote', 'votes'))),
+      '#markup' => t('Select up to @quantity @votes.', 
+        array(
+          '@quantity' => $data->max_choices, 
+          '@votes' => format_plural($data->max_choices, 'vote', 'votes')
+          )
+        ),
     );
     return $form;
   }
@@ -683,6 +736,7 @@ function advpoll_form_submit_check($data, $nid) {
 /*
  * Form element for canceling votes
  */
+
 function advpoll_cancel_vote_form($form, &$form_state, $nid) {
 
   $form['#nid'] = $nid;
@@ -703,6 +757,7 @@ function advpoll_cancel_vote_form($form, &$form_state, $nid) {
 /*
  * Submit function for cancelling a vote.
  */
+
 function advpoll_cancel_vote_submit($form, &$form_state) {
   global $user;
   if ($user) {
@@ -747,21 +802,28 @@ function advpoll_cancel_vote_submit($form, &$form_state) {
  *              by a write-in vote. In this case it is always true.
  * 
  */
+
 function advpoll_process_writein($nid, $writein, $data) {
   $node = node_load($nid);
   $id = dechex(time() * rand(5, 50));
   $writein_choice = array();
 
   if ($node) {
-    $nodeChoices = $node->advpoll_choice[$node->language];
+    $lang = $node->language;
+    
+    if (!isset($node->advpoll_choice[$lang])) {
+      $lang = 'und';
+    }
+    
+    $nodeChoices = $node->advpoll_choice[$lang];
     $writein_choice = array(
-      'choice' => $writein, 
-      'write_in' => 1, 
+      'choice' => $writein,
+      'write_in' => 1,
       'choice_id' => $id
     );
-    
+
     $nodeChoices[] = $writein_choice;
-    $node->advpoll_choice[$node->language] = $nodeChoices;
+    $node->advpoll_choice[$lang] = $nodeChoices;
     node_save($node);
   }
 
@@ -773,6 +835,7 @@ function advpoll_process_writein($nid, $writein, $data) {
  * @return
  * A rendered node or null.
  */
+
 function advpoll_get_recent() {
   $node = null;
   $result = db_query("SELECT n.nid FROM {node} n
@@ -797,8 +860,11 @@ function advpoll_get_recent() {
       break;
     }
 
-    return drupal_render(node_view($node));
+    $rendered_node = node_view($node);
+    return drupal_render($rendered_node);
   }
+
+  return $node;
 }
 
 /*
@@ -810,6 +876,7 @@ function advpoll_get_recent() {
  * @return 
  * Block object
  */
+
 function advpoll_get_poll_info_blocks($blocks) {
   $result = db_query("SELECT n.title, n.nid FROM node n
                       LEFT JOIN field_data_advpoll_dates d 
@@ -849,31 +916,39 @@ function advpoll_get_poll_info_blocks($blocks) {
  * @return
  * Returns a block object
  */
+
 function advpoll_generate_block_view($block, $delta) {
-  $parts = explode('_', $delta);
-  $nid = $parts[count($parts) - 1];
-  $isBlock = false;
+  // only run this process when there is an advanced poll
+  // block to process
+  $pattern = '/(?i)(advpoll)/';
+  if (@preg_match($pattern, $delta)) {
+    $parts = explode('_', $delta);
+    $nid = $parts[count($parts) - 1];
+    $isBlock = false;
 
-  $node = node_load($nid);
+    $node = node_load($nid);
 
-  $options = $node->advpoll_options[$node->language];
+    isset($node->advpoll_options[$node->language]) ?
+        $options = $node->advpoll_options[$node->language] :
+        $options = $node->advpoll_options['und'];
 
-  // need to check to see if the nid is meant to display as a block or not.
-  // It's possible the value gets switched off but the block id is still
-  // assigned to a region and will display anyway.
-  foreach ($options as $option) {
-    if ($option['value'] == 'block') {
-      $isBlock = true;
+    // need to check to see if the nid is meant to display as a block or not.
+    // It's possible the value gets switched off but the block id is still
+    // assigned to a region and will display anyway.
+    foreach ($options as $option) {
+      if ($option['value'] == 'block') {
+        $isBlock = true;
+      }
+    }
+
+    if ($isBlock) {
+      $rendered_node = node_view($node);
+      $block['subject'] = t('Poll');
+      $block['content'] = array(
+        '#markup' => drupal_render($rendered_node),
+      );
     }
   }
-
-  if ($isBlock) {
-    $block['subject'] = t('Poll');
-    $block['content'] = array(
-      '#markup' => drupal_render(node_view($node)),
-    );
-  }
-  
   return $block;
 }
 
