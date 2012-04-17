@@ -802,3 +802,27 @@ function _advpoll_installed_instances() {
     ),
   );
 }
+
+/*
+ * Implements hook_update_N()
+ * 7000 removes Show votes option.
+ */
+
+function advpoll_update_7000() {
+// fetch the t function for use in install
+  $t = get_t();
+
+  // Add borda and run-off to allow ranking-style display and voting.
+  $field = array(
+    'field_name' => 'advpoll_options',
+    'settings' => array(
+      'allowed_values' => array(
+        'writein' => $t('Allow users to cast write-in votes'),
+        'electoral' => $t('Restrict voting to electoral list'),
+        'block' => $t('Generate a block for this poll'),
+      ),
+      'allowed_values_function' => '',
+    ),
+  );
+  field_update_field($field);
+}

@@ -141,7 +141,16 @@ function advpoll_ranking_results_page($node) {
 /**
  * Display the overridden votes page. Uses almost the same output but allows grouping
  * for borda and instant-runoff.
- * */
+ *  
+ * Generates page for administering individual voters on a poll.  Enables administrator
+ * to clear all votes. For users that can view votes but not administer them, the button
+ * is not displayed.
+ * 
+ * @param $node
+ * An advpoll node
+ * @return
+ * Markup displayed by menu callback for this page. 
+ */
 function advpoll_ranking_votes_page($node) {
   drupal_add_css(drupal_get_path('module', 'advpoll') . '/css/advpoll.css', array('group' => CSS_DEFAULT, 'every_page' => TRUE));
 
@@ -334,7 +343,9 @@ function advpoll_ranking_choice_form($form, &$form_state, $values) {
 
   return $form;
 }
-
+/*
+ * Submit handler for ranking polls
+ */
 function advpoll_ranking_submit($form, &$form_state) {
   $data = advpoll_get_form_data($form_state);
   $count = count($data->choices);
@@ -429,7 +440,16 @@ function advpoll_ranking_submit($form, &$form_state) {
 }
 
 /*
- * Add votes for tallying by value.
+ * Handles voting algorithm used by different types of ranking polls and 
+ * passes off results to voting api.
+ * 
+ * @param $nid
+ * Node id of the poll
+ * @param $data
+ * Data from the node formatted by one of the helper functions in the 
+ * advpoll_helper.inc document.
+ * @param votes
+ * An array of voting information needed by Voting API
  */
 
 function advpoll_ranking_process_votes($data, $nid, $votes) {
@@ -481,9 +501,9 @@ function advpoll_ranking_process_results($results, $choices, $votes) {
  * @param $page
  * A boolean value that indicates whether the request is to be displayed 
  * normally (0) or on the results page (1)
+ * @return
+ * Returns appropriate markup for displaying the run-off poll.
  */
-
-
 function advpoll_display_runoff_results($nid, $data, $page = 0) {
   $output = '';
   $form = NULL;
@@ -630,6 +650,8 @@ function advpoll_display_runoff_results($nid, $data, $page = 0) {
  * @param $page
  * A boolean value that indicates whether the request is to be displayed 
  * normally (0) or on the results page (1)
+ * @return
+ * Returns appropriate borda poll markup
  */
 function advpoll_display_borda_results($nid, $data, $page = 0) {
   $output = '';
@@ -703,11 +725,16 @@ function advpoll_display_borda_results($nid, $data, $page = 0) {
 }
 
 /*
- * Need to remove duplicate rows for a given user in the case of multiple choice
+ * Remove duplicate rows for a given user in the case of multiple choice
  * (typical of a ranking poll) and display one user's choice as a token delimited
  * list indicating ranking preference
+ * 
+ * @param $rows
+ * Several rows of voting data
+ * @return
+ * Returns a set of rows with duplicates removed and replaced with a single
+ * row displaying user's ranking of choices.
  */
-
 function advpoll_ranking_process_rows($rows) {
   $users = array();
   $sorted = array();
@@ -743,7 +770,6 @@ function advpoll_ranking_process_rows($rows) {
 /*
  * Form element for canceling votes
  */
-
 function advpoll_ranking_cancel_form($form, &$form_state, $nid) {
 
   $form['#nid'] = $nid;
@@ -761,7 +787,9 @@ function advpoll_ranking_cancel_form($form, &$form_state, $nid) {
   return $form;
 }
 
-// handles removal of votes when user cancels their vote.
+/*
+ * handles removal of votes when user cancels their vote.
+ */
 function advpoll_ranking_cancel_submit($form, &$form_state) {
   global $user;
   if ($user) {
