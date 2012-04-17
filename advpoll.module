@@ -147,7 +147,7 @@ function advpoll_permission() {
     ),
     'show vote results' => array(
       'title' => t('Show vote results'),
-      'description' => t('User may view poll results in cases where access to results is generally restricted.'),
+      'description' => t('User may view poll results in cases where access to results is restricted by node settings.'),
     ),
     'access electoral list' => array(
       'title' => t('Access electoral list'),
@@ -396,9 +396,12 @@ function advpoll_validate_max_choices($element, &$form_state, $form) {
  * @param $data
  * Data from the node formatted by one of the helper functions in the 
  * advpoll_helper.inc document.
+ * @param $page
+ * A boolean value that indicates whether the request is to be displayed 
+ * normally (0) or on the results page (1)
  */
 
-function advpoll_display_results($nid, $data) {
+function advpoll_display_results($nid, $data, $page = 0) {
 
   $output = '';
   $form = NULL;
@@ -413,7 +416,8 @@ function advpoll_display_results($nid, $data) {
     $votes = advpoll_get_user_votes($nid);
   }
 
-  if (!user_access('administer polls') && ($data->show_results == 'never' || ($data->show_results == 'afterclose' && $data->end_date > time()))) {
+  if (!$page && ($data->show_results == 'never' 
+    || ($data->show_results == 'afterclose' && $data->end_date > time()))) {
     $output .= theme('advpoll_noresults', array(
       'data' => $data,
       'votes' => $votes,
@@ -774,7 +778,8 @@ function advpoll_cancel_vote_submit($form, &$form_state) {
 
     if (advpoll_user_eligibility($node)) {
       // print out voting form
-      return drupal_get_form('advpoll_choice_form', $node);
+      $update_form = drupal_get_form('advpoll_choice_form', $node);
+      return drupal_render($update_form);
     }
   }
 }
@@ -969,7 +974,7 @@ function _advpoll_results_access($node) {
   if ($node->type == 'advpoll') {
     $data = advpoll_get_data($node);
     $votes = advpoll_get_votes($node->nid);
-    return ($data->show_results && $votes['total'] > 0 && (user_access("show vote results") || user_access('administer polls')));
+    return ($votes['total'] > 0 && (user_access("show vote results") || user_access('administer polls')));
   }
 }
 
@@ -1008,7 +1013,7 @@ function _advpoll_votes_access($node) {
   if ($node->type == 'advpoll') {
     $data = advpoll_get_data($node);
     $votes = advpoll_get_votes($node->nid);
-    return ($votes['total'] > 0 && ((user_access('inspect all votes') && $data->show_votes) || user_access('administer polls')));
+    return ($votes['total'] > 0 && (user_access('inspect all votes') || user_access('administer polls')));
   }
 }
 

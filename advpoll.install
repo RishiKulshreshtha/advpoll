@@ -314,7 +314,6 @@ function _advpoll_installed_fields() {
         'allowed_values' => array(
           'writein' => $t('Allow users to cast write-in votes'),
           'electoral' => $t('Restrict voting to electoral list'),
-          'showvotes' => $t('Show individual votes'),
           'block' => $t('Generate a block for this poll'),
         ),
         'allowed_values_function' => '',

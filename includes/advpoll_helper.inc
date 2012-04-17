@@ -33,18 +33,19 @@
  *   max_choices:     (int) How many choices a user can select per vote.
  *   show_results:    When to display results - aftervote, afterclose or never.
  *   electoral:       Boolean - voting restricted to users in an electoral list.
- *   show_votes:      Boolean - allow user with appropriate permission to view 
- *                    voting node page.
  *   write_in:        Boolean - all write-in voting.
  *   block:           Boolean - Poll can be displayed as a block.
  */
 function advpoll_get_data($node) {
   $data = array();
   $lang = $node->language;
+  $options = array();
 
   if ($node->type == 'advpoll') {
   // testing each field to make sure there is no translated version
-    (isset($node->advpoll_options[$lang])) ? $options = $node->advpoll_options[$lang]:$options = $node->advpoll_options['und'];
+    if ($node->advpoll_options) {
+      (isset($node->advpoll_options[$lang])) ? $options = $node->advpoll_options[$lang] : $options = $node->advpoll_options['und'];
+    }
     (isset($node->advpoll_choice[$lang])) ? $data['choices'] = $node->advpoll_choice[$lang] : $data['choices'] = $node->advpoll_choice['und'];
     (isset($node->advpoll_dates[$lang])) ? $data['start_date'] = strtotime($node->advpoll_dates[$lang][0]['value']) : $data['start_date'] = strtotime($node->advpoll_dates['und'][0]['value']);
     (isset($node->advpoll_dates[$lang])) ? $data['end_date'] = strtotime($node->advpoll_dates[$lang][0]['value2']) : $data['end_date'] = strtotime($node->advpoll_dates['und'][0]['value2']);
@@ -55,7 +56,6 @@ function advpoll_get_data($node) {
     (isset($node->advpoll_max_choices[$lang])) ? $data['max_choices'] = $node->advpoll_max_choices[$lang][0]['value'] : $data['max_choices'] = $node->advpoll_max_choices['und'][0]['value'];
     (isset($node->advpoll_results[$lang])) ? $data['show_results'] = $node->advpoll_results[$lang][0]['value'] : $data['show_results'] = $node->advpoll_results['und'][0]['value'];
     $data['electoral'] = advpoll_has_data($options, 'electoral');
-    $data['show_votes'] = advpoll_has_data($options, 'showvotes');
     $data['write_in'] = advpoll_has_data($options, 'writein');
     $data['block'] = advpoll_has_data($options, 'block');
   }
@@ -100,8 +100,6 @@ function advpoll_has_data($options, $term) {
  *   max_choices:     (int) How many choices a user can select per vote.
  *   show_results:    When to display results - aftervote, afterclose or never.
  *   electoral:       Boolean - voting restricted to users in an electoral list.
- *   show_votes:      Boolean - allow user with appropriate permission to view 
- *                    voting node page.
  *   write_in:        Boolean - all write-in voting.
  *   block:           Boolean - Poll can be displayed as a block.
  */
@@ -111,7 +109,9 @@ function advpoll_get_form_data($form_state) {
   $lang = $node->language;
 
   if ($node->type == 'advpoll') {
-    (isset($node->advpoll_options[$lang])) ? $options = $node->advpoll_options[$lang]:$options = $node->advpoll_options['und'];
+    if ($node->advpoll_options) {
+      (isset($node->advpoll_options[$lang])) ? $options = $node->advpoll_options[$lang]:$options = $node->advpoll_options['und'];
+    }
     (isset($node->advpoll_choice[$lang])) ? $data['choices'] = $node->advpoll_choice[$lang] : $data['choices'] = $node->advpoll_choice['und'];
     (isset($node->advpoll_dates[$lang])) ? $data['start_date'] = strtotime($node->advpoll_dates[$lang][0]['value']) : $data['start_date'] = strtotime($node->advpoll_dates['und'][0]['value']);
     (isset($node->advpoll_dates[$lang])) ? $data['end_date'] = strtotime($node->advpoll_dates[$lang][0]['value2']) : $data['end_date'] = strtotime($node->advpoll_dates['und'][0]['value2']);
@@ -122,7 +122,6 @@ function advpoll_get_form_data($form_state) {
     (isset($node->advpoll_max_choices[$lang])) ? $data['max_choices'] = $node->advpoll_max_choices[$lang][0]['value'] : $data['max_choices'] = $node->advpoll_max_choices['und'][0]['value'];
     (isset($node->advpoll_results[$lang])) ? $data['show_results'] = $node->advpoll_results[$lang][0]['value'] : $data['show_results'] = $node->advpoll_results['und'][0]['value'];
     $data['electoral'] = advpoll_has_data($options, 'electoral');
-    $data['show_votes'] = advpoll_has_data($options, 'showvotes');
     $data['write_in'] = advpoll_has_data($options, 'writein');
     $data['block'] = advpoll_has_data($options, 'block');
   }

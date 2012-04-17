@@ -11,8 +11,12 @@
  * Generates page for administering individual voters on a poll.  Enables administrator
  * to clear all votes. For users that can view votes but not administer them, the button
  * is not displayed.
+ * 
+ * @param $node
+ * An advpoll node
+ * @return
+ * Markup displayed by menu callback for this page. 
  */
-
 function advpoll_votes_page($node) {
   $data = advpoll_get_data($node);
 
@@ -101,6 +105,9 @@ function advpoll_match_tag_to_choice($choices, $tag) {
   return;
 }
 
+/*
+ * Clear votes form element for the vote display page.
+ */
 function advpoll_clear_votes_form($form, &$form_state) {
   $nid = (int) check_plain(arg(1));
 
@@ -112,6 +119,14 @@ function advpoll_clear_votes_form($form, &$form_state) {
   return $form;
 }
 
+/*
+ * Displays contents of electoral list page.
+
+ * @param $node
+ * An advpoll node
+ * @return
+ * Markup displayed by menu callback for this page. 
+ */
 function advpoll_electoral_list_page($node) {
   $output = '';
 
@@ -183,7 +198,7 @@ function advpoll_electoral_list_page($node) {
 }
 
 /**
- * Build electorial list form.
+ * Form for adding or removing users on the electoral list page.
  */
 function advpoll_electoral_list_form($form, &$form_state, $nid) {
   $form['electoral_list'] = array(
@@ -235,7 +250,6 @@ function advpoll_electoral_list_form($form, &$form_state, $nid) {
 /*
  * Handles results of submitting electoral administration form.
  */
-
 function advpoll_electoral_list_form_submit($form, &$form_state) {
   $add_user = $form_state['values']['electoral_list']['add_user'];
   $nid = $form_state['values']['nid'];
@@ -358,7 +372,10 @@ function advpoll_clear_votes_confirm_form_submit($form, &$form_state) {
 }
 
 /*
- * Menu callback for Write-in node management tab page.
+ * Display Write-in node management tab page.
+ * 
+ * @param $node
+ * And advpoll node
  */
 
 function advpoll_writeins_page($node) {
@@ -607,16 +624,18 @@ function advpoll_merge_writein_form_submit($form, &$form_state) {
 }
 
 /*
- * Displays results of poll for results page tab.
+ * Display the poll's results for users with appropriate permissions
+ * 
+ * @param $node
+ * And advpoll node
  */
-
 function advpoll_results_page($node) {
   drupal_add_css(drupal_get_path('module', 'advpoll') . '/css/advpoll.css', array('group' => CSS_DEFAULT, 'every_page' => TRUE));
   $data = advpoll_get_data($node);
   $output = '';
 
   if ($node) {
-    $output = advpoll_display_results($node->nid, $data);
+    $output = advpoll_display_results($node->nid, $data, 1);
   }
 
   return $output;

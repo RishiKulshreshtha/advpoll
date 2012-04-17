@@ -7,6 +7,10 @@
   margin: 1px 0;
   background-color: #ddd;
 }
+
+.poll .voted .bar {
+  border: 1px solid #111;
+}
 .poll .bar .foreground {
   background-color: #000;
   height: 1em;

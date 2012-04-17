@@ -12,6 +12,7 @@ module_load_include('inc', 'advpoll', 'includes/advpoll_helper');
 
 /*
  * Implements hook_node_view
+ * 
  * Overriding what advanced poll does with the node_view hook for those polls
  * that are either borda or runoff.
  */
@@ -75,6 +76,7 @@ function advpoll_ranking_menu_alter(&$items) {
 
 /*
  * Implements hook_form_alter().
+ * 
  * Add validation to limit number of choices.
  */
 
@@ -86,8 +88,7 @@ function advpoll_ranking_form_alter(&$form, $form_state, $form_id) {
 }
 
 /*
- * Ranking poll is set up to support up to ten choices.  Validation prevents
- * user from entering more than 10.
+ * Validation prevents user from entering more than 10 choices on node add/edit.
  */
 
 function advpoll_ranking_validate_choices($form, &$form_state) {
@@ -111,20 +112,28 @@ function advpoll_ranking_validate_choices($form, &$form_state) {
   }
 }
 
-// determines which display to use based on behavior.
+/*
+ * Determine how display the votes based on its type
+ * 
+ * @param $node
+ * An advpoll node
+ * @return
+ * Returns poll display markup.
+ */
+
 function advpoll_ranking_results_page($node) {
   drupal_add_css(drupal_get_path('module', 'advpoll') . '/css/advpoll.css', array('group' => CSS_DEFAULT, 'every_page' => TRUE));
 
   drupal_set_title(check_plain($node->title));
   $data = advpoll_get_data($node);
   if ($data->behavior == 'borda') {
-    $results = advpoll_display_borda_results($node->nid, $data);
+    $results = advpoll_display_borda_results($node->nid, $data, 1);
   } 
   elseif ($data->behavior == 'runoff') {
-    $results = advpoll_display_runoff_results($node->nid, $data);
+    $results = advpoll_display_runoff_results($node->nid, $data, 1);
   } 
   else {
-    $results = advpoll_display_results($node->nid, $data);
+    $results = advpoll_display_results($node->nid, $data, 1);
   }
   return $results;
 }
@@ -206,8 +215,6 @@ function advpoll_ranking_votes_page($node) {
       );
     }
   }
-
-
 
   if ($rows) {
     if ($data->behavior == 'borda' || $data->behavior == 'runoff') {
@@ -465,9 +472,19 @@ function advpoll_ranking_process_results($results, $choices, $votes) {
 /*
  * Determines how to theme poll results for Instant Run-off.  The display
  * for run-off results is unique and does not use the bars.
+ * 
+ * @param $nid
+ * Node id of the poll
+ * @param $data
+ * Data from the node formatted by one of the helper functions in the 
+ * advpoll_helper.inc document.
+ * @param $page
+ * A boolean value that indicates whether the request is to be displayed 
+ * normally (0) or on the results page (1)
  */
 
-function advpoll_display_runoff_results($nid, $data) {
+
+function advpoll_display_runoff_results($nid, $data, $page = 0) {
   $output = '';
   $form = NULL;
   if (user_access('cancel own vote')) {
@@ -482,7 +499,7 @@ function advpoll_display_runoff_results($nid, $data) {
     $uservotes = advpoll_get_user_votes($nid);
   }
 
-  if ($data->show_results == 'never' || ($data->show_results == 'afterclose' && $data->end_date > time())) {
+  if (!$page && ($data->show_results == 'never' || ($data->show_results == 'afterclose' && $data->end_date > time()))) {
     $output .= theme('advpoll_noresults', array(
       'data' => $data,
       'votes' => $uservotes,
@@ -604,9 +621,17 @@ function advpoll_display_runoff_results($nid, $data) {
  * Determines how to theme poll results based on settings in $data.
  * Borda display differs in that items that have the same values are
  * grouped into one 'bar' display.
+ * 
+ * @param $nid
+ * Node id of the poll
+ * @param $data
+ * Data from the node formatted by one of the helper functions in the 
+ * advpoll_helper.inc document.
+ * @param $page
+ * A boolean value that indicates whether the request is to be displayed 
+ * normally (0) or on the results page (1)
  */
-
-function advpoll_display_borda_results($nid, $data) {
+function advpoll_display_borda_results($nid, $data, $page = 0) {
   $output = '';
   $form = NULL;
   if (user_access('cancel own vote') &&  advpoll_get_user_votes($nid)) {
@@ -619,7 +644,7 @@ function advpoll_display_borda_results($nid, $data) {
     $votes = advpoll_get_user_votes($nid);
   }
 
-  if (!user_access('administer polls') && ($data->show_results == 'never' || ($data->show_results == 'afterclose' && $data->end_date > time()))) {
+  if (!$page && ($data->show_results == 'never' || ($data->show_results == 'afterclose' && $data->end_date > time()))) {
     $output .= theme('advpoll_noresults', array(
       'data' => $data,
       'votes' => $votes,
