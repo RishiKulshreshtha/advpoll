@@ -810,6 +810,7 @@ function _advpoll_installed_instances() {
 
 function advpoll_update_7000() {
 // fetch the t function for use in install
+  db_delete('field_data_advpoll_options')->condition('advpoll_options_value', 'showvotes')->execute();
   $t = get_t();
 
   // Add borda and run-off to allow ranking-style display and voting.
@@ -826,3 +827,5 @@ function advpoll_update_7000() {
   );
   field_update_field($field);
 }
+
+
