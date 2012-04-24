@@ -1040,3 +1040,13 @@ function _advpoll_writeins_access($node) {
   }
 }
 
+/**
+ * Implementation of hook_views_api().
+ */
+function advpoll_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'advpoll') . '/views',
+  );
+}
+
