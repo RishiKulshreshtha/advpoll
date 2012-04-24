@@ -28,5 +28,5 @@
  */
 ?>
 <div class="poll">
-    <div class="ineligible"><p><?php print t('You are not eligible to vote in this poll.'); ?>
+    <div class="ineligible"><p><?php print t('You are not eligible to vote in this poll.'); ?></p></div>
 </div>
