@@ -323,7 +323,8 @@ function advpoll_node_presave($node) {
 
 function advpoll_node_delete($node) {
   // Clear node's votes from the voting api
-  db_delete('votingapi_vote')->condition('entity_id', $node->nid)->execute();
+  $and = db_and()->condition('entity_id', $nid, 'IN')->condition('entity_type', 'advpoll');
+  db_delete('votingapi_vote')->condition($and)->execute();
 }
 
 /*
@@ -399,12 +400,12 @@ function advpoll_display_results($nid, $data, $page = 0) {
   if (($data->start_date > time() || $data->end_date < time()) || $data->state == 'close') {
     $expired = TRUE;
   }
-  
+
   // get user's votes if they're logged in and if voting is normal
   $votes = array();
   if ($data->mode == 'normal') {
     $votes = advpoll_get_user_votes($nid);
-  }  
+  }
 
   if (user_access('cancel own vote') && $votes && !$expired) {
     $form = drupal_get_form('advpoll_cancel_vote_form', $nid);
@@ -413,7 +414,7 @@ function advpoll_display_results($nid, $data, $page = 0) {
 
 
 
-  if (!$page && !$votes && $data->electoral && ($data->show_results == 'afterclose' 
+  if (!$page && !$votes && $data->electoral && ($data->show_results == 'afterclose'
     || $data->show_results == 'never' ) && !$expired) {
     $output .= theme('advpoll_ineligible', array('data' => $data));
   } elseif (!$page && ($data->show_results == 'never'
