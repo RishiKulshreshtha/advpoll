@@ -215,11 +215,13 @@ function advpoll_block_view($delta = '') {
 
   switch ($delta) {
     case 'advpoll_recent':
+      $recent = advpoll_get_recent();
       $block['subject'] = t('Most Recent Poll');
-      $block['content'] = array(
-        '#markup' => advpoll_get_recent(),
-      );
-
+      if ($recent) {
+        $block['content'] = array(
+          '#markup' => $recent,
+        );
+      }
       break;
     default:
       $block = advpoll_generate_block_view($block, $delta);
@@ -320,10 +322,9 @@ function advpoll_node_presave($node) {
 /*
  * Implements hook_node_delete().
  */
-
 function advpoll_node_delete($node) {
   // Clear node's votes from the voting api
-  $and = db_and()->condition('entity_id', $nid, 'IN')->condition('entity_type', 'advpoll');
+  $and = db_and()->condition('entity_id', $node->nid)->condition('entity_type', 'advpoll');
   db_delete('votingapi_vote')->condition($and)->execute();
 }
 
@@ -836,7 +837,10 @@ function advpoll_process_writein($nid, $writein, $data) {
  */
 
 function advpoll_get_recent() {
-  $node = NULL;
+  // check to see if the page that is loading this block is a node page
+  $loaded_node = menu_get_object();
+
+  $node = '';
   $result = db_query("SELECT n.nid FROM {node} n
                       LEFT JOIN {field_data_advpoll_dates} d 
                       ON d.entity_id = n.nid 
@@ -844,14 +848,18 @@ function advpoll_get_recent() {
                       ON c.entity_id = n.nid
                       LEFT JOIN {field_data_advpoll_options} o
                       ON o.entity_id = n.nid
-                      WHERE 
-                      n.type LIKE '%advpoll%' AND
-                      o.advpoll_options_value <> 'electoral' AND
+                      WHERE
+                      n.nid NOT IN(
+                        SELECT entity_id
+                        FROM {field_data_advpoll_options}
+                        WHERE advpoll_options_value = 'electoral'
+                      ) AND
+                      n.type = 'advpoll' AND
                       n.status = 1 AND
                       c.advpoll_closed_value = 'open' AND
                       d.advpoll_dates_value < NOW() AND 
                       d.advpoll_dates_value2 > NOW() 
-                      GROUP BY n.nid ORDER BY n.created DESC 
+                      ORDER BY n.created DESC 
                       LIMIT 1");
   if ($result) {
     foreach ($result as $record) {
@@ -859,8 +867,16 @@ function advpoll_get_recent() {
       break;
     }
 
-    $rendered_node = node_view($node);
-    return drupal_render($rendered_node);
+    if ($node) {
+      // Prevent block from showing on its node's page.
+      if ($loaded_node) {
+        if ($loaded_node->nid == $record->nid) {
+          return '';
+        }
+      }
+      $rendered_node = node_view($node);
+      return drupal_render($rendered_node);
+    }
   }
 
   return $node;
@@ -878,20 +894,19 @@ function advpoll_get_recent() {
 
 function advpoll_get_poll_info_blocks($blocks) {
   $result = db_query("SELECT n.title, n.nid FROM {node} n
-                      LEFT JOIN {field_data_advpoll_dates} d 
-                      ON d.entity_id = n.nid 
+                      LEFT JOIN {field_data_advpoll_dates} d
+                      ON d.entity_id = n.nid
                       LEFT JOIN {field_data_advpoll_closed} c
                       ON c.entity_id = n.nid
                       LEFT JOIN {field_data_advpoll_options} o
                       ON o.entity_id = n.nid
-                      WHERE 
-                      n.type LIKE '%advpoll%' AND
-                      o.advpoll_options_value <> 'electoral' AND
+                      WHERE
+                      n.type = 'advpoll' AND
                       o.advpoll_options_value = 'block' AND
                       n.status = 1 AND
                       c.advpoll_closed_value = 'open' AND
-                      d.advpoll_dates_value < NOW() AND d.advpoll_dates_value2 > NOW() 
-                      GROUP BY n.nid 
+                      d.advpoll_dates_value < NOW()
+                      AND d.advpoll_dates_value2 > NOW()
                       ORDER BY n.created DESC");
   if ($result) {
     foreach ($result as $record) {
@@ -921,31 +936,43 @@ function advpoll_generate_block_view($block, $delta) {
   // block to process
   $pattern = '/(?i)(advpoll)/';
   if (@preg_match($pattern, $delta)) {
+    // check to see if the page that is loading this block is a node page
+    $loaded_node = menu_get_object();
     $parts = explode('_', $delta);
     $nid = $parts[count($parts) - 1];
     $isBlock = FALSE;
+    if ($nid) {
+      $node = node_load($nid);
+      // had to test against type - value was returning a boolean but
+      // simply doing if ($node) still indicated the node existed. MW
+      if (gettype($node) == 'object') {
+        isset($node->advpoll_options[$node->language]) ?
+            $options = $node->advpoll_options[$node->language] :
+            $options = $node->advpoll_options['und'];
 
-    $node = node_load($nid);
+        // need to check to see if the nid is meant to display as a block or not.
+        // It's possible the value gets switched off but the block id is still
+        // assigned to a region and will display anyway.
+        foreach ($options as $option) {
+          if ($option['value'] == 'block') {
+            $isBlock = TRUE;
+          }
+        }
 
-    isset($node->advpoll_options[$node->language]) ?
-        $options = $node->advpoll_options[$node->language] :
-        $options = $node->advpoll_options['und'];
-
-    // need to check to see if the nid is meant to display as a block or not.
-    // It's possible the value gets switched off but the block id is still
-    // assigned to a region and will display anyway.
-    foreach ($options as $option) {
-      if ($option['value'] == 'block') {
-        $isBlock = TRUE;
+        if ($isBlock) {
+          // prevent block from showing on its node's page
+          if ($loaded_node) {
+            if ($loaded_node->nid == $node->nid) {
+              return $block;
+            }
+          }
+          $rendered_node = node_view($node);
+          $block['subject'] = t('Poll');
+          $block['content'] = array(
+            '#markup' => drupal_render($rendered_node),
+          );
+        }
       }
-    }
-
-    if ($isBlock) {
-      $rendered_node = node_view($node);
-      $block['subject'] = t('Poll');
-      $block['content'] = array(
-        '#markup' => drupal_render($rendered_node),
-      );
     }
   }
   return $block;
