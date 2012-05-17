@@ -103,8 +103,11 @@ function advpoll_uninstall() {
 
 
   if ($nid) {
-    $and = db_and()->condition('entity_id', $nid, 'IN')->condition('entity_type', 'advpoll');
-    db_delete('votingapi_vote')->condition($and)->execute();
+    db_delete('votingapi_vote')
+      ->condition('entity_id', $nid, 'IN')
+      ->condition('entity_type', 'advpoll')
+      ->execute();
+
     // Delete all the nodes at once
     // http://api.drupal.org/api/function/node_delete_multiple/7
     node_delete_multiple($nid);
@@ -808,7 +811,9 @@ function _advpoll_installed_instances() {
  */
 
 function advpoll_update_7000() {
-  db_delete('field_data_advpoll_options')->condition('advpoll_options_value', 'showvotes')->execute();
+  db_delete('field_data_advpoll_options')
+    ->condition('advpoll_options_value', 'showvotes')
+    ->execute();
   // fetch the t function for use in install
   $t = get_t();
 

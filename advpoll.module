@@ -323,9 +323,10 @@ function advpoll_node_presave($node) {
  * Implements hook_node_delete().
  */
 function advpoll_node_delete($node) {
-  // Clear node's votes from the voting api
-  $and = db_and()->condition('entity_id', $node->nid)->condition('entity_type', 'advpoll');
-  db_delete('votingapi_vote')->condition($and)->execute();
+  db_delete('votingapi_vote')
+    ->condition('entity_id', $node->nid)
+    ->condition('entity_type', 'advpoll')
+    ->execute();
 }
 
 /*
@@ -843,11 +844,11 @@ function advpoll_get_recent() {
   $node = '';
   $result = db_query("SELECT n.nid FROM {node} n
                       LEFT JOIN {field_data_advpoll_dates} d 
-                      ON d.entity_id = n.nid 
+                      ON d.revision_id = n.vid 
                       LEFT JOIN {field_data_advpoll_closed} c
-                      ON c.entity_id = n.nid
+                      ON c.revision_id = n.vid
                       LEFT JOIN {field_data_advpoll_options} o
-                      ON o.entity_id = n.nid
+                      ON o.revision_id = n.vid
                       WHERE
                       n.nid NOT IN(
                         SELECT entity_id
@@ -895,11 +896,11 @@ function advpoll_get_recent() {
 function advpoll_get_poll_info_blocks($blocks) {
   $result = db_query("SELECT n.title, n.nid FROM {node} n
                       LEFT JOIN {field_data_advpoll_dates} d
-                      ON d.entity_id = n.nid
+                      ON d.revision_id = n.vid
                       LEFT JOIN {field_data_advpoll_closed} c
-                      ON c.entity_id = n.nid
+                      ON c.revision_id = n.vid
                       LEFT JOIN {field_data_advpoll_options} o
-                      ON o.entity_id = n.nid
+                      ON o.revision_id = n.vid
                       WHERE
                       n.type = 'advpoll' AND
                       o.advpoll_options_value = 'block' AND
