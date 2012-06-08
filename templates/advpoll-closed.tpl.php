@@ -29,7 +29,7 @@
 <div class="poll">
     <div class="poll-closed">
     <?php if ($data->start_date > time()): ?>
-        <?php $date = date('F j, Y g:ia', $data->start_date); ?>
+        <?php $date = format_date($data->start_date, 'long'); ?>
        <p><?php print t('This poll will open on @date.', array('@date' => $date)); ?></p>
     <?php else: ?>
        <p><?php print t('Thank you for participating.  The poll is now closed.'); ?></p>

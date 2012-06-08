@@ -107,6 +107,7 @@ function advpoll_get_form_data($form_state) {
   $data = array();
   $node = $form_state['build_info']['args'][0];
   $lang = $node->language;
+  $options = array();
 
   if ($node->type == 'advpoll') {
     if ($node->advpoll_options) {

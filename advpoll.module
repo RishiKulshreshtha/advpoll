@@ -415,8 +415,9 @@ function advpoll_display_results($nid, $data, $page = 0) {
   $rendered_form = drupal_render($form);
 
 
-
-  if (!$page && !$votes && $data->electoral && ($data->show_results == 'afterclose'
+  if (!$page && $expired && $data->show_results == 'never') {
+    $output .= theme('advpoll_closed', array('data' => $data));    
+  } elseif (!$page && !$votes && $data->electoral && ($data->show_results == 'afterclose'
     || $data->show_results == 'never' ) && !$expired) {
     $output .= theme('advpoll_ineligible', array('data' => $data));
   } elseif (!$page && ($data->show_results == 'never'
@@ -433,6 +434,8 @@ function advpoll_display_results($nid, $data, $page = 0) {
     $bars = '';
     $final = advpoll_update_choices($data->choices, $results['choices']);
 
+    //TODO - update title to indicate that the source of a vote is a write in
+    //       Allow permission to determine whether or not to display a write in vote in results.
     foreach ($final as $item) {
       $voted = FALSE;
 

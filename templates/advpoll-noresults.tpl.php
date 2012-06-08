@@ -46,7 +46,7 @@
     <?php endif; ?>
     
     <?php if ($data->show_results == 'afterclose'): ?>
-        <?php $date = date('F j, Y g:ia', $data->end_date); ?>
+        <?php $date = format_date($data->end_date, 'long'); ?>
         <p><?php print t('The results of this poll will be available after @date.', array('@date' => $date)); ?></p>
     <?php endif; ?>
 
