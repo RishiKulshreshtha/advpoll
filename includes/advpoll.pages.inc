@@ -218,13 +218,29 @@ function advpoll_electoral_list_form($form, &$form_state, $nid) {
     $form['electoral_list']['add_user']['#autocomplete_path'] = 'user/autocomplete';
   }
 
+  // Check to see if basic authorized users (2) have permission to vote.  If this is the case, 
+  // new roles added after auth was selected in permissions may not show up in list. This check 
+  // ensures that all roles get added to the list if auth users are included.
+  $auth = db_query("SELECT r.name, 
+                      r.rid 
+                      FROM {role} r 
+                      LEFT JOIN {role_permission} p ON p.rid = r.rid 
+                      WHERE p.permission LIKE '%vote on polls%' 
+                      AND r.rid = 2 ORDER BY r.name")->fetchField();
   // List all roles with "vote on polls" permission, but don't include anonymous users.
-  $result = db_query("SELECT r.name, 
+  if ($auth) {
+    $result = db_query("SELECT r.name, 
+                      r.rid 
+                      FROM {role} r 
+                      WHERE r.rid <> 1 ORDER BY r.name");
+  } else {
+    $result = db_query("SELECT r.name, 
                       r.rid 
                       FROM {role} r 
                       LEFT JOIN {role_permission} p ON p.rid = r.rid 
                       WHERE p.permission LIKE '%vote on polls%' 
                       AND r.rid <> 1 ORDER BY r.name");
+  }
   $role_options = array(0 => t('(Select a role)'));
 
   foreach ($result as $record) {
@@ -262,9 +278,8 @@ function advpoll_electoral_list_form_submit($form, &$form_state) {
   if ($add_user) {
     $uid = db_query('SELECT uid 
                      FROM {users} 
-                     WHERE name = :user', 
-                     array(':user' => $add_user))->fetchField();
-    
+                     WHERE name = :user', array(':user' => $add_user))->fetchField();
+
     db_merge('advpoll_electoral_list')
       ->key(array(
         'nid' => $nid,
@@ -325,8 +340,7 @@ function advpoll_electoral_list_form_validate($form, &$form_state) {
     // Check that the user exists
     $result = db_query("SELECT uid 
                         FROM {users} 
-                        WHERE name = :name", 
-                        array(':name' => $add_user));
+                        WHERE name = :name", array(':name' => $add_user));
     if (!$result) {
       form_set_error('electoral_list][add_user', t('User %user does not exist.', array('%user' => $add_user)));
       return FALSE;
@@ -345,9 +359,8 @@ function advpoll_remove_voter() {
     if ($uid && $node = node_load($nid)) {
       $user = db_query('SELECT name 
                         FROM {users} 
-                        WHERE uid = :uid', 
-                        array(':uid' => $uid))->fetchField();
-      
+                        WHERE uid = :uid', array(':uid' => $uid))->fetchField();
+
       if ($user) {
         db_delete('advpoll_electoral_list')
           ->condition('nid', $nid)
@@ -386,7 +399,7 @@ function advpoll_clear_votes_confirm_form_submit($form, &$form_state) {
   $nid = (int) check_plain(arg(1));
   db_delete('votingapi_vote')
     ->condition('entity_id', $nid)
-    ->condition('entity_type', 'advpoll')  
+    ->condition('entity_type', 'advpoll')
     ->execute();
   drupal_goto('node/' . $nid);
 }
