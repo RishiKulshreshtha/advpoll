@@ -42,7 +42,7 @@ function advpoll_ranking_node_view($node, $view_mode) {
         } else {
           $results = advpoll_display_runoff_results($node->nid, $data);
         }
-        
+
         $node->content['advpoll_choice'] = array('#markup' => $results, '#weight' => 1);
       }
     }
@@ -497,7 +497,7 @@ function advpoll_display_runoff_results($nid, $data, $page = 0) {
   if ($data->mode == 'normal') {
     $uservotes = advpoll_get_user_votes($nid);
   }
-  
+
   if (user_access('cancel own vote') && $uservotes && !$expired) {
     $form = drupal_get_form('advpoll_ranking_cancel_form', $nid);
   }
@@ -509,7 +509,8 @@ function advpoll_display_runoff_results($nid, $data, $page = 0) {
       'data' => $data
       )
     );
-  } elseif (!$page && ($data->show_results == 'never'
+  } 
+  elseif (!$page && ($data->show_results == 'never'
     || ($data->show_results == 'afterclose' && !$expired))) {
     $output .= theme('advpoll_noresults', array(
       'data' => $data,
@@ -518,7 +519,8 @@ function advpoll_display_runoff_results($nid, $data, $page = 0) {
       'cancel_form' => $rendered_form,
       )
     );
-  } else {
+  } 
+  else {
 
     $criteria = array();
     $criteria['entity_id'] = $nid;
@@ -563,11 +565,13 @@ function advpoll_display_runoff_results($nid, $data, $page = 0) {
 
     $rows = array();
     $all_by_key = array();
+    $write_in = array();
 
     // get all choices with unique ID as key
     foreach ($data->choices as $choice) {
       // store all choices by key
       $all_by_key[$choice['choice_id']] = $choice['choice'];
+      $write_in[$choice['choice_id']] = $choice['write_in'];
     }
 
     // build rows for table
@@ -579,6 +583,7 @@ function advpoll_display_runoff_results($nid, $data, $page = 0) {
           'votes' => $tally[$key],
           'choice' => $all_by_key[$key],
           'user_choice' => TRUE,
+          'write_in' => $write_in[$key],
         );
       } else {
         $rows[] = array(
@@ -587,6 +592,7 @@ function advpoll_display_runoff_results($nid, $data, $page = 0) {
           'votes' => $tally[$key],
           'choice' => $all_by_key[$key],
           'user_choice' => FALSE,
+          'write_in' => $write_in[$key],
         );
       }
       // remove from keyed list of choices so we can ensure all choices display even if there
@@ -604,6 +610,7 @@ function advpoll_display_runoff_results($nid, $data, $page = 0) {
           'votes' => 0,
           'choice' => $choice,
           'user_choice' => FALSE,
+          'write_in' => $write_in[$key],
         );
       }
     }
@@ -679,18 +686,32 @@ function advpoll_display_borda_results($nid, $data, $page = 0) {
     $final = advpoll_update_choices($data->choices, $results['choices']);
     $reordered = array();
     foreach ($final as $item) {
-      $voted = FALSE;
-      if (in_array($item['tag'], $votes)) {
-        $voted = TRUE;
+
+      $title = $item['title'];
+
+      $show_bar = TRUE;
+      if ($item['write_in']) {
+        $title .= ' ' . t('(Write in)');
+
+        $node = node_load($nid);
+        $show_bar = _advpoll_show_writeins_access();
       }
-      if (!isset($reordered[$item['percentage']])) {
-        $reordered[$item['percentage']] = array();
+
+      if ($show_bar) {
+
+        $voted = FALSE;
+        if (in_array($item['tag'], $votes)) {
+          $voted = TRUE;
+        }
+        if (!isset($reordered[$item['percentage']])) {
+          $reordered[$item['percentage']] = array();
+        }
+        $reordered[$item['percentage']][] = array(
+          'title' => $title,
+          'votes' => $item['votes'],
+          'voted' => $voted,
+        );
       }
-      $reordered[$item['percentage']][] = array(
-        'title' => $item['title'],
-        'votes' => $item['votes'],
-        'voted' => $voted,
-      );
     }
 
     foreach ($reordered as $key => $candidates) {
@@ -792,12 +813,13 @@ function advpoll_ranking_cancel_form($form, &$form_state, $nid) {
 
 function advpoll_ranking_cancel_submit($form, &$form_state) {
   global $user;
-  if ($user) {
+  if ($user->uid) {
     $nid = $form['#nid'];
 
     $criteria = array();
     $criteria['entity_id'] = $nid;
     $criteria['entity_type'] = 'advpoll';
+
     $criteria['uid'] = $user->uid;
 
     votingapi_delete_votes(votingapi_select_votes($criteria));

@@ -206,7 +206,6 @@ function advpoll_user_eligibility($node) {
   if (!user_access('vote on polls')) {
     return FALSE;
   }
-
   global $user;
   $data = advpoll_get_data($node);
 
@@ -237,9 +236,14 @@ function advpoll_user_eligibility($node) {
     $criteria['entity_id'] = $node->nid;
     $criteria['entity_type'] = $node->type;
 
-    $criteria['uid'] = $user->uid;
-
+    if ($user->uid) {
+      $criteria['uid'] = $user->uid;
+    }
+    else {
+      $criteria['vote_source'] = ip_address();
+    }
     $results = votingapi_select_votes($criteria);
+
     if ($results) {
       return FALSE;
     }
@@ -285,7 +289,7 @@ function advpoll_check_electoral_list($uid, $nid) {
  *                       set.
  */
 function advpoll_add_votes($vote) {
-
+  global $user;
   // normal voting uses the voteapi to record user id or ip based on authentication
   if ($vote['mode'] === 'normal') {
     $votes = array(
@@ -294,6 +298,7 @@ function advpoll_add_votes($vote) {
       'value' => $vote['value'],
       'tag' => $vote['tag'],
     );
+    
   } 
   else {
     // unlimited and cookie voting simply add values to the votingapi and bypass 

@@ -1,15 +1,15 @@
 /* 
  * Advanced Ranking Poll
  * Handles behavior of Ranking polls.
- */
-
+ http://groups.drupal.org/node/237188#comment-772138
+*/
 (function ($) {
   // storing identifiers arrays to enable more than one ranking poll to render 
   // properly if more than one is displayed on the same page.  
   var ids = [];
   var totals = {};
   var currentIndices = {};
-    
+
   Drupal.behaviors.advpollModule = {
     attach: function (context, settings) {
       if (Drupal.settings){
@@ -30,8 +30,9 @@
             $(formID+' #advpolltable tfoot tr.submit-row td').append($('.advpoll-ranking-wrapper '+formID+' .form-submit'));
             $(formID+' li a').each(function(index){
               $(this).data('index', index);
-            });                              
-                
+            });
+            $('#advpolltable tbody td').css('display', 'block');
+            $('#advpolltable tr').css('visibility', 'visible');
             // how many possible choices can user make?
             totals[ids[i]] = $(formID+' #advpolltable tbody tr').length;
                 
@@ -73,10 +74,10 @@
           if (Drupal.tableDrag) {
             tableDrag = Drupal.tableDrag.advpolltable;
               
-
-            // Add a handler for when a row is swapped.
-            tableDrag.row.prototype.onSwap = function (swappedRow) {
-
+            if (tableDrag.row) {
+              // Add a handler for when a row is swapped.
+              tableDrag.row.prototype.onSwap = function (swappedRow) {
+              }
             };
 
             // Add a handler so when a row is dropped, update fields dropped into new regions.
@@ -90,7 +91,7 @@
       } 
     }
 
-  };
+  }
     
   // called when an item is added or removed from the list or upon initialization
   Drupal.advpollUpdateEvents =  function (value) {
@@ -101,7 +102,7 @@
       if (currentIndices[value] < totals[value]) {
         $(this).removeClass('add').addClass('remove').html('(x)');
       }
-      $(formID+' #advpolltable tbody td').eq(currentIndices[value]).append(element);
+      $(formID+' #advpolltable tbody td').eq(currentIndices[value]).append(element).css('display', 'block');
       $(formID+' #advpolltable tbody tr').eq(currentIndices[value]).css('visibility', 'visible');
       currentIndices[value]++;
       Drupal.advpollUpdateEvents(value);

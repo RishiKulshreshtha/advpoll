@@ -141,6 +141,11 @@ td.poll-chvotes .form-text {
     white-space: normal;
 }
 
+#advpolltable td {
+  border: none;
+  min-height: 20px;
+}
+
 #advpolltable td li {
   display: block;
   width: 198px;
