@@ -306,9 +306,19 @@ function advpoll_node_presave($node) {
         }
 
         $choices = $node->advpoll_choice[$lang];
+        $count = count($choices);
+        $ids = array();
 
-        foreach ($choices as $choice) {
-          $ids[] = $choice['choice_id'];
+        // ensure there are no duplicate choice_ids in this node
+        for ($i = 0; $i < $count; $i++) {
+          $id = $choices[$i]['choice_id'];
+          if (!in_array($id, $ids)) {
+            $ids[] = $id;
+          } else {
+            $new_id = dechex(time() * rand(5, 50));
+            $node->advpoll_choice[$lang][$i]['choice_id'] = $new_id;
+            $ids[] = $new_id;
+          }
         }
 
         $noMatch = array();
@@ -1106,7 +1116,7 @@ function _advpoll_writeins_access($node) {
  * Returns TRUE or FALSE
  */
 function _advpoll_show_writeins_access() {
-    return user_access('show write-ins');
+  return user_access('show write-ins');
 }
 
 /**
