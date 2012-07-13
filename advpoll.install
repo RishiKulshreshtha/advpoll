@@ -817,7 +817,8 @@ function advpoll_update_7000() {
   // fetch the t function for use in install
   $t = get_t();
 
-  // Add borda and run-off to allow ranking-style display and voting.
+  // Remove options that are no longer valid from initial build and replace
+  // only with valid options.
   $field = array(
     'field_name' => 'advpoll_options',
     'settings' => array(

@@ -288,39 +288,54 @@ function advpoll_theme($existing, $type, $theme, $path) {
  */
 
 function advpoll_node_presave($node) {
-// Scrub any votes that are orphaned when a choice is removed via the edit page.
   if ($node->type === 'advpoll') {
-// get votes for this node
-    if (isset($node->nid)) {
+
+    $lang = $node->language;
+
+    if (!isset($node->advpoll_choice[$lang])) {
+      $lang = 'und';
+    }
+
+    // get all existing choices in the node
+    $choices = $node->advpoll_choice[$lang];
+    $count = count($choices);
+
+    // set up for the benefit of Devel to ensure values present
+    // a normal/average type of poll setting.
+    if (isset($node->devel_generate)) {
+      $node->advpoll_dates[$lang][0]['value'] = date('Y-m-d 00:00:00', time());
+      $node->advpoll_dates[$lang][0]['value2'] = date('Y-m-d 00:00:00', time() + (60 * 60 * 24 * 30));
+      $node->advpoll_max_choices[$lang][0]['value'] = $count;
+      $node->advpoll_closed[$lang][0]['value'] = 'open'; 
+      $node->advpoll_mode[$lang][0]['value'] = 'normal'; 
+      $node->advpoll_cookie_duration[$lang][0]['value'] = 60; 
+      $node->advpoll_results[$lang][0]['value'] = 'aftervote'; 
+      unset($node->advpoll_options);
+    }
+
+
+    // ensure there are no duplicate choice_ids in this node
+    $ids = array();
+    for ($i = 0; $i < $count; $i++) {
+      $id = $choices[$i]['choice_id'];
+      if (!in_array($id, $ids)) {
+        $ids[] = $id;
+      } else {
+        $new_id = dechex(time() * rand(5, 50));
+        $node->advpoll_choice[$lang][$i]['choice_id'] = $new_id;
+        $ids[] = $new_id;
+      }
+    }
+
+    // check for vote results for this node      
+    if (isset($nid)) {
       $criteria = array();
       $criteria['entity_id'] = $node->nid;
       $criteria['entity_type'] = 'advpoll';
       $results = votingapi_select_votes($criteria);
-      $lang = $node->language;
 
+      // Scrub any votes that are orphaned when a choice is removed.
       if ($results) {
-// get all existing choices in the node
-
-        if (!isset($node->advpoll_choice[$lang])) {
-          $lang = 'und';
-        }
-
-        $choices = $node->advpoll_choice[$lang];
-        $count = count($choices);
-        $ids = array();
-
-        // ensure there are no duplicate choice_ids in this node
-        for ($i = 0; $i < $count; $i++) {
-          $id = $choices[$i]['choice_id'];
-          if (!in_array($id, $ids)) {
-            $ids[] = $id;
-          } else {
-            $new_id = dechex(time() * rand(5, 50));
-            $node->advpoll_choice[$lang][$i]['choice_id'] = $new_id;
-            $ids[] = $new_id;
-          }
-        }
-
         $noMatch = array();
         foreach ($results as $vote) {
           if (!in_array($vote['tag'], $ids)) {
