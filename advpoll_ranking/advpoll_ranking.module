@@ -73,43 +73,6 @@ function advpoll_ranking_menu_alter(&$items) {
   $items['node/%node/results']['page callback'] = 'advpoll_ranking_results_page';
 }
 
-/*
- * Implements hook_form_alter().
- * 
- * Add validation to limit number of choices.
- */
-
-function advpoll_ranking_form_alter(&$form, $form_state, $form_id) {
-  if ($form_id == 'advpoll_node_form') {
-    $lang = $form['language']['#value'];
-    $form['#validate'][] = 'advpoll_ranking_validate_choices';
-  }
-}
-
-/*
- * Validation prevents user from entering more than 10 choices on node add/edit.
- */
-
-function advpoll_ranking_validate_choices($form, &$form_state) {
-  $input_choices = array();
-  $lang = $form_state['build_info']['args'][0]->language;
-
-  if (!isset($form_state['input']['advpoll_choice'][$lang])) {
-    $lang = 'und';
-  }
-
-  $choices = $form_state['input']['advpoll_choice'][$lang];
-
-  foreach ($choices as $choice) {
-    if ($choice['choice']) {
-      $input_choices[] = $choice['choice'];
-    }
-  }
-  $behavior = $form_state['input']['advpoll_behavior'][$lang];
-  if (count($input_choices) > 10 && ($behavior == 'borda' || $behavior == 'runoff')) {
-    form_set_error('advpoll_choice', t('A ranking poll may only have 10 choices.  Please remove some choices.'));
-  }
-}
 
 /*
  * Determine how display the votes based on its type
@@ -344,9 +307,12 @@ function advpoll_draggable_submit($form, &$form_state) {
 function advpoll_ranking_choice_form($form, &$form_state, $values) {
   $data = advpoll_get_data($values);
   $count = count($data->choices);
-  // values are necessary to render select list. This means that the user can't allow more than
-  // 10 rankable items.
-  $ranking = array('--', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th');
+
+  // allow only the number of choices available for hidden select
+  $ranking = array('--');
+  for ($i = 0; $i < $data->max_choices; $i++) {
+    $ranking[] = $i + 1;
+  }
   $options = array();
 
   $form['#id'] = 'advpoll-ranking-form-' . $values->nid;
