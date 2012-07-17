@@ -575,10 +575,14 @@ function advpoll_display_runoff_results($nid, $data, $page = 0) {
   $form = NULL;
   $expired = FALSE;
 
-  if (($data->start_date > time() || $data->end_date < time()) || $data->state == 'close') {
+  if ($data->state == 'close') {
     $expired = TRUE;
   }
-
+  
+  if ($data->start_date && $data->start_date > time() || $data->end_date && $data->end_date < time()) {
+    $expired = TRUE;
+  }
+  
   // get user's votes if they're logged in and if voting is normal
   $uservotes = array();
   if ($data->mode == 'normal') {

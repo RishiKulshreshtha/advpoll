@@ -29,7 +29,7 @@
  *   block:           Boolean - Poll can be displayed as a block.
  */
 
-drupal_add_tabledrag('advpoll-ranking-draggable', 'match', 'sibling', 'advpoll-weight');
+drupal_add_tabledrag('advpoll-ranking-draggable', 'match', 'sibling', 'advpoll-draggable-weight', NULL, NULL, FALSE);
 
 ?>
 <table id="advpoll-ranking-draggable" class="sticky-enabled">
@@ -45,7 +45,7 @@ drupal_add_tabledrag('advpoll-ranking-draggable', 'match', 'sibling', 'advpoll-w
   ?>
   <?php foreach ($choices as $choice): ?>
       <tr class="draggable <?php print $row % 2 == 0 ? 'odd' : 'even'; ?>">
-        <td class="advpoll-weight"><?php print $choice['choice']; ?>
+        <td class="advpoll-draggable-weight"><?php print $choice['choice']; ?>
           <select id="edit-draggable-choice-<?php print $row;?> "class="form-select" name="choice[<?php print $row; ?>]" style="display:none" >
             <option value="0">--</option>
             <option value="1">1</option>

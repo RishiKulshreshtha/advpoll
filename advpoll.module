@@ -430,7 +430,12 @@ function advpoll_display_results($nid, $data, $page = 0) {
   $output = '';
   $form = NULL;
   $expired = FALSE;
-  if (($data->start_date > time() || $data->end_date < time()) || $data->state == 'close') {
+
+  if ($data->state == 'close') {
+    $expired = TRUE;
+  }
+  
+  if ($data->start_date && $data->start_date > time() || $data->end_date && $data->end_date < time()) {
     $expired = TRUE;
   }
 
@@ -587,7 +592,7 @@ function advpoll_choice_form($form, &$form_state, $values) {
   }
 
   if ($data->write_in && $data->mode != 'unlimited') {
-    $options['write-in'] = t('(Write-in)');
+    $options['write-in'] = t('Other (Write-in)');
     $form['choice_' + $count] = array(
       '#type' => $input_type,
       '#title' => '',

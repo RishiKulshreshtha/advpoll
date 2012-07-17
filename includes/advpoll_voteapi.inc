@@ -1,4 +1,5 @@
 <?php
+
 /*
  * @file
  * Advanced Poll Vote API Include
@@ -27,11 +28,9 @@ function advpoll_get_votes($nid, $behavior = 'approval') {
 
   if ($behavior === 'approval') {
     $tabulated = advpoll_approval_vote($results);
-  } 
-  elseif ($behavior === 'pool') {
+  } elseif ($behavior === 'pool') {
     $tabulated = advpoll_pooled_vote($results);
-  } 
-  else {
+  } else {
     $tabulated = advpoll_default_vote($results);
   }
 
@@ -62,8 +61,7 @@ function advpoll_approval_vote($results) {
   foreach ($results as $result) {
     if (isset($tallied[$result['tag']])) {
       $tallied[$result['tag']]++;
-    } 
-    else {
+    } else {
       $tallied[$result['tag']] = 1;
     }
 
@@ -98,8 +96,7 @@ function advpoll_pooled_vote($results) {
   foreach ($results as $result) {
     if (isset($tallied[$result['tag']])) {
       $tallied[$result['tag']]++;
-    } 
-    else {
+    } else {
       $tallied[$result['tag']] = 1;
     }
     $total++;
@@ -136,8 +133,7 @@ function advpoll_default_vote($results) {
     if (isset($tallied[$result['tag']])) {
       $tallied[$result['tag']] += $points;
       ;
-    } 
-    else {
+    } else {
       $tallied[$result['tag']] = $points;
     }
     $totalpoints += $points;
@@ -179,14 +175,13 @@ function advpoll_calculate_percentage($tallied, $total) {
 /*
  * callback for usort to order items by percentage.
  */
+
 function advpoll_compare($a, $b) {
   if ($a['percentage'] > $b['percentage']) {
     return 1;
-  } 
-  elseif ($a['percentage'] < $b['percentage']) {
+  } elseif ($a['percentage'] < $b['percentage']) {
     return -1;
-  } 
-  else {
+  } else {
     return 0;
   }
 }
@@ -202,6 +197,7 @@ function advpoll_compare($a, $b) {
  * Returns TRUE or FALSE.
  * 
  */
+
 function advpoll_user_eligibility($node) {
   if (!user_access('vote on polls')) {
     return FALSE;
@@ -223,8 +219,10 @@ function advpoll_user_eligibility($node) {
     return FALSE;
   }
 
-  if ($data->start_date > time() || $data->end_date < time()) {
-    return FALSE;
+  if ($data->start_date && $data->end_date) {
+    if ($data->start_date > time() || $data->end_date < time()) {
+      return FALSE;
+    }
   }
 
   if ($data->mode === 'cookie' && isset($_COOKIE[$node->type . $node->nid])) {
@@ -238,8 +236,7 @@ function advpoll_user_eligibility($node) {
 
     if ($user->uid) {
       $criteria['uid'] = $user->uid;
-    }
-    else {
+    } else {
       $criteria['vote_source'] = ip_address();
     }
     $results = votingapi_select_votes($criteria);
@@ -262,11 +259,11 @@ function advpoll_user_eligibility($node) {
  * @return
  * Returns TRUE or FALSE
  */
+
 function advpoll_check_electoral_list($uid, $nid) {
   $result = db_query('SELECT uid 
                       FROM {advpoll_electoral_list} 
-                      WHERE uid = :uid AND nid = :nid', 
-                      array(':uid' => $uid, ':nid' => $nid))->fetchField();
+                      WHERE uid = :uid AND nid = :nid', array(':uid' => $uid, ':nid' => $nid))->fetchField();
 
   if ($result) {
     return TRUE;
@@ -298,9 +295,7 @@ function advpoll_add_votes($vote) {
       'value' => $vote['value'],
       'tag' => $vote['tag'],
     );
-    
-  } 
-  else {
+  } else {
     // unlimited and cookie voting simply add values to the votingapi and bypass 
     // user id and ip as source. Ttime stamp instead of ip will prevent a unique 
     // id from being tied to these voters.
@@ -368,6 +363,7 @@ function advpoll_checkbox_selected($choices, $votes) {
  * @return
  * Returns the unique ID of the choice selected by the user.
  */
+
 function advpoll_radio_selected($choices, $vote) {
 
   $selected = array();
@@ -401,8 +397,7 @@ function advpoll_get_user_votes($nid) {
 
   if ($user->uid) {
     $criteria['uid'] = $user->uid;
-  } 
-  else {
+  } else {
     $criteria['vote_source'] = ip_address();
   }
 
