@@ -42,22 +42,16 @@ drupal_add_tabledrag('advpoll-ranking-draggable', 'match', 'sibling', 'advpoll-d
   <?php
     $row = 0;
     $choices = $data->choices;
+    $choice_count = count($choices);
   ?>
   <?php foreach ($choices as $choice): ?>
       <tr class="draggable <?php print $row % 2 == 0 ? 'odd' : 'even'; ?>">
         <td class="advpoll-draggable-weight"><?php print $choice['choice']; ?>
           <select id="edit-draggable-choice-<?php print $row;?> "class="form-select" name="choice[<?php print $row; ?>]" style="display:none" >
             <option value="0">--</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-            <option value="6">6</option>
-            <option value="7">7</option>
-            <option value="8">8</option>
-            <option value="9">9</option>
-            <option value="10">10</option>
+           <?php for ($i = 0; $i < $choice_count; $i++): ?>
+            <option value="<?php print $i + 1; ?>"><?php print $i + 1; ?></option>
+           <?php endfor; ?>
           </select>
       </tr>
     <?php $row++; ?>

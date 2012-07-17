@@ -743,7 +743,7 @@ function advpoll_display_borda_results($nid, $data, $page = 0) {
   $form = NULL;
 
   $expired = FALSE;
-  if (($data->start_date > time() || $data->end_date < time()) || $data->state == 'close') {
+  if (($data->start_date && $data->start_date > time() || $data->end_date && $data->end_date < time()) || $data->state == 'close') {
     $expired = TRUE;
   }
 

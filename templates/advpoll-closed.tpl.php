@@ -28,7 +28,7 @@
 ?>
 <div class="poll">
     <div class="poll-closed">
-    <?php if ($data->start_date > time()): ?>
+    <?php if ($data->start_date && $data->start_date > time()): ?>
         <?php $date = format_date($data->start_date, 'long'); ?>
        <p><?php print t('This poll will open on @date.', array('@date' => $date)); ?></p>
     <?php else: ?>

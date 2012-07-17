@@ -219,6 +219,7 @@ function advpoll_user_eligibility($node) {
     return FALSE;
   }
 
+  // It is possible for a user to not set a start or end date.
   if ($data->start_date && $data->end_date) {
     if ($data->start_date > time() || $data->end_date < time()) {
       return FALSE;
