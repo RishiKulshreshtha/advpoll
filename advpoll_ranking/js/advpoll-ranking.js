@@ -7,6 +7,7 @@
   // storing identifiers arrays to enable more than one ranking poll to render 
   // properly if more than one is displayed on the same page.  
   var ids = [];
+  var draggable_ids = [];
   var totals = {};
   var currentIndices = {};
 
@@ -205,12 +206,26 @@
   };
 
   Drupal.theme.prototype.tableDragChangedMarker = function () {
+    Drupal.advpollDraggableUpdate();
     return [];
   };   
     
   Drupal.advpollSetup = function(value) {
     ids.push(value);
   }
-    
 
+  Drupal.advpollDraggableUpdate = function () {
+    for (var i = 0; i < draggable_ids.length; i++) {
+      var draggable_table = $('#advpoll-ranking-draggable-form-'+draggable_ids[i]+' #advpoll-ranking-draggable');
+      var rows = $(draggable_table).find('tbody tr').length;
+      for(var j = 1; j <= rows; j++) {
+        $("#advpoll-ranking-draggable-form-"+draggable_ids[i]+" table tbody tr:nth-child("+j+") select option[value='"+(j)+"']").attr('selected', 'selected');
+      }
+    }
+  }
+
+  Drupal.advpollDraggableSetup = function(value) {
+    draggable_ids.push(value);
+    Drupal.advpollDraggableUpdate();
+  }
 })(jQuery);

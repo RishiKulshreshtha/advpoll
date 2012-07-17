@@ -103,9 +103,9 @@ function advpoll_has_data($options, $term) {
  *   write_in:        Boolean - all write-in voting.
  *   block:           Boolean - Poll can be displayed as a block.
  */
-function advpoll_get_form_data($form_state) {
+function advpoll_get_form_data($form_state, $index=0) {
   $data = array();
-  $node = $form_state['build_info']['args'][0];
+  $node = $form_state['build_info']['args'][$index];
   $lang = $node->language;
   $options = array();
 
