@@ -212,7 +212,7 @@ function advpoll_ranking_votes_page($node) {
  * Theme elements used by Advanced Ranking Poll.
  */
 function advpoll_ranking_theme($existing, $type, $theme, $path) {
-  return array(
+  $theme_hooks = array(
       'advpoll_runoff' => array(
           'variables' => array(
               'total' => 0,
@@ -233,7 +233,7 @@ function advpoll_ranking_theme($existing, $type, $theme, $path) {
           'path' => drupal_get_path('module', 'advpoll_ranking') . '/templates',
           'template' => 'advpoll-borda-bar'
       ),
-      'advpoll_ranking_draggable' => array(
+      'advpoll_draggable' => array(
           'variables' => array(
               'data' => NULL,
               'node' => NULL,
@@ -242,7 +242,10 @@ function advpoll_ranking_theme($existing, $type, $theme, $path) {
           'template' => 'advpoll-draggable',
       ),
   );
+
+  return $theme_hooks;  
 }
+
 
 /*
  * form view for ranking and borda poll draggable version
@@ -250,7 +253,7 @@ function advpoll_ranking_theme($existing, $type, $theme, $path) {
 
 function advpoll_draggable_form($form, &$form_state, $data, $node) {
   $form['#id'] = 'advpoll-ranking-draggable-form-' . $node->nid;
-  $form['choices'] = array('#theme' => 'advpoll_ranking_draggable', '#data' => $data, '#node' => $node);
+  $form['choices'] = array('#theme' => 'advpoll_draggable', '#data' => $data, '#node' => $node);
 
 
   $form['submit'] = array(
