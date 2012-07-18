@@ -259,14 +259,22 @@
       j,
       len,
       draggable_table,
-      rows;
+      rows,
+      $row;
 
     for (i = 0, len = draggable_ids.length; i < len; i += 1) {
       draggable_table = $('#advpoll-ranking-draggable-form-' + draggable_ids[i] + ' .advpoll-ranking-draggable');
       rows = $(draggable_table).find('tbody tr').length;
 
       for (j = 1; j <= rows; j += 1) {
-        $("#advpoll-ranking-draggable-form-" + draggable_ids[i] + " table tbody tr:nth-child(" + j + ") select option[value='" + (j) + "']").attr('selected', 'selected');
+        $row = $("#advpoll-ranking-draggable-form-" + draggable_ids[i] + " table tbody tr:nth-child(" + j + ")");
+
+        // update the select menu
+        $row.find("select option[value='" + (j) + "']").attr('selected', 'selected');
+
+        // remove attributes from the elements that aren't selected
+        $row.find("select option[value!='" + (j) + "']").removeAttr('selected');
+
       }
     }
   };
