@@ -321,13 +321,6 @@ function advpoll_ranking_choice_form($form, &$form_state, $values) {
   $form['#id'] = 'advpoll-ranking-form-' . $values->nid;
   $form['choice'] = array('#tree' => TRUE);
 
-  // need some way to get the unique NID value for javascript. This assists with
-  // issues inwhich more than one ranking poll is displaying on a page.
-  $form['identity-markup'] = array(
-      '#type' => 'item',
-      '#markup' => '<script>Drupal.advpollSetup(' . $values->nid . ');</script>',
-  );
-
   for ($i = 0; $i < $count; $i++) {
     if (!$data->choices[$i]['write_in']) {
       $form['choice'][$i] = array(
@@ -374,9 +367,9 @@ function advpoll_ranking_choice_form($form, &$form_state, $values) {
       '#type' => 'item',
       '#prefix' => '<div class="advpoll-vote-region">',
       '#suffix' => '</div>',
-      '#markup' => '<table id="advpolltable"><thead><tr><th>' . t('Your Vote') . '</th></tr><tbody>' . $rows . '</tbody></table>',
+      '#markup' => '<table id="advpolltable-'.$values->nid.'" data-nid="'.$values->nid.'" class="sticky-enabled advpoll-ranking-table-wrapper"><thead><tr><th>' . t('Your Vote') . '</th></tr><tbody>' . $rows . '</tbody></table>',
   );
-  drupal_add_tabledrag('advpolltable', 'match', 'sibling', 'advpoll-weight');
+  drupal_add_tabledrag('advpolltable-'.$values->nid, 'match', 'sibling', 'advpoll-weight', NULL, NULL, FALSE);
 
   return $form;
 }
