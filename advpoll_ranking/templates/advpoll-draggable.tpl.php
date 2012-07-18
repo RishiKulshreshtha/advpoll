@@ -29,10 +29,11 @@
  *   block:           Boolean - Poll can be displayed as a block.
  */
 
-drupal_add_tabledrag('advpoll-ranking-draggable', 'match', 'sibling', 'advpoll-draggable-weight', NULL, NULL, FALSE);
+$tableId = 'advpoll-ranking-draggable-table-' . $node->nid;
+drupal_add_tabledrag($tableId, 'match', 'sibling', 'advpoll-draggable-weight', NULL, NULL, FALSE);
 
 ?>
-<table id="advpoll-ranking-draggable" class="sticky-enabled">
+<table id="<?php print $tableId ?>" class="sticky-enabled advpoll-ranking-draggable" data-nid="<?php print $node->nid; ?>">
   <thead>
     <tr>
       <th><?php print t('Order your choices'); ?></th>
@@ -53,9 +54,9 @@ drupal_add_tabledrag('advpoll-ranking-draggable', 'match', 'sibling', 'advpoll-d
             <option value="<?php print $i + 1; ?>"><?php print $i + 1; ?></option>
            <?php endfor; ?>
           </select>
+        </td>
       </tr>
     <?php $row++; ?>
   <?php endforeach; ?>
   </tbody>
 </table>
-<script>Drupal.advpollDraggableSetup(<?php print $node->nid; ?>);</script>

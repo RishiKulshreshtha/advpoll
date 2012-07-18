@@ -1,5 +1,5 @@
 /*global Drupal: true, jQuery: true */
-/*jslint devel: true, browser: true, sloppy: true, nomen: true, maxerr: 50, indent: 2 */
+/*jslint indent: 2 */
 
 /* 
  * Advanced Ranking Poll
@@ -7,6 +7,8 @@
  http://groups.drupal.org/node/237188#comment-772138
 */
 (function ($) {
+  "use strict";
+
   // storing identifiers arrays to enable more than one ranking poll to render 
   // properly if more than one is displayed on the same page.  
   var ids          = [],
@@ -21,6 +23,17 @@
         formID,
         value,
         tableDrag;
+
+      $('.advpoll-ranking-draggable:not(".advpoll-processed")').each(function (i) {
+        var $this = $(this),
+          nid     = $this.attr('data-nid');
+
+        if (nid.length > 0) {
+          Drupal.advpoll.draggableSetup(nid);
+          $this.addClass('advpoll-processed');
+        }
+
+      });
 
       if (Drupal.settings) {
         for (i = 0, len = ids.length; i < len; i += 1) {
@@ -86,7 +99,7 @@
               }
             });
 
-            Drupal.advpollUpdateEvents(ids[i]);
+            Drupal.advpoll.updateEvents(ids[i]);
 
           }
 
@@ -101,7 +114,7 @@
 
             // Add a handler so when a row is dropped, update fields dropped into new regions.
             tableDrag.onDrop = function () {
-              Drupal.advpollUpdateSelect(value);
+              Drupal.advpoll.updateSelect(value);
               return true;
             };
 
@@ -112,10 +125,13 @@
 
   };
 
+  // namespace
+  Drupal.advpoll = Drupal.advpoll || {};
+
   // called when an item is added or removed from the list or upon initialization
-  Drupal.advpollUpdateEvents =  function (value) {
+  Drupal.advpoll.updateEvents =  function (value) {
     var formID = '#advpoll-ranking-form-' + value;
-    Drupal.advpollRemoveEvents(value);
+    Drupal.advpoll.removeEvents(value);
     $(formID + ' ul.selectable-list li a.add').bind('click', function () {
       var element = $(this).parents('li');
       if (currentIndices[value] < totals[value]) {
@@ -124,7 +140,7 @@
       $(formID + ' #advpolltable tbody td').eq(currentIndices[value]).append(element).css('display', 'block');
       $(formID + ' #advpolltable tbody tr').eq(currentIndices[value]).css('visibility', 'visible');
       currentIndices[value] += 1;
-      Drupal.advpollUpdateEvents(value);
+      Drupal.advpoll.updateEvents(value);
       return false;
     });
 
@@ -139,16 +155,16 @@
       $(formID + " #" + select.attr('id') + " option[value='0']").attr('selected', 'selected');
       currentIndices[value] -= 1;
       // items are removed so reweight them in the list.
-      Drupal.advpollReorderChoices(value);
-      Drupal.advpollUpdateEvents(value);
+      Drupal.advpoll.reorderChoices(value);
+      Drupal.advpoll.updateEvents(value);
       return false;
     });
-    Drupal.advpollUpdateCount(value);
+    Drupal.advpoll.updateCount(value);
 
   };
 
   // called when items are dragged in selected list.
-  Drupal.advpollReorderChoices = function (value) {
+  Drupal.advpoll.reorderChoices = function (value) {
     var formID = '#advpoll-ranking-form-' + value,
       choices = [],
       i,
@@ -164,17 +180,17 @@
   };
 
   // Called to ensure that we never bind the click events multiple times.
-  Drupal.advpollRemoveEvents =  function (value) {
+  Drupal.advpoll.removeEvents =  function (value) {
     var formID = '#advpoll-ranking-form-' + value;
 
     $(formID + ' ul.selectable-list li a.add').unbind('click');
     $(formID + ' td a.remove').unbind('click');
 
-    Drupal.advpollUpdateSelect(value);
+    Drupal.advpoll.updateSelect(value);
   };
 
   // Update markup and field values when items are rearranged.
-  Drupal.advpollUpdateSelect = function (value) {
+  Drupal.advpoll.updateSelect = function (value) {
     var formID = '#advpoll-ranking-form-' + value;
     $(formID + ' #advpolltable tbody tr').each(function (index) {
       var select;
@@ -211,7 +227,7 @@
     }
   };
 
-  Drupal.advpollUpdateCount = function (value) {
+  Drupal.advpoll.updateCount = function (value) {
     var formID = '#advpoll-ranking-form-' + value,
       votes    = totals[value] - currentIndices[value];
 
@@ -230,15 +246,15 @@
   };
 
   Drupal.theme.prototype.tableDragChangedMarker = function () {
-    Drupal.advpollDraggableUpdate();
+    Drupal.advpoll.draggableUpdate();
     return [];
   };
 
-  Drupal.advpollSetup = function (value) {
+  Drupal.advpoll.setup = function (value) {
     ids.push(value);
   };
 
-  Drupal.advpollDraggableUpdate = function () {
+  Drupal.advpoll.draggableUpdate = function () {
     var i,
       j,
       len,
@@ -246,7 +262,7 @@
       rows;
 
     for (i = 0, len = draggable_ids.length; i < len; i += 1) {
-      draggable_table = $('#advpoll-ranking-draggable-form-' + draggable_ids[i] + ' #advpoll-ranking-draggable');
+      draggable_table = $('#advpoll-ranking-draggable-form-' + draggable_ids[i] + ' .advpoll-ranking-draggable');
       rows = $(draggable_table).find('tbody tr').length;
 
       for (j = 1; j <= rows; j += 1) {
@@ -255,9 +271,9 @@
     }
   };
 
-  Drupal.advpollDraggableSetup = function (value) {
+  Drupal.advpoll.draggableSetup = function (value) {
     draggable_ids.push(value);
-    Drupal.advpollDraggableUpdate();
+    Drupal.advpoll.draggableUpdate();
   };
 
 }(jQuery));
