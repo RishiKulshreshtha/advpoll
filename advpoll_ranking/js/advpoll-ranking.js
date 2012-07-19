@@ -5,27 +5,27 @@
  * Advanced Ranking Poll
  * Handles behavior of Ranking polls.
 */
-(function($) {
+(function ($) {
   'use strict';
 
   // storing identifiers arrays to enable more than one ranking poll to render
   // properly if more than one is displayed on the same page.
-  var ids = [],
-  draggable_ids = [],
-  totals = {},
-  currentIndices = {};
+  var ids          = [],
+    draggable_ids  = [],
+    totals         = {},
+    currentIndices = {};
 
   Drupal.behaviors.advpollModule = {
-    attach: function(context, settings) {
+    attach: function (context, settings) {
       var i,
-      len,
-      formID,
-      value,
-      tableDrag;
+        len,
+        formID,
+        value,
+        tableDrag;
 
-      $('.advpoll-ranking-draggable:not(".advpoll-processed")').each(function(i) {
+      $('.advpoll-ranking-draggable:not(".advpoll-processed")').each(function (i) {
         var $this = $(this),
-        nid = $this.attr('data-nid');
+          nid = $this.attr('data-nid');
 
         if (nid.length > 0) {
           Drupal.advpoll.draggableSetup(nid);
@@ -35,9 +35,9 @@
 
       });
 
-      $('.advpoll-ranking-table-wrapper:not(".advpoll-processed")').each(function(i) {
+      $('.advpoll-ranking-table-wrapper:not(".advpoll-processed")').each(function (i) {
         var $this = $(this),
-        nid = $this.attr('data-nid');
+          nid     = $this.attr('data-nid');
 
         if (nid.length > 0) {
           Drupal.advpoll.rankingSetup(nid);
@@ -56,31 +56,31 @@
   /**
    * Get rid of irritating tabledrag messages
    */
-  Drupal.theme.tableDragChangedWarning = function() {
+  Drupal.theme.tableDragChangedWarning = function () {
     return [];
   };
 
-  Drupal.theme.prototype.tableDragIndentation = function() {
+  Drupal.theme.prototype.tableDragIndentation = function () {
     return [];
   };
 
-  Drupal.theme.prototype.tableDragChangedMarker = function() {
+  Drupal.theme.prototype.tableDragChangedMarker = function () {
     Drupal.advpoll.draggableUpdate();
     Drupal.advpoll.updateRankingTable();
     return [];
   };
 
-  Drupal.advpoll.setup = function(value) {
+  Drupal.advpoll.setup = function (value) {
     ids.push(value);
   };
 
-  Drupal.advpoll.draggableUpdate = function() {
+  Drupal.advpoll.draggableUpdate = function () {
     var i,
-    j,
-    len,
-    draggable_table,
-    rows,
-    $row;
+      j,
+      len,
+      draggable_table,
+      rows,
+      $row;
 
     for (i = 0, len = draggable_ids.length; i < len; i += 1) {
       draggable_table = $('#advpoll-ranking-draggable-form-' + draggable_ids[i] + ' .advpoll-ranking-draggable');
@@ -104,7 +104,7 @@
    Also creating add and remove links that enable the list items to be
    moved back and forth between the list and the table
  */
-  Drupal.advpoll.rankingInitialize = function(value) {
+  Drupal.advpoll.rankingInitialize = function (value) {
 
     var formID, tableID;
 
@@ -125,12 +125,12 @@
     $(formID + ' li.selectable select').css('display', 'none');
 
     // adding click events to add and remove links
-    $(formID + ' li.selectable').each(function(i) {
-      var $this = $(this);
-      var remove = $this.find('a.remove');
-      var add = $this.find('a.add');
+    $(formID + ' li.selectable').each(function (i) {
+      var $this = $(this),
+        remove  = $this.find('a.remove'),
+        add     = $this.find('a.add');
 
-      $(remove).bind('click', function() {
+      $(remove).bind('click', function () {
         var partner = add;
         $(this).css('display', 'none');
         partner.css('display', 'block');
@@ -140,7 +140,7 @@
         return false;
       });
 
-      $(add).bind('click', function() {
+      $(add).bind('click', function () {
         if (totals[value] - currentIndices[value]) {
           var partner = remove;
           $(this).css('display', 'none');
@@ -159,56 +159,63 @@
    * Update ranking table so that if there are items removed, items reorder
    * properly into the available rows if one is removed.
    */
-  Drupal.advpoll.updateRankingTable = function() {
+  Drupal.advpoll.updateRankingTable = function () {
+    var i,
+      len,
+      value,
+      formID,
+      tableID,
+      row_count,
+      votes;
 
-    for (var i = 0, len = ids.length; i < len; i += 1) {
-      var value = ids[i];
-      var formID = '#advpoll-ranking-form-' + value;
-      var tableID = '#advpolltable-' + value;
-      var row_count = $(tableID + ' td.advpoll-weight').length;
-      var votes = totals[value] - currentIndices[value];
+    for (i = 0, len = ids.length; i < len; i += 1) {
+      value     = ids[i];
+      formID    = '#advpoll-ranking-form-' + value;
+      tableID   = '#advpolltable-' + value;
+      row_count = $(tableID + ' td.advpoll-weight').length;
+      votes     = totals[value] - currentIndices[value];
 
       // clear all select lists that are not currently in the table.
-      $(formID + ' li.selectable').each(function(j) {
+      $(formID + ' li.selectable').each(function (j) {
         $(this).find("select option[value!='" + (j + 1) + "']").removeAttr('selected');
       });
 
       // cycle through list items that have been added to the table
-      $(tableID + ' td.advpoll-weight li').each(function(j) {
+      $(tableID + ' td.advpoll-weight li').each(function (j) {
         var li = $(this);
         // make sure the value in the select list matches the index of the list item
         li.find("select option[value='" + (j + 1) + "']").attr('selected', 'selected');
-        $(tableID + ' td.advpoll-weight').each(function(k) {
+        $(tableID + ' td.advpoll-weight').each(function (k) {
           var td = $(this);
           // the indexes match, so we'll move the li to its matching td index to
           // ensure that it visually appears to be in the correct position in
           // the table
-          if (k == j) {
+          if (k === j) {
             td.append(li);
           }
         });
 
       });
-      
+
       if (votes < 1) {
         $(formID + ' ul.selectable-list li.selectable label a.add').css('display', 'none');
       } else {
-        $(formID + ' ul.selectable-list li.selectable label a.add').css('display', 'block');        
+        $(formID + ' ul.selectable-list li.selectable label a.add').css('display', 'block');
       }
 
       // update counter in table footer
       $(formID + ' ' + tableID + ' tfoot tr.message td').empty().append('<p>' + Drupal.t('Votes remaining: ') + ' ' + votes + '</p>');
 
     }
-  }
+  };
 
-  Drupal.advpoll.rankingSetup = function(value) {
+  Drupal.advpoll.rankingSetup = function (value) {
     ids.push(value);
     Drupal.advpoll.rankingInitialize(value);
     Drupal.advpoll.updateRankingTable();
-  }
+  };
 
-  Drupal.advpoll.draggableSetup = function(value) {
+  Drupal.advpoll.draggableSetup = function (value) {
     draggable_ids.push(value);
     Drupal.advpoll.draggableUpdate();
   };
