@@ -23,6 +23,7 @@
         value,
         tableDrag;
 
+      // instant run-off and borda drag/drop
       $('.advpoll-ranking-draggable:not(".advpoll-processed")').each(function (i) {
         var $this = $(this),
           nid = $this.attr('data-nid');
@@ -35,6 +36,7 @@
 
       });
 
+      // instant run-off and borda normal
       $('.advpoll-ranking-table-wrapper:not(".advpoll-processed")').each(function (i) {
         var $this = $(this),
           nid     = $this.attr('data-nid');
@@ -117,27 +119,52 @@
     $(formID + ' a.remove').css('display', 'none');
     $(formID + ' li.selectable select').css('display', 'none');
 
-    // adding click events to add and remove links
-    $(formID + ' li.selectable').each(function (i) {
-      var $this = $(this),
-        remove  = $this.find('a.remove'),
-        add     = $this.find('a.add');
+    /**
+     * Replaces the wrapping element of the supplied jQuery DOM collection
+     * with a wrapper of your choice.
+     * 
+     * NOTE: This will remove any events bound to the original parent element.
+     *
+     * NOTE: Moving around <li> elements in the DOM without their accompanying <ul> is
+     * semantically incorrect, and may cause rendering errors. This function was made
+     * to solve this problem.
+     * 
+     * @param  {object} $content jQuery collection
+     * @param  {string} type The element markup you want to use as the replacement wrapper.
+     * @return {object} newly wrapped jQuery collection.
+     */
+    function convertElement($content, type) {
+      var $contents = $content.contents().clone(true);
 
-      $(remove).bind('click', function () {
-        var partner = add;
-        $(this).css('display', 'none');
-        partner.css('display', '');
+      $contents = $contents.wrapAll(type).parent();
+      $content.remove();
+
+      return $contents;
+    }
+
+    // adding click events to add and remove links
+    $(formID + ' .selectable').each(function (i) {
+      var $this = $(this),
+        $remove = $this.find('a.remove'),
+        $add    = $this.find('a.add');
+
+      $remove.bind('click', function () {
+        var $removeButton = $(this);
+        $removeButton.css('display', 'none');
+        $removeButton.siblings('a.add').css('display', '');
+        $this = convertElement($this, '<li class="selectable"></li>');
         $(formID + ' ul.selectable-list').append($this);
         currentIndices[value] -= 1;
         Drupal.advpoll.updateRankingTable();
         return false;
       });
 
-      $(add).bind('click', function () {
+      $add.bind('click', function () {
         if (totals[value] - currentIndices[value]) {
-          var partner = remove;
-          $(this).css('display', 'none');
-          partner.css('display', '');
+          var $addButton = $(this);
+          $addButton.css('display', 'none');
+          $addButton.siblings('a.remove').css('display', '');
+          $this = convertElement($this, '<div class="selectable"></div>');
           $(formID + ' ' + tableID + ' tbody td').eq(currentIndices[value]).append($this);
           currentIndices[value] += 1;
           Drupal.advpoll.updateRankingTable();
@@ -161,28 +188,29 @@
       votes;
 
     for (i = 0, len = ids.length; i < len; i += 1) {
-      value     = ids[i];
-      formID    = '#advpoll-ranking-form-' + value;
-      tableID   = '#advpolltable-' + value;
-      votes     = totals[value] - currentIndices[value];
+      value   = ids[i];
+      formID  = '#advpoll-ranking-form-' + value;
+      tableID = '#advpolltable-' + value;
+      votes   = totals[value] - currentIndices[value];
 
       // clear all select lists that are not currently in the table.
-      $(formID + ' li.selectable').each(function (j) {
+      $(formID + ' .selectable').each(function (j) {
         $(this).find("select option[value!='" + (j + 1) + "']").removeAttr('selected');
       });
 
-      // cycle through list items that have been added to the table
-      $(tableID + ' td.advpoll-weight li').each(function (j) {
-        var li = $(this);
+      // cycle through items that have been added to the table
+      $(tableID + ' td.advpoll-weight .selectable').each(function (j) {
+        var $item = $(this);
+
         // make sure the value in the select list matches the index of the list item
-        li.find("select option[value='" + (j + 1) + "']").attr('selected', 'selected');
+        $item.find("select option[value='" + (j + 1) + "']").attr('selected', 'selected');
         $(tableID + ' td.advpoll-weight').each(function (k) {
           var td = $(this);
-          // the indexes match, so we'll move the li to its matching td index to
+          // the indexes match, so we'll move the item to its matching td index to
           // ensure that it visually appears to be in the correct position in
           // the table
           if (k === j) {
-            td.append(li);
+            td.append($item);
           }
         });
 
