@@ -192,6 +192,8 @@
       
       if (votes < 1) {
         $(formID + ' ul.selectable-list li.selectable label a.add').css('display', 'none');
+      } else {
+        $(formID + ' ul.selectable-list li.selectable label a.add').css('display', 'block');        
       }
 
       // update counter in table footer
