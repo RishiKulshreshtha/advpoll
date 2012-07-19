@@ -141,12 +141,14 @@
       });
 
       $(add).bind('click', function() {
-        var partner = remove;
-        $(this).css('display', 'none');
-        partner.css('display', 'block');
-        $(formID + ' ' + tableID + ' tbody td').eq(currentIndices[value]).append($this);
-        currentIndices[value] += 1;
-        Drupal.advpoll.updateRankingTable();
+        if (totals[value] - currentIndices[value]) {
+          var partner = remove;
+          $(this).css('display', 'none');
+          partner.css('display', 'block');
+          $(formID + ' ' + tableID + ' tbody td').eq(currentIndices[value]).append($this);
+          currentIndices[value] += 1;
+          Drupal.advpoll.updateRankingTable();
+        }
         return false;
       });
 
@@ -163,6 +165,7 @@
       var value = ids[i];
       var formID = '#advpoll-ranking-form-' + value;
       var tableID = '#advpolltable-' + value;
+      var row_count = $(tableID + ' td.advpoll-weight').length;
       var votes = totals[value] - currentIndices[value];
 
       // clear all select lists that are not currently in the table.
@@ -186,6 +189,10 @@
         });
 
       });
+      
+      if (votes < 1) {
+        $(formID + ' ul.selectable-list li.selectable label a.add').css('display', 'none');
+      }
 
       // update counter in table footer
       $(formID + ' ' + tableID + ' tfoot tr.message td').empty().append('<p>' + Drupal.t('Votes remaining: ') + ' ' + votes + '</p>');
