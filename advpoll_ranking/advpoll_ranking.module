@@ -880,7 +880,7 @@ function advpoll_ranking_cancel_vote_submit($form, &$form_state) {
     $node = node_load($nid);
 
     if (advpoll_user_eligibility($node)) {
-// print out voting form
+      // print out voting form
       $data = advpoll_get_data($node);
 
       if ($data->behavior == 'borda' || $data->behavior == 'runoff') {
