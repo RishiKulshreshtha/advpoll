@@ -113,13 +113,6 @@
     totals[value] = $(formID + ' ' + tableID + ' tbody tr').length;
     currentIndices[value] = 0;
 
-    // Adjust the DOM for list to table behavior
-    $(formID + ' div.form-type-select').wrap('<li class="selectable" />');
-    $(formID + ' div.form-type-textfield').wrap('<li class="selectable" />');
-    $(formID + ' li').wrapAll('<ul class="selectable-list" />');
-    $(formID + ' label').append('<a href="" class="vote add">' + Drupal.t('Add') + ' ></a>');
-    $(formID + ' label').append('<a href="" class="vote remove">(x)</a>');
-    $(formID + ' ' + tableID).append('<tfoot><tr class="submit-row"><td></td></tr><tr class="message"><td></td></tr></tfoot>');
     $(formID + ' ' + tableID + ' tfoot tr.submit-row td').append($('.advpoll-ranking-wrapper ' + formID + ' .form-submit'));
     $(formID + ' a.remove').css('display', 'none');
     $(formID + ' li.selectable select').css('display', 'none');
@@ -133,7 +126,7 @@
       $(remove).bind('click', function () {
         var partner = add;
         $(this).css('display', 'none');
-        partner.css('display', 'block');
+        partner.css('display', '');
         $(formID + ' ul.selectable-list').append($this);
         currentIndices[value] -= 1;
         Drupal.advpoll.updateRankingTable();
@@ -144,7 +137,7 @@
         if (totals[value] - currentIndices[value]) {
           var partner = remove;
           $(this).css('display', 'none');
-          partner.css('display', 'block');
+          partner.css('display', '');
           $(formID + ' ' + tableID + ' tbody td').eq(currentIndices[value]).append($this);
           currentIndices[value] += 1;
           Drupal.advpoll.updateRankingTable();
@@ -165,14 +158,12 @@
       value,
       formID,
       tableID,
-      row_count,
       votes;
 
     for (i = 0, len = ids.length; i < len; i += 1) {
       value     = ids[i];
       formID    = '#advpoll-ranking-form-' + value;
       tableID   = '#advpolltable-' + value;
-      row_count = $(tableID + ' td.advpoll-weight').length;
       votes     = totals[value] - currentIndices[value];
 
       // clear all select lists that are not currently in the table.
@@ -198,9 +189,9 @@
       });
 
       if (votes < 1) {
-        $(formID + ' ul.selectable-list li.selectable label a.add').css('display', 'none');
+        $(formID + ' ul.selectable-list li.selectable a.add').css('display', 'none');
       } else {
-        $(formID + ' ul.selectable-list li.selectable label a.add').css('display', 'block');
+        $(formID + ' ul.selectable-list li.selectable a.add').css('display', '');
       }
 
       // update counter in table footer
