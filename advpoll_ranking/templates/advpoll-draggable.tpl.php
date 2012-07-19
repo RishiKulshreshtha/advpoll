@@ -47,7 +47,8 @@ drupal_add_tabledrag($tableId, 'match', 'sibling', 'advpoll-draggable-weight', N
   ?>
   <?php foreach ($choices as $choice): ?>
       <tr class="draggable <?php print $row % 2 == 0 ? 'odd' : 'even'; ?>">
-        <td class="advpoll-draggable-weight"><?php print $choice['choice']; ?>
+        <td class="advpoll-draggable-weight">
+          <span class="choice"><?php print $choice['choice']; ?></span>
           <select id="edit-draggable-choice-<?php print $row;?>" class="form-select" name="choice[<?php print $row; ?>]" >
             <option value="0">--</option>
            <?php for ($i = 0; $i < $choice_count; $i++): ?>
