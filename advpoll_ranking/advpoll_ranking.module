@@ -461,7 +461,7 @@ function advpoll_ranking_process_votes($data, $nid, $votes) {
 
   foreach ($votes as $ranking) {
     $vote = array();
-    $vote['type'] = 'advpoll';
+    $vote['type'] = 'node';
     $vote['tag'] = $ranking['id'];
     $vote['nid'] = $nid;
     $vote['value'] = $points - ($ranking['rank'] - 1);
@@ -540,7 +540,7 @@ function advpoll_display_runoff_results($nid, $data, $page = 0) {
 
     $criteria = array();
     $criteria['entity_id'] = $nid;
-    $criteria['entity_type'] = 'advpoll';
+    $criteria['entity_type'] = 'node';
 
     $results = votingapi_select_votes($criteria);
 
@@ -837,7 +837,7 @@ function advpoll_ranking_cancel_vote_submit($form, &$form_state) {
 
     $criteria = array();
     $criteria['entity_id'] = $nid;
-    $criteria['entity_type'] = 'advpoll';
+    $criteria['entity_type'] = 'node';
     $criteria['uid'] = $user->uid;
 
     votingapi_delete_votes(votingapi_select_votes($criteria));

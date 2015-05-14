@@ -327,7 +327,7 @@ function advpoll_node_presave($node) {
     if (isset($nid)) {
       $criteria = array();
       $criteria['entity_id'] = $node->nid;
-      $criteria['entity_type'] = 'advpoll';
+      $criteria['entity_type'] = 'node';
       $results = votingapi_select_votes($criteria);
 
       // Scrub any votes that are orphaned when a choice is removed.
@@ -352,7 +352,7 @@ function advpoll_node_presave($node) {
 function advpoll_node_delete($node) {
   db_delete('votingapi_vote')
     ->condition('entity_id', $node->nid)
-    ->condition('entity_type', 'advpoll')
+    ->condition('entity_type', 'node')
     ->execute();
 }
 
@@ -734,7 +734,7 @@ function advpoll_form_submit($form, &$form_state) {
   if (count($selected) > 0 && count($selected) <= $data->max_choices) {
     foreach ($selected as $item) {
       $vote = array();
-      $vote['type'] = 'advpoll';
+      $vote['type'] = 'node';
       $vote['tag'] = $item;
       $vote['nid'] = $nid;
       $vote['value'] = 1;
@@ -771,7 +771,7 @@ function advpoll_form_submit_check($data, $nid) {
     global $user;
     $criteria = array();
     $criteria['entity_id'] = $nid;
-    $criteria['entity_type'] = 'advpoll';
+    $criteria['entity_type'] = 'node';
 
     global $user;
     if ($user->uid) {
@@ -821,7 +821,7 @@ function advpoll_cancel_vote_submit($form, &$form_state) {
 
     $criteria = array();
     $criteria['entity_id'] = $nid;
-    $criteria['entity_type'] = 'advpoll';
+    $criteria['entity_type'] = 'node';
     $criteria['uid'] = $user->uid;
 
     votingapi_delete_votes(votingapi_select_votes($criteria));

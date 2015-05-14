@@ -616,7 +616,7 @@ function advpoll_merge_writein_form_submit($form, &$form_state) {
   // transfer merge from votes to new vote object and update votingapi
   foreach ($merge_fromVotes as $vote) {
     $votes = array(
-      'entity_type' => 'advpoll',
+      'entity_type' => 'node',
       'entity_id' => $nid,
       'value' => $vote['value'],
       'tag' => $to_tag,

@@ -4,7 +4,7 @@
  * @file
  * Install file for Advanced Poll
  * Much thanks to the example modules. MW
- * 
+ *
  * */
 function advpoll_schema() {
   // Install electoral list table
@@ -104,9 +104,9 @@ function advpoll_uninstall() {
 
   if ($nid) {
     db_delete('votingapi_vote')
-      ->condition('entity_id', $nid, 'IN')
-      ->condition('entity_type', 'advpoll')
-      ->execute();
+        ->condition('entity_id', $nid, 'IN')
+        ->condition('entity_type', 'node')
+        ->execute();
 
     // Delete all the nodes at once
     // http://api.drupal.org/api/function/node_delete_multiple/7
@@ -812,8 +812,8 @@ function _advpoll_installed_instances() {
 
 function advpoll_update_7000() {
   db_delete('field_data_advpoll_options')
-    ->condition('advpoll_options_value', 'showvotes')
-    ->execute();
+      ->condition('advpoll_options_value', 'showvotes')
+      ->execute();
   // fetch the t function for use in install
   $t = get_t();
 
@@ -833,3 +833,15 @@ function advpoll_update_7000() {
   field_update_field($field);
 }
 
+/**
+ * Change entity type of cast votes to node.
+ */
+
+function advpoll_update_7002() {
+  db_update('votingapi_vote')
+      ->fields(array(
+        'entity_type' => 'node'
+      ))
+      ->condition('entity_type', 'advpoll', '=')
+      ->execute();
+}

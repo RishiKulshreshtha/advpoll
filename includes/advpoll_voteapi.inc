@@ -22,7 +22,7 @@
 function advpoll_get_votes($nid, $behavior = 'approval') {
   $criteria = array();
   $criteria['entity_id'] = $nid;
-  $criteria['entity_type'] = 'advpoll';
+  $criteria['entity_type'] = 'node';
 
   $results = votingapi_select_votes($criteria);
 
@@ -231,7 +231,7 @@ function advpoll_user_eligibility($node) {
   if ($data->mode === 'normal') {
     $criteria = array();
     $criteria['entity_id'] = $node->nid;
-    $criteria['entity_type'] = $node->type;
+    $criteria['entity_type'] = 'node';
 
     if ($user->uid) {
       $criteria['uid'] = $user->uid;
@@ -392,7 +392,7 @@ function advpoll_get_user_votes($nid) {
   $votes = array();
   $criteria = array();
   $criteria['entity_id'] = $nid;
-  $criteria['entity_type'] = 'advpoll';
+  $criteria['entity_type'] = 'node';
 
   if ($user->uid) {
     $criteria['uid'] = $user->uid;
