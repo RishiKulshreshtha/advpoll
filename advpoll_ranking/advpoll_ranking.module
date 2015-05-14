@@ -70,7 +70,7 @@ function advpoll_ranking_node_view($node, $view_mode) {
  */
 function advpoll_ranking_menu_alter(&$items) {
   $items['node/%node/advpoll/votes']['page callback'] = 'advpoll_ranking_votes_page';
-  $items['node/%node/results']['page callback'] = 'advpoll_ranking_results_page';
+  $items['node/%node/advpoll/results']['page callback'] = 'advpoll_ranking_results_page';
 }
 
 /*

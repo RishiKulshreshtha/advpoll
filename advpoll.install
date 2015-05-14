@@ -845,3 +845,10 @@ function advpoll_update_7002() {
       ->condition('entity_type', 'advpoll', '=')
       ->execute();
 }
+
+/**
+ * Changed menu paths need a menu rebuild.
+ */
+function advpoll_update_7004() {
+  menu_rebuild();
+}

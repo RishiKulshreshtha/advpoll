@@ -44,7 +44,7 @@ function advpoll_menu() {
     'file path' => drupal_get_path('module', 'advpoll') . '/includes',
   );
 // Show electoral list tab if using the functionality.
-  $menu['node/%node/electoral-list'] = array(
+  $menu['node/%node/advpoll/electoral-list'] = array(
     'title' => 'Electoral list',
     'page callback' => 'advpoll_electoral_list_page',
     'page arguments' => array(1),
@@ -57,7 +57,7 @@ function advpoll_menu() {
   );
 
 // Allow voters to be removed.
-  $menu['node/%node/remove'] = array(
+  $menu['node/%node/advpoll/remove'] = array(
     'page callback' => 'advpoll_remove_voter',
     'page arguments' => array(1),
     'access arguments' => array('administer polls'),
@@ -80,7 +80,7 @@ function advpoll_menu() {
   );
 
 // Show the write-ins tab if poll is set to use them.
-  $menu['node/%node/write-ins'] = array(
+  $menu['node/%node/advpoll/write-ins'] = array(
     'title' => 'Write-ins',
     'page callback' => 'advpoll_writeins_page',
     'page arguments' => array(1),
@@ -92,8 +92,8 @@ function advpoll_menu() {
     'file path' => drupal_get_path('module', 'advpoll') . '/includes',
   );
 
-// show results of poll to administrators
-  $menu['node/%node/results'] = array(
+  // Show results of poll to administrators.
+  $menu['node/%node/advpoll/results'] = array(
     'title' => 'Results',
     'page callback' => 'advpoll_results_page',
     'page arguments' => array(1),
