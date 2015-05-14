@@ -647,6 +647,7 @@ function advpoll_choice_form($form, &$form_state, $values) {
       'wrapper' => 'advpoll-form-' . $values->nid,
       'name' => 'submit1',
     ),
+    '#id' => 'edit-submit-advpoll-' . $values->nid,
     '#value' => t('Vote'),
   );
 
