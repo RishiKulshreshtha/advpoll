@@ -343,7 +343,7 @@ function advpoll_checkbox_selected($choices, $votes) {
   $count = count($choices);
 
   for ($i = 0; $i < $count; $i++) {
-    $choice = strip_tags($choices[$i]['choice']);
+    $choice = strip_tags($choices[$i]['choice_id']);
     if (isset($votes[$choice]) && !is_numeric($votes[$choice]) && !empty($votes[$choice])) {
       $selected[] = $choices[$i]['choice_id'];
     }
@@ -371,7 +371,7 @@ function advpoll_radio_selected($choices, $vote) {
   $count = count($choices);
 
   for ($i = 0; $i < $count; $i++) {
-    $choice = strip_tags($choices[$i]['choice']);
+    $choice = strip_tags($choices[$i]['choice_id']);
 
     if ($choice == strip_tags($vote)) {
       $selected[] = $choices[$i]['choice_id'];

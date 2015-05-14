@@ -290,11 +290,7 @@ function advpoll_theme($existing, $type, $theme, $path) {
 function advpoll_node_presave($node) {
   if ($node->type === 'advpoll') {
 
-    $lang = $node->language;
-
-    if (!isset($node->advpoll_choice[$lang])) {
-      $lang = 'und';
-    }
+    $lang = entity_language('node', $node);
 
     // get all existing choices in the node
     $choices = $node->advpoll_choice[$lang];
@@ -365,7 +361,7 @@ function advpoll_node_delete($node) {
  */
 
 function advpoll_form_alter(&$form, $form_state, $form_id) {
-// Add validation to max_choices field.
+  // Add validation to max_choices field.
   if ($form_id == 'advpoll_node_form') {
     $lang = $form['language']['#value'];
 
@@ -388,8 +384,8 @@ function advpoll_form_alter(&$form, $form_state, $form_id) {
 
 function advpoll_validate_max_choices($element, &$form_state, $form) {
   $input_choices = array();
-  $lang = $form_state['build_info']['args'][0]->language;
 
+  $lang = entity_language('node', $form_state['node']);
   if (!isset($form_state['input']['advpoll_choice'][$lang])) {
     $lang = 'und';
   }
@@ -581,11 +577,10 @@ function advpoll_choice_form($form, &$form_state, $values) {
   $form['#id'] = 'advpoll-form-' . $values->nid;
   for ($i = 0; $i < $count; $i++) {
     if (!$data->choices[$i]['write_in']) {
-      $options[] = strip_tags($data->choices[$i]['choice']);
+      $options[$data->choices[$i]['choice_id']] = strip_tags($data->choices[$i]['choice']);
     }
   }
 
-  $options = drupal_map_assoc($options);
   $input_type = 'radios';
   if ($data->max_choices > 1) {
     $input_type = 'checkboxes';
@@ -636,7 +631,7 @@ function advpoll_choice_form($form, &$form_state, $values) {
     $form['choice_' + $count] = array(
       '#type' => $input_type,
       '#title' => '',
-      '#options' => drupal_map_assoc($options),
+      '#options' => $options,
     );
   }
 
@@ -679,6 +674,8 @@ function advpoll_form_submit($form, &$form_state) {
   $data = advpoll_get_form_data($form_state);
   $count = count($data->choices);
   $votes = $form[$count]['#value'];
+
+  $node = $form_state['build_info']['args'][0];
   $nid = $form_state['build_info']['args'][0]->nid;
   $writein = '';
 
@@ -869,12 +866,7 @@ function advpoll_process_writein($nid, $writein, $data) {
   $writein_choice = array();
 
   if ($node) {
-    $lang = $node->language;
-
-    if (!isset($node->advpoll_choice[$lang])) {
-      $lang = 'und';
-    }
-
+    $lang = entity_language('node', $node);
     $nodeChoices = $node->advpoll_choice[$lang];
     $writein_choice = array(
       'choice' => $writein,

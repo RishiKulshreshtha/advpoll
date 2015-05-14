@@ -38,15 +38,22 @@
  */
 function advpoll_get_data($node) {
   $data = array();
-  $lang = $node->language;
   $options = array();
+  $lang_default = $node->language;
+  $lang = $GLOBALS['language']->language;
 
   if ($node->type == 'advpoll') {
     // testing each field to make sure there is no translated version
     if ($node->advpoll_options) {
       (isset($node->advpoll_options[$lang])) ? $options = $node->advpoll_options[$lang] : $options = $node->advpoll_options['und'];
     }
-    (isset($node->advpoll_choice[$lang])) ? $data['choices'] = $node->advpoll_choice[$lang] : $data['choices'] = $node->advpoll_choice['und'];
+    $field = field_info_field('advpoll_choice');
+    if ($field['translatable']) {
+      (isset($node->advpoll_choice[$lang])) ? $data['choices'] = $node->advpoll_choice[$lang] : $data['choices'] = $node->advpoll_choice[$lang_default];
+    }
+    else {
+      (isset($node->advpoll_choice[$lang])) ? $data['choices'] = $node->advpoll_choice[$lang] : $data['choices'] = $node->advpoll_choice['und'];
+    }
 
     if ($node->advpoll_dates) {
       (isset($node->advpoll_dates[$lang])) ? $data['start_date'] = strtotime($node->advpoll_dates[$lang][0]['value']) : $data['start_date'] = strtotime($node->advpoll_dates['und'][0]['value']);
@@ -113,7 +120,7 @@ function advpoll_has_data($options, $term) {
 function advpoll_get_form_data($form_state, $index=0) {
   $data = array();
   $node = $form_state['build_info']['args'][$index];
-  $lang = $node->language;
+  $lang = $GLOBALS['language']->language;
   $options = array();
 
   if ($node->type == 'advpoll') {
