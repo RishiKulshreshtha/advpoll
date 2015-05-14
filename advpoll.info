@@ -6,6 +6,7 @@ dependencies[] = advpoll_field
 dependencies[] = votingapi
 dependencies[] = date
 dependencies[] = date_popup
+configure = admin/config/search/advpoll
 
 core = 7.x
 package = "Voting"

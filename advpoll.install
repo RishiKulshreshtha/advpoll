@@ -3,9 +3,7 @@
 /**
  * @file
  * Install file for Advanced Poll
- * Much thanks to the example modules. MW
- *
- * */
+ */
 function advpoll_schema() {
   // Install electoral list table
   $schema['advpoll_electoral_list'] = array(
@@ -134,6 +132,11 @@ function advpoll_uninstall() {
   // Purge all field infromation
   // http://api.drupal.org/api/function/field_purge_batch/7
   field_purge_batch(1000);
+
+  // Delete precision and rounding method variables.
+  variable_del('advpoll_percentage_precision');
+  variable_del('percentage_rounding_method');
+
 }
 
 /**
@@ -850,5 +853,12 @@ function advpoll_update_7002() {
  * Changed menu paths need a menu rebuild.
  */
 function advpoll_update_7004() {
+  menu_rebuild();
+}
+
+/**
+ * Changed menu paths need a menu rebuild.
+ */
+function advpoll_update_7006() {
   menu_rebuild();
 }

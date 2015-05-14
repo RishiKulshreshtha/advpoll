@@ -31,6 +31,17 @@ module_load_include('inc', 'advpoll', 'includes/advpoll_helper');
  * Implements hook_menu()
  */
 function advpoll_menu() {
+  $menu['admin/config/search/advpoll'] = array(
+    'title' => t('Advanced Poll'),
+    'description' => t('Configure sitewide Advanced Poll settings.'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('advpoll_settings_form'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer polls'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'advpoll.admin.inc',
+    'file path' => drupal_get_path('module', 'advpoll') . '/includes',
+  );
 // changed to inspect-votes because it conflicted with path for standard poll module.
   $menu['node/%node/advpoll/votes'] = array(
     'title' => 'Votes',
