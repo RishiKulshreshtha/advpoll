@@ -65,9 +65,7 @@ function advpoll_approval_vote($results) {
       $tallied[$result['tag']] = 1;
     }
 
-    if (!in_array($result['timestamp'], $source)) {
-      $source[] = $result['timestamp'];
-    }
+    $source[$result['timestamp']] = 1;
   }
 
   $total = count($source);
