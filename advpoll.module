@@ -697,7 +697,6 @@ function advpoll_form_submit($form, &$form_state) {
 
 // check to see if a write-in exists and was filled in.
   if ($data->write_in) {
-
     if (isset($form_state['values']['write_in'])) {
       $writein = trim($form_state['values']['write_in']);
 
@@ -707,7 +706,9 @@ function advpoll_form_submit($form, &$form_state) {
       $writein = check_plain($writein);
 
       if ($writein) {
-        $data->choices[] = advpoll_process_writein($nid, $writein, $data);
+        $processed_writein = advpoll_process_writein($nid, $writein, $data);
+        $writein_id = $processed_writein['choice_id'];
+        $data->choices[] = $processed_writein;
       } else {
         $form['message'] = array(
           '#type' => 'markup',
@@ -725,12 +726,12 @@ function advpoll_form_submit($form, &$form_state) {
   if ($data->max_choices > 1) {
     if ($writein) {
       unset($votes['write-in']);
-      $votes[$writein] = $writein;
+      $votes[$writein_id] = $writein_id;
     }
     $selected = advpoll_checkbox_selected($data->choices, $votes);
   } else {
     if ($writein) {
-      $votes = $writein;
+      $votes = $writein_id;
     }
     $selected = advpoll_radio_selected($data->choices, $votes);
   }
