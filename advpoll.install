@@ -164,7 +164,7 @@ function _advpoll_installed_fields() {
       'foreign keys' => array(),
       'indexes' => array(
         'choice' => array(
-          0 => 'choice',
+          0 => array('choice', 255),
         ),
       ),
       'module' => 'advpoll_field',
