@@ -471,10 +471,25 @@ function advpoll_ranking_process_votes($data, $nid, $votes) {
   }
 }
 
+/**
+ * Returns TRUE if @c $votes contains a vote of rank @c $rank.
+ */
+function advpoll_ranking_vote_has_rank($votes, $rank) {
+  foreach ($votes as $vote) {
+    if ($vote['rank'] == $rank) {
+      return TRUE;
+    }
+  }
+}
+
 function advpoll_ranking_process_results($results, $choices, $votes) {
 
   foreach ($results as $key => $result) {
     if ($result) {
+      // Make sure each vote has a unique rank.
+      while (advpoll_ranking_vote_has_rank($votes, $result)) {
+        ++$result;
+      }
       $votes[] = array('rank' => $result, 'id' => $choices[$key]['choice_id']);
     }
   }
