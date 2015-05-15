@@ -344,7 +344,7 @@ function _advpoll_installed_fields() {
         'allowed_values' => array(
           'aftervote' => $t('After voting'),
           'afterclose' => $t('After poll is closed'),
-          'never' => 'Never',
+          'never' => $t('Never'),
         ),
         'allowed_values_function' => '',
       ),
