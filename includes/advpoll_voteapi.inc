@@ -307,7 +307,8 @@ function advpoll_add_votes($vote) {
       // Raw cookies are safe in this case as we're only passing a static value
       // to mark that this user voted on their machine.
       global $cookie_domain;
-      setrawcookie($vote['type'] . $vote['nid'], 'vote', time() + (60 * $vote['duration']), '/', $cookie_domain);
+
+      setrawcookie($vote['nodetype'] . $vote['nid'], 'vote', time() + (60 * $vote['duration']), '/', $cookie_domain);
     }
 
     $votes = array(
