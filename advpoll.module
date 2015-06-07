@@ -675,6 +675,13 @@ function advpoll_writein_callback($form, $form_state) {
  * Submit handler for voting
  */
 function advpoll_form_submit($form, &$form_state) {
+  // Validate the form.
+  drupal_validate_form('advpoll_choice_form', $form, $form_state);
+  // if there are errors, return the form to display the error messages
+  if (form_get_errors()) {
+    $form_state['rebuild'] = TRUE;
+    return $form;
+  }
   $data = advpoll_get_form_data($form_state);
   $count = count($data->choices);
   $votes = $form[$count]['#value'];
