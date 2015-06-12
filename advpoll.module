@@ -199,6 +199,7 @@ function advpoll_block_info() {
 
   $blocks['advpoll_recent'] = array(
     'info' => t('Advanced Poll: Most Recent'),
+    'cache' => DRUPAL_NO_CACHE,
   );
 
   $blocks = advpoll_get_poll_info_blocks($blocks);
@@ -961,6 +962,7 @@ function advpoll_get_poll_info_blocks($blocks) {
 
       $blocks['advpoll_block_' . $record->nid] = array(
         'info' => t('Advanced Poll: @title', array('@title' => $record->title)),
+        'cache' => DRUPAL_NO_CACHE,
       );
     }
   }
