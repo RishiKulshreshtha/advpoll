@@ -358,7 +358,7 @@ function advpoll_form_alter(&$form, $form_state, $form_id) {
     $lang = $form['language']['#value'];
 
     if (!isset($form['advpoll_max_choices'][$lang])) {
-      $lang = 'und';
+      $lang = LANGUAGE_NONE;
     }
 
     $form['advpoll_max_choices'][$lang][0]['value']['#element_validate'][] = 'advpoll_validate_max_choices';
@@ -378,7 +378,7 @@ function advpoll_validate_max_choices($element, &$form_state, $form) {
 
   $lang = entity_language('node', $form_state['node']);
   if (!isset($form_state['input']['advpoll_choice'][$lang])) {
-    $lang = 'und';
+    $lang = LANGUAGE_NONE;
   }
 
   $choices = $form_state['input']['advpoll_choice'][$lang];
@@ -997,7 +997,7 @@ function advpoll_generate_block_view($block, $delta) {
       if (gettype($node) == 'object') {
         isset($node->advpoll_options[$node->language]) ?
             $options = $node->advpoll_options[$node->language] :
-            $options = $node->advpoll_options['und'];
+            $options = $node->advpoll_options[LANGUAGE_NONE];
 
 // Need to check to see if the nid is meant to display as a block or not.
 // It's possible the value gets switched off but the block id is still
