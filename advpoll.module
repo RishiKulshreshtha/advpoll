@@ -580,7 +580,7 @@ function advpoll_choice_form($form, &$form_state, $values) {
 
   if ($data->write_in && $data->mode != 'unlimited') {
     $options['write-in'] = t('Other (Write-in)');
-    $form['choice_' + $count] = array(
+    $form['choice_' . $count] = array(
       '#type' => $input_type,
       '#title' => '',
       '#options' => $options,
@@ -593,7 +593,7 @@ function advpoll_choice_form($form, &$form_state, $values) {
 
     if (isset($form_state['values'])) {
       foreach ($form_state['values'] as $key => $item) {
-        if (is_numeric($key)) {
+        if ($key == 'choice_' . $count) {
           break;
         }
       }
@@ -620,7 +620,7 @@ function advpoll_choice_form($form, &$form_state, $values) {
       }
     }
   } else {
-    $form['choice_' + $count] = array(
+    $form['choice_' . $count] = array(
       '#type' => $input_type,
       '#title' => '',
       '#options' => $options,
@@ -670,7 +670,7 @@ function advpoll_form_submit($form, &$form_state) {
   }
   $data = advpoll_get_form_data($form_state);
   $count = count($data->choices);
-  $votes = $form[$count]['#value'];
+  $votes = $form['choice_' . $count]['#value'];
 
   $node = $form_state['build_info']['args'][0];
   $nid = $form_state['build_info']['args'][0]->nid;
