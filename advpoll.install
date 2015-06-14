@@ -170,9 +170,7 @@ function _advpoll_installed_fields() {
       'field_name' => 'advpoll_choice',
       'foreign keys' => array(),
       'indexes' => array(
-        'choice' => array(
-          0 => array('choice', 255),
-        ),
+        'choice' => array(),
       ),
       'module' => 'advpoll_field',
       'settings' => array(),
@@ -202,9 +200,7 @@ function _advpoll_installed_fields() {
       'field_name' => 'advpoll_behavior',
       'foreign keys' => array(),
       'indexes' => array(
-        'value' => array(
-          0 => 'value',
-        ),
+        'value' => array('value'),
       ),
       'module' => 'list',
       'settings' => array(
@@ -226,9 +222,7 @@ function _advpoll_installed_fields() {
       'field_name' => 'advpoll_closed',
       'foreign keys' => array(),
       'indexes' => array(
-        'value' => array(
-          0 => 'value',
-        ),
+        'value' => array('value'),
       ),
       'module' => 'list',
       'settings' => array(
@@ -292,9 +286,7 @@ function _advpoll_installed_fields() {
       'field_name' => 'advpoll_mode',
       'foreign keys' => array(),
       'indexes' => array(
-        'value' => array(
-          0 => 'value',
-        ),
+        'value' => array('value'),
       ),
       'module' => 'list',
       'settings' => array(
@@ -317,9 +309,7 @@ function _advpoll_installed_fields() {
       'field_name' => 'advpoll_options',
       'foreign keys' => array(),
       'indexes' => array(
-        'value' => array(
-          0 => 'value',
-        ),
+        'value' => array('value'),
       ),
       'module' => 'list',
       'settings' => array(
@@ -342,9 +332,7 @@ function _advpoll_installed_fields() {
       'field_name' => 'advpoll_results',
       'foreign keys' => array(),
       'indexes' => array(
-        'value' => array(
-          0 => 'value',
-        ),
+        'value' => array('value'),
       ),
       'module' => 'list',
       'settings' => array(
