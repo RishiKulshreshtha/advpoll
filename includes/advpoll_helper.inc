@@ -56,8 +56,8 @@ function advpoll_get_data($node) {
     }
 
     if ($node->advpoll_dates) {
-      (isset($node->advpoll_dates[$lang])) ? $data['start_date'] = strtotime($node->advpoll_dates[$lang][0]['value']) : $data['start_date'] = strtotime($node->advpoll_dates[LANGUAGE_NONE][0]['value']);
-      (isset($node->advpoll_dates[$lang])) ? $data['end_date'] = strtotime($node->advpoll_dates[$lang][0]['value2']) : $data['end_date'] = strtotime($node->advpoll_dates[LANGUAGE_NONE][0]['value2']);
+      $data['start_date'] = (isset($node->advpoll_dates[$lang])) ? strtotime($node->advpoll_dates[$lang][0]['value'] . ' UTC') : strtotime($node->advpoll_dates[LANGUAGE_NONE][0]['value'] . ' UTC');
+      $data['end_date'] = (isset($node->advpoll_dates[$lang])) ? strtotime($node->advpoll_dates[$lang][0]['value2'] . ' UTC') : strtotime($node->advpoll_dates[LANGUAGE_NONE][0]['value2'] . 'UTC');
     } else {
       $data['start_date'] = 0;
       $data['end_date'] = 0;
