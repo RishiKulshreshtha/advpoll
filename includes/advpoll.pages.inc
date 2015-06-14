@@ -399,7 +399,7 @@ function advpoll_clear_votes_confirm_form_submit($form, &$form_state) {
   $nid = (int) check_plain(arg(1));
   db_delete('votingapi_vote')
     ->condition('entity_id', $nid)
-    ->condition('entity_type', 'advpoll')
+    ->condition('entity_type', 'node')
     ->execute();
   drupal_goto('node/' . $nid);
 }
