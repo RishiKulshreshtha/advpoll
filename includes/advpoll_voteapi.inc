@@ -236,12 +236,11 @@ function advpoll_user_eligibility($node) {
     $criteria = array();
     $criteria['entity_id'] = $node->nid;
     $criteria['entity_type'] = 'node';
-
-    if ($user->uid) {
-      $criteria['uid'] = $user->uid;
-    } else {
+    $criteria['uid'] = $user->uid;
+    if (!$user->uid) {
       $criteria['vote_source'] = ip_address();
     }
+
     $results = votingapi_select_votes($criteria);
 
     if ($results) {
@@ -399,9 +398,8 @@ function advpoll_get_user_votes($nid) {
   $criteria['entity_id'] = $nid;
   $criteria['entity_type'] = 'node';
 
-  if ($user->uid) {
-    $criteria['uid'] = $user->uid;
-  } else {
+  $criteria['uid'] = $user->uid;
+  if (!$user->uid) {
     $criteria['vote_source'] = ip_address();
   }
 

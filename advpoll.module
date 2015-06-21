@@ -775,10 +775,8 @@ function advpoll_form_submit_check($data, $nid) {
     $criteria['entity_id'] = $nid;
     $criteria['entity_type'] = 'node';
 
-    global $user;
-    if ($user->uid) {
-      $criteria['uid'] = $user->uid;
-    } else {
+    $criteria['uid'] = $user->uid;
+    if (!$user->uid) {
       $criteria['vote_source'] = ip_address();
     }
 
@@ -816,23 +814,25 @@ function advpoll_cancel_vote_form($form, &$form_state, $nid) {
  */
 function advpoll_cancel_vote_submit($form, &$form_state) {
   global $user;
-  if ($user->uid) {
-    $nid = $form['#nid'];
 
-    $criteria = array();
-    $criteria['entity_id'] = $nid;
-    $criteria['entity_type'] = 'node';
-    $criteria['uid'] = $user->uid;
+  $nid = $form['#nid'];
 
-    votingapi_delete_votes(votingapi_select_votes($criteria));
+  $criteria = array();
+  $criteria['entity_id'] = $nid;
+  $criteria['entity_type'] = 'node';
+  $criteria['uid'] = $user->uid;
+  if (!$user->uid) {
+    $criteria['vote_source'] = ip_address();
+  }
 
-    $node = node_load($nid);
+  votingapi_delete_votes(votingapi_select_votes($criteria));
 
-    if (advpoll_user_eligibility($node)) {
+  $node = node_load($nid);
+
+  if (advpoll_user_eligibility($node)) {
 // print out voting form
-      $update_form = drupal_get_form('advpoll_choice_form', $node);
-      return drupal_render($update_form);
-    }
+    $update_form = drupal_get_form('advpoll_choice_form', $node);
+    return drupal_render($update_form);
   }
 }
 
