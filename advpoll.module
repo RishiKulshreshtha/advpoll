@@ -287,7 +287,12 @@ function advpoll_node_presave($node) {
     $lang = entity_language('node', $node);
 
     // Get all existing choices in the node.
-    $choices = $node->advpoll_choice[$lang];
+    if (isset($node->advpoll_choice[$lang])) {
+      $choices = $node->advpoll_choice[$lang];
+    }
+    else {
+      $choices = $node->advpoll_choice[LANGUAGE_NONE];
+    }
     $count = count($choices);
 
     // Set up for the benefit of Devel to ensure values present
