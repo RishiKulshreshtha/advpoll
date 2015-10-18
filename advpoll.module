@@ -386,7 +386,10 @@ function advpoll_validate_max_choices($element, &$form_state, $form) {
     $lang = LANGUAGE_NONE;
   }
 
-  $choices = $form_state['input']['advpoll_choice'][$lang];
+  $choices = $form_state['values']['advpoll_choice'][$lang];
+  if (array_key_exists('add_more', $choices)) {
+    unset($choices['add_more']);
+  }
 
   foreach ($choices as $choice) {
     if ($choice['choice']) {
