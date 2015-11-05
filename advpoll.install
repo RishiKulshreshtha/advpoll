@@ -78,7 +78,9 @@ function advpoll_install() {
 
   // http://api.drupal.org/api/function/field_create_field/7
   foreach (_advpoll_installed_fields() as $field) {
-    field_create_field($field);
+    if (!field_info_field($field['field_name'])) {
+      field_create_field($field);
+    }
   }
 
   // Create all the instances for our fields.
@@ -86,7 +88,9 @@ function advpoll_install() {
   foreach (_advpoll_installed_instances() as $instance) {
     $instance['entity_type'] = 'node';
     $instance['bundle'] = $node_adv['type'];
-    field_create_instance($instance);
+    if (!field_info_instance('node', $instance['field_name'], $node_adv['type'])) {
+      field_create_instance($instance);
+    }
   }
 }
 
