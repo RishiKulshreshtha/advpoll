@@ -338,7 +338,7 @@ function advpoll_checkbox_selected($choices, $votes) {
 
   for ($i = 0; $i < $count; $i++) {
     $choice = strip_tags($choices[$i]['choice_id']);
-    if (isset($votes[$choice]) && !is_numeric($votes[$choice]) && !empty($votes[$choice])) {
+    if (isset($votes[$choice]) && ctype_xdigit($votes[$choice]) && !empty($votes[$choice])) {
       $selected[] = $choices[$i]['choice_id'];
     }
   }
