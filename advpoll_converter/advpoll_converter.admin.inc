@@ -1,11 +1,12 @@
 <?php
-/*
+/**
  * @file
- * Advanced Poll Converter Module Admin Forms and Functions
- * 
- * Administrative form for converter.
+ * Advanced Poll Converter Module Admin Forms and Functions.
  */
 
+/**
+ * Administrative form for converter.
+ */
 function advpoll_converter_form($form, $form_state) {
   $form = array(
     '#attributes' => array('class' => array('advpoll-converter-form')),
@@ -41,7 +42,7 @@ function advpoll_converter_form($form, $form_state) {
       '#type' => 'submit',
       '#value' => t('Convert'),
     );
-  } 
+  }
   else {
     $form['info']['message'] = array(
       '#type' => 'item',
@@ -52,10 +53,9 @@ function advpoll_converter_form($form, $form_state) {
   return $form;
 }
 
-/*
- * Submit for administrative form
+/**
+ * Submit for administrative form.
  */
-
 function advpoll_converter_form_submit($form, $form_state) {
   $nids = array();
   $delete = 0;
@@ -73,17 +73,16 @@ function advpoll_converter_form_submit($form, $form_state) {
       if ($delete) {
         node_delete_multiple($nids);
       }
-    } 
+    }
     else {
       form_set_error('advpoll_converter_select', t('Please select at least one poll to convert.'));
     }
   }
 }
 
-/*
- * Fetch available polls
+/**
+ * Fetch available polls.
  */
-
 function _advpoll_converter_get_polls() {
   $result = db_query("SELECT title, nid FROM {node} WHERE type='poll'");
   $options = array();
@@ -93,26 +92,27 @@ function _advpoll_converter_get_polls() {
   return $options;
 }
 
-/*
- * Convert selected polls to Advanced Polls
+/**
+ * Converts selected polls to Advanced Polls.
  */
-
 function _advpoll_converter_create_nodes($nids) {
-  $poll_nodes = db_query("SELECT n.nid, 
-                                 n.title, 
-                                 n.language, 
-                                 n.created, 
-                                 n.status, 
-                                 n.uid,
-                                 p.runtime, 
-                                 p.active 
-                                 FROM {node} n 
-                                 JOIN {poll} p ON n.nid = p.nid 
-                                 WHERE type='poll' AND n.nid IN (:ids)", 
-                                 array(':ids' => $nids));
+  $poll_nodes = db_query("
+    SELECT n.nid,
+      n.title,
+      n.language,
+      n.created,
+      n.status,
+      n.uid,
+      p.runtime,
+      p.active
+    FROM {node} n
+    JOIN {poll} p ON n.nid = p.nid
+    WHERE type='poll' AND n.nid IN (:ids)",
+    array(':ids' => $nids)
+  );
 
   foreach ($poll_nodes as $record) {
-    //set up base Node
+    // Set up base Node.
     $node = new stdClass();
     $node->type = 'advpoll';
     node_object_prepare($node);
@@ -123,12 +123,13 @@ function _advpoll_converter_create_nodes($nids) {
     $node->status = $record->status;
     $record->language = LANGUAGE_NONE;
 
-    // fetch poll's choices
-    $poll_choices = db_query("SELECT pc.chid, 
-                                     pc.chtext 
-                                     FROM {poll_choice} pc 
-                                     WHERE pc.nid = :nid", 
-                                     array(':nid' => $record->nid));
+    // Fetch poll's choices.
+    $poll_choices = db_query("
+      SELECT pc.chid, pc.chtext
+      FROM {poll_choice} pc
+      WHERE pc.nid = :nid",
+      array(':nid' => $record->nid)
+    );
     $choice_by_id = array();
     $choices = array();
 
@@ -136,10 +137,10 @@ function _advpoll_converter_create_nodes($nids) {
       $id = dechex(time() * rand(5, 50));
       $choice_by_id[$choice->chid] = $id;
       $choices[] = array(
-        'choice' => $choice->chtext, 
-        'write_in' => 0, 
+        'choice' => $choice->chtext,
+        'write_in' => 0,
         'choice_id' => $id,
-        );
+      );
     }
 
     $node->advpoll_choice[$record->language] = $choices;
@@ -148,14 +149,14 @@ function _advpoll_converter_create_nodes($nids) {
     $end_time = time();
     if ($record->runtime) {
       $end_time = $record->created + $record->runtime;
-    } 
+    }
     else {
       $end_time = $record->created + 60 * 60 * 24 * 365;
     }
 
     if ($record->active) {
       $node->advpoll_closed[$record->language][0]['value'] = 'open';
-    } 
+    }
     else {
       $node->advpoll_closed[$record->language][0]['value'] = 'close';
     }
@@ -168,17 +169,20 @@ function _advpoll_converter_create_nodes($nids) {
     $node->advpoll_behavior[$record->language][0]['value'] = 'approval';
     node_save($node);
 
-    // save to get nid of newly created node - needed to be able to record associated votes.
+    // Save to get nid of newly created node
+    // Needed to be able to record associated votes.
     $nid = $node->nid;
 
-    // update associated votes
-    $poll_votes = db_query("SELECT pv.chid, 
-                                   pv.uid, 
-                                   pv.hostname, 
-                                   pv.timestamp 
-                                   FROM {poll_vote} pv 
-                                   WHERE pv.nid = :nid", 
-                                   array(':nid' => $record->nid));
+    // Update associated votes.
+    $poll_votes = db_query("
+      SELECT pv.chid,
+        pv.uid,
+        pv.hostname,
+        pv.timestamp
+        FROM {poll_vote} pv
+      WHERE pv.nid = :nid",
+      array(':nid' => $record->nid)
+    );
 
     $votes = array();
     foreach ($poll_votes as $row) {

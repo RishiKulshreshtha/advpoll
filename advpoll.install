@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Install file for Advanced Poll
+ * Install file for Advanced Poll.
  */
 
 /**
@@ -13,13 +13,13 @@ function advpoll_schema() {
   $schema['advpoll_electoral_list'] = array(
     'fields' => array(
       'nid' => array(
-        'description' => t('Node id for the relevant advpoll.'),
+        'description' => 'Node id for the relevant advpoll.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
       'uid' => array(
-        'description' => t('User id who will be given access to vote in an advpoll.'),
+        'description' => 'User id who will be given access to vote in an advpoll.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -36,7 +36,7 @@ function advpoll_schema() {
  */
 function advpoll_install() {
 
-// Fetch the t function for use in install
+  // Fetch the t function for use in install.
   $t = get_t();
 
   // We define the node type as an associative array.
@@ -50,24 +50,27 @@ function advpoll_install() {
     'custom' => TRUE,
   );
 
-  // Complete the node type definition by setting any defaults not explicitly
-  // declared above.
-  // http://api.drupal.org/api/function/node_type_set_defaults/7
+  /* Complete the node type definition by setting any defaults not explicitly
+   * declared above.
+   * http://api.drupal.org/api/function/node_type_set_defaults/7
+   */
   $content_type = node_type_set_defaults($node_adv);
 
-  //We add a body field and set the body label immediately.
+  // We add a body field and set the body label immediately.
   node_add_body_field($content_type, $t('Description'));
 
-  // Save the content type
+  // Save the content type.
   node_type_save($content_type);
 
 
-  // Load the instance definition for our content type's body
-  // http://api.drupal.org/api/function/field_info_instance/7
+  /* Load the instance definition for our content type's body.
+   * http://api.drupal.org/api/function/field_info_instance/7
+   */
   $body_instance = field_info_instance('node', 'body', 'advpoll');
 
-  // Add our example_node_list view mode to the body instance display by
-  // instructing the body to display as a summary
+  /* Add our example_node_list view mode to the body instance display by
+   * instructing the body to display as a summary.
+   */
   $body_instance['display']['advpoll_list'] = array(
     'label' => 'hidden',
     'type' => 'text_summary_or_trimmed',
@@ -83,8 +86,9 @@ function advpoll_install() {
     }
   }
 
-  // Create all the instances for our fields.
-  // http://api.drupal.org/api/function/field_create_instance/7
+  /* Create all the instances for our fields.
+   * http://api.drupal.org/api/function/field_create_instance/7
+   */
   foreach (_advpoll_installed_instances() as $instance) {
     $instance['entity_type'] = 'node';
     $instance['bundle'] = $node_adv['type'];
@@ -96,8 +100,6 @@ function advpoll_install() {
 
 /**
  * Implements hook_uninstall().
- *
- * @ingroup node_example
  */
 function advpoll_uninstall() {
   // Gather all the example content that might have been created while this
@@ -117,31 +119,36 @@ function advpoll_uninstall() {
         ->condition('entity_type', 'node')
         ->execute();
 
-    // Delete all the nodes at once
-    // http://api.drupal.org/api/function/node_delete_multiple/7
+    /* Delete all the nodes at once
+     * http://api.drupal.org/api/function/node_delete_multiple/7
+     */
     node_delete_multiple($nid);
   }
-  // Loop over each of the fields defined by this module and delete
-  // all instances of the field, their data, and the field itself.
-  // http://api.drupal.org/api/function/field_delete_field/7
+  /* Loop over each of the fields defined by this module and delete
+   * all instances of the field, their data, and the field itself.
+   * http://api.drupal.org/api/function/field_delete_field/7
+   */
   foreach (array_keys(_advpoll_installed_fields()) as $field) {
     field_delete_field($field);
   }
 
-  // Loop over any remaining field instances attached to the node_example
-  // content type (such as the body field) and delete them individually.
-  // http://api.drupal.org/api/function/field_delete_field/7
+  /* Loop over any remaining field instances attached to the node_example
+   * content type (such as the body field) and delete them individually.
+   * http://api.drupal.org/api/function/field_delete_field/7
+   */
   $instances = field_info_instances('node', 'advpoll');
   foreach ($instances as $instance_name => $instance) {
     field_delete_instance($instance);
   }
 
-  // Delete our content type
-  // http://api.drupal.org/api/function/node_type_delete/7
+  /* Delete our content type
+   * http://api.drupal.org/api/function/node_type_delete/7
+   */
   node_type_delete('advpoll');
 
-  // Purge all field infromation
-  // http://api.drupal.org/api/function/field_purge_batch/7
+  /* Purge all field infromation
+   * http://api.drupal.org/api/function/field_purge_batch/7
+   */
   field_purge_batch(1000);
 
   // Delete precision and rounding method variables.
@@ -156,11 +163,9 @@ function advpoll_uninstall() {
  * This is factored into this function so it can be used in both
  * node_example_install() and node_example_uninstall().
  *
- * @return
- *  An associative array specifying the fields we wish to add to our
- *  new node type.
- *
- * @ingroup node_example
+ * @return array
+ *   An associative array specifying the fields we wish to add to our
+ *   new node type.
  */
 function _advpoll_installed_fields() {
   $t = get_t();
@@ -356,12 +361,6 @@ function _advpoll_installed_fields() {
 /**
  * Returns a structured array defining the instances for this content type.
  *
- * The instance lets Drupal know which widget to use to allow the user to enter
- * data and how to react in different view modes.  We are going to display a
- * page that uses a custom "node_example_list" view mode.  We will set a
- * cardinality of three allowing our content type to give the user three color
- * fields.
- *
  * This is factored into this function so it can be used in both
  * node_example_install() and node_example_uninstall().
  *
@@ -374,7 +373,7 @@ function _advpoll_installed_fields() {
 function _advpoll_installed_instances() {
   $t = get_t();
   return array(
-    // -- Choices field instance display info
+    // Choices field.
     'advpoll_choice' => array(
       'default_value' => NULL,
       'deleted' => '0',
@@ -414,7 +413,7 @@ function _advpoll_installed_instances() {
         'weight' => '1',
       ),
     ),
-    // -- Max choices instance display
+    // Max number of choices field.
     'advpoll_max_choices' => array(
       'default_value' => array(
         0 => array(
@@ -468,7 +467,7 @@ function _advpoll_installed_instances() {
         'weight' => '2',
       ),
     ),
-    // -- Date fields instance display
+    // Date field.
     'advpoll_dates' => array(
       'deleted' => '0',
       'description' => $t('Select the date range that controls the availability of this poll.'),
@@ -525,7 +524,7 @@ function _advpoll_installed_instances() {
         'weight' => '3',
       ),
     ),
-    // Open/Closed field instance display
+    // Open/Closed field.
     'advpoll_closed' => array(
       'default_value' => array(
         0 => array(
@@ -570,7 +569,7 @@ function _advpoll_installed_instances() {
         'weight' => '4',
       ),
     ),
-    // Options fields display instance
+    // Options fields.
     'advpoll_options' => array(
       'default_value' => array(
         0 => array(
@@ -615,7 +614,7 @@ function _advpoll_installed_instances() {
         'weight' => '5',
       ),
     ),
-    // Mode field instance display
+    // Mode field.
     'advpoll_mode' => array(
       'default_value' => array(
         0 => array(
@@ -660,7 +659,7 @@ function _advpoll_installed_instances() {
         'weight' => '6',
       ),
     ),
-    // Cookie duration field
+    // Cookie duration field.
     'advpoll_cookie_duration' => array(
       'default_value' => array(
         0 => array(
@@ -714,7 +713,7 @@ function _advpoll_installed_instances() {
         'weight' => '7',
       ),
     ),
-    // Results field display instance
+    // Results field.
     'advpoll_results' => array(
       'default_value' => array(
         0 => array(
@@ -759,7 +758,7 @@ function _advpoll_installed_instances() {
         'weight' => '8',
       ),
     ),
-    // Poll behavior field
+    // Poll behavior field.
     'advpoll_behavior' => array(
       'default_value' => array(
         0 => array(
@@ -814,11 +813,12 @@ function advpoll_update_7000() {
   db_delete('field_data_advpoll_options')
       ->condition('advpoll_options_value', 'showvotes')
       ->execute();
-  // fetch the t function for use in install
+  // Fetch the t function for use in install.
   $t = get_t();
 
-  // Remove options that are no longer valid from initial build and replace
-  // only with valid options.
+  /* Remove options that are no longer valid from initial build and replace
+   * only with valid options.
+   */
   $field = array(
     'field_name' => 'advpoll_options',
     'settings' => array(

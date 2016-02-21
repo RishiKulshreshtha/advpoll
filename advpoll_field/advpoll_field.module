@@ -1,12 +1,11 @@
 <?php
 
 /**
-/*
  * @file
  * Advanced Poll Field Module
- * 
- * Provides a FieldAPI field type for presenting an Advanced Poll choice field with
- * a Boolean checkbox to indicate write-in status.
+ *
+ * Provides a Field API field type for presenting an Advanced Poll choice field
+ * with a boolean checkbox to indicate write-in status.
  */
 
 /**
@@ -44,6 +43,7 @@ function advpoll_field_field_formatter_info() {
 
 /**
  * Implements hook_field_formatter_view().
+ *
  * Write-in flag is not visible.
  */
 function advpoll_field_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
@@ -99,8 +99,10 @@ function advpoll_field_field_widget_form(&$form, &$form_state, $field, $instance
         '#default_value' => empty($items[$delta]['write_in']) ? 0 : 1,
       );
       $default = dechex(time() * rand(5, 50));
-      // decided to hex for a smaller value to stick into votingapi tag field. Added a randomized
-      // multiplier to make absolutely sure value is unique if choices are created at the same time.
+      /* Decided to hex for a smaller value to stick into votingapi tag field.
+       * Added a randomized multiplier to make absolutely sure value is unique
+       * if choices are created at the same time.
+       */
       $element['choice_id'] = array(
         '#type' => 'hidden',
         '#default_value' => empty($items[$delta]['choice_id']) ? $default : $items[$delta]['choice_id'],
@@ -113,7 +115,7 @@ function advpoll_field_field_widget_form(&$form, &$form_state, $field, $instance
  * Implements hook_field_views_data().
  */
 function advpoll_field_field_views_data($field) {
-  // An attempt to make a Views friendly display.
+  // An attempt to make a Views-friendly display.
 
   $views_fields = field_views_field_default_views_data($field);
   foreach ($views_fields as $key => $data) {

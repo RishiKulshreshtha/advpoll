@@ -1,7 +1,9 @@
 <?php
 /**
  * @file
- * Default template for an advanced poll bar - based on default Drupal Poll template.
+ * Default template for an advanced poll bar.
+ *
+ * Based on default Drupal Poll template.
  *
  * Variables available:
  * - $title: The title of the poll.
@@ -11,10 +13,12 @@
  * - $voted: Set to TRUE if the user voted for this choice.
  */
 
-// add extra class to wrapper so that user's selected vote can have a different style.
+/* Add extra class to wrapper so that user's selected vote can have a different
+ * style.
+ */
 $voted_class = '';
 if ($voted) {
-    $voted_class = ' voted';
+  $voted_class = ' voted';
 }
 ?>
 <div class="poll-bar poll-borda<?php print $voted_class; ?>">

@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Advanced Poll Vote API Include
+ * Advanced Poll Vote API Include.
  *
  * Handles function calls related to voting and selection of votes.
  */
@@ -11,13 +11,14 @@
  * Get all votes related to a node by content type and node id.
  *
  * @param $nid
- * Node ID of an advanced poll.
+ *   Node ID of an advanced poll.
  * @param $behavior
- * Behavior dictates how results are tabulated and displayed.
+ *   Behavior dictates how results are tabulated and displayed.
+ *
  * @return array
- *   An array containing the key:
- *     'choices' which matches the index of each choice with its tallied votes.
- *     'total' which is the total of all votes
+ *   An array containing the keys:
+ *   - choices: The index of each choice with its tallied votes.
+ *   - total: The total of all votes.
  */
 function advpoll_get_votes($nid, $behavior = 'approval') {
   $criteria = array();
@@ -28,9 +29,11 @@ function advpoll_get_votes($nid, $behavior = 'approval') {
 
   if ($behavior === 'approval') {
     $tabulated = advpoll_approval_vote($results);
-  } elseif ($behavior === 'pool') {
+  }
+  elseif ($behavior === 'pool') {
     $tabulated = advpoll_pooled_vote($results);
-  } else {
+  }
+  else {
     $tabulated = advpoll_default_vote($results);
   }
 
@@ -43,15 +46,16 @@ function advpoll_get_votes($nid, $behavior = 'approval') {
  * For approval voting, multiple choices cast by a single user count as one
  * vote.
  *
- * @param $results
- * Results returned from voting api.
- * @return array
- *   Keyed array containing vote choices in descending order and total votes.
- *   $choices contains:
- *      index = the index of the choice
- *      percentage = percentage of votes choice received.
- *      votes = the number of votes received.
+ * @param array $results
+ *   Results returned from voting api.
  *
+ * @return array
+ *   Associative array containing vote choices in descending order and total
+ *   votes.
+ *   $choices contains:
+ *   - index: The index of the choice.
+ *   - percentage: Percentage of votes choice received.
+ *   - votes: The number of votes received.
  */
 function advpoll_approval_vote($results) {
   $tallied = array();
@@ -60,7 +64,8 @@ function advpoll_approval_vote($results) {
   foreach ($results as $result) {
     if (isset($tallied[$result['tag']])) {
       $tallied[$result['tag']]++;
-    } else {
+    }
+    else {
       $tallied[$result['tag']] = 1;
     }
 
@@ -75,16 +80,19 @@ function advpoll_approval_vote($results) {
 
 /**
  * Tally votes by pooling them.
+ *
  * All votes, whether cast by single or multichoice bear the same weight.
  *
- * @param $results
- * Results returned from voting api.
+ * @param array $results
+ *   Results returned from voting api.
+ *
  * @return array
- *   Keyed array containing vote choices in descending order and total votes.
- *   $choices contains:
- *      index = the index of the choice
- *      percentage = percentage of votes choice received.
- *      votes = the number of votes received.
+ *   Associative array containing vote choices in descending order and total
+ *   votes.
+ *   Contains:
+ *   - index: The index of the choice.
+ *   - percentage: Percentage of votes choice received.
+ *   - votes: The number of votes received.
  *
  */
 function advpoll_pooled_vote($results) {
@@ -93,7 +101,8 @@ function advpoll_pooled_vote($results) {
   foreach ($results as $result) {
     if (isset($tallied[$result['tag']])) {
       $tallied[$result['tag']]++;
-    } else {
+    }
+    else {
       $tallied[$result['tag']] = 1;
     }
     $total++;
@@ -105,20 +114,21 @@ function advpoll_pooled_vote($results) {
 }
 
 /**
- * Default voting count
+ * Default voting count.
  *
  * Uses the 'value' field returned by the voting API to tally votes and arrive
  * at percentages.
  *
- * @param $results
- * Results returned from voting api.
- * @return array
- *   Keyed array containing vote choices in descending order and total votes.
- *   $choices contains:
- *      index = the index of the choice
- *      percentage = percentage of votes choice received.
- *      votes = the number of votes received.
+ * @param array $results
+ *   Results returned from voting api.
  *
+ * @return array
+ *   Associative array containing vote choices in descending order and total
+ *   votes.
+ *   $choices contains:
+ *   - index: The index of the choice.
+ *   - percentage: Percentage of votes choice received.
+ *   - votes: The number of votes received.
  */
 function advpoll_default_vote($results) {
   $tallied = array();
@@ -128,7 +138,8 @@ function advpoll_default_vote($results) {
     $points = (int)$result['value'];
     if (isset($tallied[$result['tag']])) {
       $tallied[$result['tag']] += $points;
-    } else {
+    }
+    else {
       $tallied[$result['tag']] = $points;
     }
     $total_points += $points;
@@ -144,14 +155,15 @@ function advpoll_default_vote($results) {
  * Return keyed array with percentages for each index.
  *
  * @param $tallied
- * Array containing totals per choice index
+ *   Array containing totals per choice index.
  * @param $total
- * Total number of votes
+ *   Total number of votes.
+ *
  * @return array
- *   A keyed array containing:
- *   index = the index of the choice
- *   percentage = the percentage of votes
- *   votes = the number of votes received
+ *   An associative array containing:
+ *   - index: The index of the choice.
+ *   - percentage: The percentage of votes.
+ *   - votes: The number of votes received.
  */
 function advpoll_calculate_percentage($tallied, $total) {
   $tabulated = array();
@@ -162,7 +174,11 @@ function advpoll_calculate_percentage($tallied, $total) {
   foreach ($tallied as $key => $value) {
     $percentage = (int)$value / (int)$total * 100;
     $percentage = number_format($rounding_method($percentage * $pow) / $pow, $precision);
-    $tabulated[] = array('index' => $key, 'percentage' => $percentage, 'votes' => $value);
+    $tabulated[] = array(
+      'index' => $key,
+      'percentage' => $percentage,
+      'votes' => $value,
+    );
   }
 
   usort($tabulated, "advpoll_compare");
@@ -177,23 +193,25 @@ function advpoll_calculate_percentage($tallied, $total) {
 function advpoll_compare($a, $b) {
   if ($a['percentage'] > $b['percentage']) {
     return 1;
-  } elseif ($a['percentage'] < $b['percentage']) {
+  }
+  elseif ($a['percentage'] < $b['percentage']) {
     return -1;
-  } else {
+  }
+  else {
     return 0;
   }
 }
 
 /**
- * Check for user's eligibility to vote on a given poll.
+ * Checks for user's eligibility to vote on a given poll.
  *
  * Provides a series of fall-through tests to determine user's ability to vote.
  *
  * @param $node
- * The poll node.
- * @return bool
- * Returns TRUE or FALSE.
+ *   The poll node.
  *
+ * @return bool
+ *   TRUE or FALSE.
  */
 function advpoll_user_eligibility($node) {
   if (!user_access('vote on polls')) {
@@ -247,19 +265,22 @@ function advpoll_user_eligibility($node) {
 }
 
 /**
- * Check user against electoral list
+ * Checks user against electoral list.
  *
  * @param $uid
- * User's ID
+ *   User's ID.
  * @param $nid
- * Node ID of the poll
+ *   Node ID of the poll.
+ *
  * @return bool
- * Returns TRUE or FALSE
+ *   TRUE or FALSE
  */
 function advpoll_check_electoral_list($uid, $nid) {
-  $result = db_query('SELECT uid
-                      FROM {advpoll_electoral_list}
-                      WHERE uid = :uid AND nid = :nid', array(':uid' => $uid, ':nid' => $nid))->fetchField();
+  $result = db_query("
+    SELECT uid
+    FROM {advpoll_electoral_list}
+    WHERE uid = :uid AND nid = :nid
+  ", array(':uid' => $uid, ':nid' => $nid))->fetchField();
 
   if ($result) {
     return TRUE;
@@ -271,18 +292,19 @@ function advpoll_check_electoral_list($uid, $nid) {
 /**
  * Add votes for a given poll.
  *
- * @param $vote
- * A keyed array that is used to determine the method in which the vote will be
- * tracked and what values will be passed to votingapi
- *   $vote['type'] The content type - either advpoll or advpoll_ranking
- *   $vote['tag'] = Tag corresponds to the index of the selected choice
- *   $vote['nid'] = The node ID of poll being voted on
- *   $vote['mode'] = normal, cookie, or unlimited
- *   $vote['duration'] = duration is minutes that the cookie will last if one is
- *                       set.
+ * @param array $vote
+ *   An associative array that is used to determine the method in which the vote
+ *   will be tracked and what values will be passed to votingapi.  It contains:
+ *   - type: The content type - either advpoll or advpoll_ranking.
+ *   - tag: Tag corresponds to the index of the selected choice.
+ *   - nid: The node ID of poll being voted on.
+ *   - mode: normal, cookie, or unlimited.
+ *   - duration: duration is minutes that the cookie will last if one is set.
  */
 function advpoll_add_votes($vote) {
-  // Normal voting uses the votingapi to record user id or ip based on authentication.
+  /* Normal voting uses the votingapi to record user id or ip based on
+   * authentication.
+   */
   if ($vote['mode'] === 'normal') {
     $votes = array(
         'entity_type' => $vote['type'],
@@ -290,14 +312,17 @@ function advpoll_add_votes($vote) {
         'value' => $vote['value'],
         'tag' => $vote['tag'],
     );
-  } else {
-    // unlimited and cookie voting simply add values to the votingapi and bypass
-    // user id and ip as source. Time stamp instead of ip will prevent a unique
-    // id from being tied to these voters.
+  }
+  else {
+    /* Unlimited and cookie voting simply add values to the votingapi and bypass
+     * user id and ip as source. Time stamp instead of ip will prevent a unique
+     * id from being tied to these voters.
+     */
     if ($vote['mode'] === 'cookie') {
-      // necessary to pass Drupal's $cookie_domain to get this to stick.
-      // Raw cookies are safe in this case as we're only passing a static value
-      // to mark that this user voted on their machine.
+      /* Necessary to pass Drupal's $cookie_domain to get this to stick.
+       * Raw cookies are safe in this case as we're only passing a static value
+       * to mark that this user voted on their machine.
+       */
       global $cookie_domain;
 
       setrawcookie($vote['nodetype'] . $vote['nid'], 'vote', time() + (60 * $vote['duration']), '/', $cookie_domain);
@@ -317,19 +342,20 @@ function advpoll_add_votes($vote) {
 }
 
 /**
- * Process votes cast via checkboxes
+ * Processes votes cast via checkboxes.
  *
  * Checkbox values returned by form_state have a different structure
  * than radio buttons.  We need an array of indexes representing
  * items selected from list of choices.
  *
- * @param $choices
- * An array containing available choices in the poll
- * @param $votes
- * Text of choices selected from the form_state. Need to match them up with
- * choices saved in the node.
+ * @param array $choices
+ *   An array containing available choices in the poll.
+ * @param array $votes
+ *   Text of choices selected from the form_state. Need to match them up with
+ *   choices saved in the node.
+ *
  * @return array
- * The the unique IDs of the choices selected by the user.
+ *   The the unique IDs of the choices selected by the user.
  *
  */
 function advpoll_checkbox_selected($choices, $votes) {
@@ -346,17 +372,18 @@ function advpoll_checkbox_selected($choices, $votes) {
 }
 
 /**
- * Process votes cast via radio buttons
+ * Processes votes cast via radio buttons.
  *
  * Radio buttons returns a string rather than an array.
  *
- * @param $choices
- * An array containing available choices in the poll
- * @param $vote
- * Text of choice selected from the form_state. Need to match it up with
- * choices saved in the node.
+ * @param array $choices
+ *   An array containing available choices in the poll.
+ * @param array $vote
+ *   Text of choice selected from the form_state. Need to match it up with
+ *   choices saved in the node.
+ *
  * @return array
- * The unique ID of the choice selected by the user.
+ *   The unique ID of the choice selected by the user.
  */
 function advpoll_radio_selected($choices, $vote) {
 
@@ -375,12 +402,13 @@ function advpoll_radio_selected($choices, $vote) {
 }
 
 /**
- * Return unique choice ids for a given node id and user id.
+ * Returns unique choice ids for a given node id and user id.
  *
  * @param $nid
- * The node ID of the poll to be examined for the current user.
+ *   The node ID of the poll to be examined for the current user.
+ *
  * @return array
- * Unique choice IDs selected by the user.
+ *   Unique choice IDs selected by the user.
  */
 function advpoll_get_user_votes($nid) {
   global $user;

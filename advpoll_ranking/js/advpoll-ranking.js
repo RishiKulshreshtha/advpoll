@@ -1,10 +1,10 @@
-/*global Drupal: true, jQuery: true */
-/*jslint indent: 2 */
-
-/*
- * Advanced Ranking Poll
+/**
+ * @file
  * Handles behavior of Ranking polls.
-*/
+ *
+ * global Drupal: true, jQuery: true
+ * jslint indent: 2
+ */
 (function ($) {
   'use strict';
 
