@@ -27,6 +27,11 @@ function advpoll_ranking_node_view($node, $view_mode) {
         'every_page' => TRUE
         )
       );
+      // Use existing weight if defined.
+      $weight = 1;
+      if(!empty($node->content['advpoll_choice']['#weight'])) {
+        $weight = $node->content['advpoll_choice']['#weight'];
+      }
       // Replace the markup for choices with appropriate markup.
       unset($node->content['advpoll_choice']);
       // Check for eligibility to vote
@@ -35,12 +40,12 @@ function advpoll_ranking_node_view($node, $view_mode) {
         if ($data->behavior == 'borda' || $data->behavior == 'runoff') {
           $rendered_form = drupal_get_form('advpoll_ranking_choice_form', $data, $node);
           $voteform = '<div class="advpoll-ranking-wrapper">' . drupal_render($rendered_form) . '</div>';
-          $node->content['advpoll_choice'] = array('#markup' => $voteform, '#weight' => 1);
+          $node->content['advpoll_choice'] = array('#markup' => $voteform, '#weight' => $weight);
         }
         else {
           $rendered_form = drupal_get_form('advpoll_draggable_form', $data, $node);
           $voteform = '<div class="advpoll-ranking-wrapper">' . drupal_render($rendered_form) . '</div>';
-          $node->content['advpoll_choice'] = array('#markup' => $voteform, '#weight' => 1);
+          $node->content['advpoll_choice'] = array('#markup' => $voteform, '#weight' => $weight);
         }
       }
       else {
@@ -57,7 +62,7 @@ function advpoll_ranking_node_view($node, $view_mode) {
           $results = advpoll_display_runoff_results($node->nid, $data);
         }
 
-        $node->content['advpoll_choice'] = array('#markup' => $results, '#weight' => 1);
+        $node->content['advpoll_choice'] = array('#markup' => $results, '#weight' => $weight);
       }
     }
     /* JS needs to be present for any ranking poll in case form is re-rendered
