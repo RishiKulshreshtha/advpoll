@@ -42,10 +42,10 @@ function advpoll_install() {
   // We define the node type as an associative array.
   $node_adv = array(
     'type' => 'advpoll',
-    'name' => $t('Advanced Poll'),
+    'name' => $t('Advanced poll'),
     'base' => 'node_content',
     'has_title' => 1,
-    'description' => $t('Advanced Poll adds additional poll functionality, cookie voting, write-ins and voting modes.'),
+    'description' => $t('Advanced poll adds additional poll functionality, cookie voting, write-ins and voting modes.'),
     'title_label' => $t('Question'),
     'custom' => TRUE,
   );
@@ -400,7 +400,7 @@ function _advpoll_installed_instances() {
       ),
       'entity_type' => 'node',
       'field_name' => 'advpoll_choice',
-      'label' => $t('Poll Choice'),
+      'label' => $t('Poll choice'),
       'required' => 1,
       'settings' => array(
         'user_register_form' => FALSE,
