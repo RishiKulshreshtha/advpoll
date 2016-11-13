@@ -752,7 +752,7 @@ function advpoll_display_borda_results($nid, $data, $page = 0) {
     );
   }
   else {
-    $results = advpoll_get_votes($nid, $data->behavior);
+    $results = advpoll_get_votes($nid, $data);
     $bars = '';
     $final = advpoll_update_choices($data->choices, $results['choices']);
     $reordered = array();

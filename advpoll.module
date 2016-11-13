@@ -476,7 +476,7 @@ function advpoll_display_results($nid, $data, $page = 0) {
     );
   }
   else {
-    $results = advpoll_get_votes($nid, $data->behavior);
+    $results = advpoll_get_votes($nid, $data);
     $bars = '';
     $final = advpoll_update_choices($data->choices, $results['choices']);
 
@@ -806,6 +806,7 @@ function advpoll_form_submit_check($data, $nid) {
     $criteria = array();
     $criteria['entity_id'] = $nid;
     $criteria['entity_type'] = 'node';
+    $criteria['value_type'] = 'percent';
 
     $criteria['uid'] = $user->uid;
     if (!$user->uid) {
@@ -1083,7 +1084,7 @@ function advpoll_generate_block_view($block, $delta) {
 function _advpoll_results_access($node) {
   if ($node->type == 'advpoll') {
     $data = advpoll_get_data($node);
-    $votes = advpoll_get_votes($node->nid);
+    $votes = advpoll_get_votes($node->nid, $data);
     return ($votes['total'] > 0 && (user_access("show vote results") || user_access('administer polls')));
   }
 }
@@ -1124,14 +1125,14 @@ function _advpoll_electoral_list_access($node) {
 function _advpoll_votes_access($node) {
   if ($node->type == 'advpoll') {
     $data = advpoll_get_data($node);
-    $votes = advpoll_get_votes($node->nid);
+    $votes = advpoll_get_votes($node->nid, $data);
     return $votes['total'] > 0 && (user_access('inspect all votes') || user_access('administer polls'));
   }
 }
 
 /**
  * Clear votes access callback.
-
+ *
  * @param $node
  *   An advanced poll node.
  *
@@ -1140,7 +1141,8 @@ function _advpoll_votes_access($node) {
  */
 function _advpoll_clear_votes_access($node) {
   if ($node->type == 'advpoll') {
-    $votes = advpoll_get_votes($node->nid);
+    $data = advpoll_get_data($node);
+    $votes = advpoll_get_votes($node->nid, $data);
     return ($votes['total'] > 0 && user_access('administer polls'));
   }
 }

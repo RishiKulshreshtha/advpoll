@@ -12,25 +12,32 @@
  *
  * @param $nid
  *   Node ID of an advanced poll.
- * @param $behavior
- *   Behavior dictates how results are tabulated and displayed.
+ * @param $data
+ *   Data from the node formatted by one of the helper functions in the
+ *   advpoll_helper.inc document.
  *
  * @return array
  *   An array containing the keys:
  *   - choices: The index of each choice with its tallied votes.
  *   - total: The total of all votes.
  */
-function advpoll_get_votes($nid, $behavior = 'approval') {
+function advpoll_get_votes($nid, $data) {
   $criteria = array();
   $criteria['entity_id'] = $nid;
   $criteria['entity_type'] = 'node';
 
+  $tags = array();
+  foreach($data->choices as $choice) {
+    $tags[$choice['choice_id']] = $choice['choice_id'];
+  }
+  $criteria['tag'] = $tags;
+
   $results = votingapi_select_votes($criteria);
 
-  if ($behavior === 'approval') {
+  if ($data->behavior === 'approval') {
     $tabulated = advpoll_approval_vote($results);
   }
-  elseif ($behavior === 'pool') {
+  elseif ($data->behavior === 'pool') {
     $tabulated = advpoll_pooled_vote($results);
   }
   else {
@@ -249,6 +256,7 @@ function advpoll_user_eligibility($node) {
     $criteria = array();
     $criteria['entity_id'] = $node->nid;
     $criteria['entity_type'] = 'node';
+    $criteria['value_type'] = 'percent';
     $criteria['uid'] = $user->uid;
     if (!$user->uid) {
       $criteria['vote_source'] = ip_address();
@@ -416,7 +424,7 @@ function advpoll_get_user_votes($nid) {
   $criteria = array();
   $criteria['entity_id'] = $nid;
   $criteria['entity_type'] = 'node';
-
+  $criteria['value_type'] = 'percent';
   $criteria['uid'] = $user->uid;
   if (!$user->uid) {
     $criteria['vote_source'] = ip_address();
