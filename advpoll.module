@@ -188,12 +188,6 @@ function advpoll_node_view($node, $view_mode) {
         $node->content['advpoll_choice'] = array(0 => $voteform, '#weight' => $weight);
       }
       else {
-        // Get user's votes if they're logged in and if voting is normal.
-        $votes = array();
-        if ($data->mode == 'normal') {
-          $votes = advpoll_get_user_votes($node->nid);
-        }
-
         $results = advpoll_display_results($node->nid, $data);
         $node->content['advpoll_choice'] = array('#markup' => $results, '#weight' => $weight);
       }
